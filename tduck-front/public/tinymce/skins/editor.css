@@ -1,0 +1,12 @@
+/*自定义代码引用组件*/
+formvariable {
+    background-color: #1890ff;
+    font-size: 12px;
+    line-height: 20px;
+    color: #FFFFFF;
+    border-radius: 7px;
+    padding: 0 5px;
+    display: inline-block;
+    margin: 0 3px;
+}
+
