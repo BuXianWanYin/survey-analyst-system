@@ -36,6 +36,33 @@ const routes = [
           title: '首页',
           requiresAuth: true
         }
+      },
+      {
+        path: 'user/survey/list',
+        name: 'SurveyList',
+        component: () => import('@/views/user/SurveyList.vue'),
+        meta: {
+          title: '我的问卷',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/design',
+        name: 'SurveyDesign',
+        component: () => import('@/views/user/SurveyDesign.vue'),
+        meta: {
+          title: '问卷设计',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/fill/:id',
+        name: 'SurveyFill',
+        component: () => import('@/views/user/SurveyFill.vue'),
+        meta: {
+          title: '填写问卷',
+          requiresAuth: false
+        }
       }
     ]
   },
@@ -70,4 +97,3 @@ const router = createRouter({
 setupRouterGuard(router)
 
 export default router
-
