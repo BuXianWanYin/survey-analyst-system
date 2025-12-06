@@ -170,8 +170,8 @@ const handleSubmit = async () => {
       const value = formData[question.id]
       if (value !== null && value !== undefined && value !== '') {
         if (Array.isArray(value)) {
-          // 多选题，取第一个选项ID（实际应该保存多个答案）
-          answers[question.id] = value[0]
+          // 多选题，保存多个选项ID
+          answers[question.id] = value
         } else {
           answers[question.id] = value
         }
@@ -207,7 +207,8 @@ const handleSaveDraft = async () => {
       const value = formData[question.id]
       if (value !== null && value !== undefined && value !== '') {
         if (Array.isArray(value)) {
-          answers[question.id] = value[0]
+          // 多选题，保存多个选项ID
+          answers[question.id] = value
         } else {
           answers[question.id] = value
         }

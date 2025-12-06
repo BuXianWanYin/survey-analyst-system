@@ -3,6 +3,7 @@ package com.server.surveyanalystserver.controller.user;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.Survey;
+import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.SurveyService;
 import com.server.surveyanalystserver.service.user.UserService;
 import io.swagger.annotations.Api;

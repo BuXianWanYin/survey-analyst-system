@@ -63,6 +63,15 @@ const routes = [
           title: '填写问卷',
           requiresAuth: false
         }
+      },
+      {
+        path: 'user/survey/publish',
+        name: 'SurveyPublish',
+        component: () => import('@/views/user/SurveyPublish.vue'),
+        meta: {
+          title: '问卷发布',
+          requiresAuth: true
+        }
       }
     ]
   },
@@ -81,6 +90,46 @@ const routes = [
         component: () => import('@/views/admin/Dashboard.vue'),
         meta: {
           title: '数据概览',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'user',
+        name: 'UserManagement',
+        component: () => import('@/views/admin/UserManagement.vue'),
+        meta: {
+          title: '用户管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'survey',
+        name: 'SurveyManagement',
+        component: () => import('@/views/admin/SurveyManagement.vue'),
+        meta: {
+          title: '问卷管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'data',
+        name: 'DataManagement',
+        component: () => import('@/views/admin/DataManagement.vue'),
+        meta: {
+          title: '数据管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'system',
+        name: 'SystemMonitor',
+        component: () => import('@/views/admin/SystemMonitor.vue'),
+        meta: {
+          title: '系统监控',
           requiresAuth: true,
           requiresAdmin: true
         }

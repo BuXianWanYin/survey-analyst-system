@@ -18,6 +18,9 @@ export { optionApi } from './option'
 // 填写记录相关 API
 export { responseApi } from './response'
 
+// 问卷发布与推广相关 API
+export { surveyPublishApi } from './surveyPublish'
+
 // 文件相关 API
 export { fileApi } from './file'
 

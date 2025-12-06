@@ -51,7 +51,7 @@
         </div>
         <div class="card-footer">
           <el-link type="primary" @click="handleEdit(survey.id)">编辑</el-link>
-          <el-link type="primary" @click="handleView(survey.id)">查看</el-link>
+          <el-link type="primary" @click="handlePublish(survey.id)">发布</el-link>
           <el-link type="danger" @click="handleDelete(survey.id)">删除</el-link>
         </div>
       </el-card>
@@ -150,8 +150,8 @@ const handleEdit = (id) => {
   router.push(`/user/survey/design?id=${id}`)
 }
 
-const handleView = (id) => {
-  router.push(`/user/survey/view/${id}`)
+const handlePublish = (id) => {
+  router.push(`/user/survey/publish?id=${id}`)
 }
 
 const handleDelete = async (id) => {

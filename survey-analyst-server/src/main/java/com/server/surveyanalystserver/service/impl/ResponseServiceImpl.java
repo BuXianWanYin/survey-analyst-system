@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -74,17 +75,32 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             Long questionId = entry.getKey();
             Object answerValue = entry.getValue();
 
-            Answer answer = new Answer();
-            answer.setResponseId(responseId);
-            answer.setQuestionId(questionId);
-
-            if (answerValue instanceof Long) {
+            if (answerValue instanceof List) {
+                // 多选题：保存多个选项
+                @SuppressWarnings("unchecked")
+                List<Long> optionIds = (List<Long>) answerValue;
+                for (Long optionId : optionIds) {
+                    Answer answer = new Answer();
+                    answer.setResponseId(responseId);
+                    answer.setQuestionId(questionId);
+                    answer.setOptionId(optionId);
+                    answerMapper.insert(answer);
+                }
+            } else if (answerValue instanceof Long) {
+                // 单选题：保存单个选项
+                Answer answer = new Answer();
+                answer.setResponseId(responseId);
+                answer.setQuestionId(questionId);
                 answer.setOptionId((Long) answerValue);
+                answerMapper.insert(answer);
             } else if (answerValue instanceof String) {
+                // 填空题：保存文本内容
+                Answer answer = new Answer();
+                answer.setResponseId(responseId);
+                answer.setQuestionId(questionId);
                 answer.setContent((String) answerValue);
+                answerMapper.insert(answer);
             }
-
-            answerMapper.insert(answer);
         }
     }
 }
