@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  * 选项实体类
  */
 @Data
-@TableName("option")
+@TableName("`option`")
 @ApiModel(description = "选项实体")
 public class Option implements Serializable {
 

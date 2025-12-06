@@ -139,7 +139,7 @@ const questionWordCloudOptions = reactive({})
 const chartConfigDialog = ref(false)
 const currentConfigQuestionId = ref(null)
 const chartConfig = reactive({
-  colors: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'],
+  colors: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#409EFF', '#66b1ff'],
   titleStyle: { fontSize: 16, fontWeight: 'bold' },
   legendStyle: { right: '10%' }
 })

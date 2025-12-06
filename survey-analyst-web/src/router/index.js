@@ -49,7 +49,7 @@ const routes = [
       {
         path: 'user/survey/design',
         name: 'SurveyDesign',
-        component: () => import('@/views/user/SurveyDesign.vue'),
+        component: () => import('@/views/user/SurveyDesignNew.vue'),
         meta: {
           title: '问卷设计',
           requiresAuth: true

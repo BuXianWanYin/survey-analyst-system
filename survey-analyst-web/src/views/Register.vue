@@ -162,7 +162,7 @@ const goToLogin = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
 }
 
 .register-box {

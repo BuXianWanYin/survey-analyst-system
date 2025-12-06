@@ -17,7 +17,9 @@ export default defineConfig(({ mode }) => {
         [baseApi]: {
           target: proxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path.replace(new RegExp(`^${baseApi}`), '')
+          secure: false
+          // 不重写路径，保持/api前缀，因为后端接口路径就是/api/auth/login
+          // rewrite: (path) => path.replace(new RegExp(`^${baseApi}`), '')
         }
       }
     },

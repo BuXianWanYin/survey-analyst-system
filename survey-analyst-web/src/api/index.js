@@ -35,3 +35,6 @@ export { analysisApi } from './analysis'
 
 // 导出相关 API
 export { exportApi } from './export'
+
+// 表单设计相关 API（参考 tduck）
+export { formApi } from './form'

@@ -73,7 +73,8 @@ knife4j:
 # JWT配置
 security:
   jwt:
-    secret: survey-analyst-jwt-secret-key-2024
+    # JWT密钥（至少64字符，512位，用于HS512算法）
+    secret: survey-analyst-jwt-secret-key-2024-this-is-a-very-long-secret-key-for-hs512-algorithm-which-requires-at-least-512-bits
     expiration: 604800000
     refresh-expiration: 2592000000
 

@@ -78,7 +78,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Knife4j (Swagger UI增强) - 3.x版本兼容Spring Boot 2.6+ -->
+        <!-- Knife4j (Swagger UI增强) -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>

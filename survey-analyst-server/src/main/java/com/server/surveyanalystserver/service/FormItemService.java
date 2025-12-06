@@ -1,0 +1,26 @@
+package com.server.surveyanalystserver.service;
+
+import com.server.surveyanalystserver.entity.FormItem;
+
+import java.util.List;
+
+/**
+ * 表单项服务接口
+ */
+public interface FormItemService {
+    /**
+     * 批量保存表单项
+     */
+    void batchSave(String formKey, List<FormItem> items);
+    
+    /**
+     * 根据 formKey 获取表单项列表
+     */
+    List<FormItem> getByFormKey(String formKey);
+    
+    /**
+     * 删除表单项
+     */
+    void deleteById(Long id);
+}
+

@@ -89,7 +89,13 @@ const handleLogin = async () => {
           userStore.setToken(res.data.token)
           userStore.setUserInfo(res.data.user)
           ElMessage.success('登录成功')
-          router.push('/home')
+          
+          // 根据用户角色跳转到不同页面
+          if (res.data.user && res.data.user.role === 'ADMIN') {
+            router.push('/admin/dashboard')
+          } else {
+            router.push('/home')
+          }
         }
       } catch (error) {
         ElMessage.error(error.message || '登录失败')
@@ -112,7 +118,7 @@ const goToRegister = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
 }
 
 .login-box {
