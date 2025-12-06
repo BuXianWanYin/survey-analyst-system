@@ -22,5 +22,10 @@ public interface FormItemService {
      * 删除表单项
      */
     void deleteById(Long id);
+    
+    /**
+     * 根据 formKey 删除所有表单项（逻辑外键联动删除）
+     */
+    void deleteByFormKey(String formKey);
 }
 

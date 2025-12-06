@@ -60,6 +60,39 @@
 
     <el-empty v-if="!loading && surveyList.length === 0" description="暂无数据" />
 
+    <!-- 创建问卷对话框 -->
+    <el-dialog
+      v-model="showCreateDialog"
+      title="创建问卷"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="createForm" label-width="80px">
+        <el-form-item label="问卷名称" required>
+          <el-input
+            v-model="createForm.title"
+            placeholder="请输入问卷名称"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="问卷描述">
+          <el-input
+            v-model="createForm.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入问卷描述（可选）"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreateSurvey">确定</el-button>
+      </template>
+    </el-dialog>
+
     <el-pagination
       v-if="total > 0"
       v-model:current-page="currentPage"
@@ -143,8 +176,41 @@ const handleCurrentChange = () => {
   loadSurveyList()
 }
 
+const showCreateDialog = ref(false)
+const createForm = ref({
+  title: '',
+  description: ''
+})
+
 const goToCreateSurvey = () => {
-  router.push('/user/survey/design')
+  createForm.value = {
+    title: '',
+    description: ''
+  }
+  showCreateDialog.value = true
+}
+
+const handleCreateSurvey = async () => {
+  if (!createForm.value.title.trim()) {
+    ElMessage.warning('请输入问卷名称')
+    return
+  }
+  
+  try {
+    const res = await surveyApi.createSurvey({
+      title: createForm.value.title,
+      description: createForm.value.description || ''
+    })
+    
+    if (res.code === 200 && res.data) {
+      ElMessage.success('创建成功')
+      showCreateDialog.value = false
+      // 跳转到编辑页，并传递问卷ID
+      router.push(`/user/survey/design?id=${res.data.id}`)
+    }
+  } catch (error) {
+    ElMessage.error('创建问卷失败')
+  }
 }
 
 const handleEdit = (id) => {

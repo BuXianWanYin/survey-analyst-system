@@ -20,5 +20,10 @@ public interface FormConfigService {
      * 根据 formKey 获取表单配置
      */
     FormConfig getByFormKey(String formKey);
+    
+    /**
+     * 删除表单配置（逻辑外键联动删除）
+     */
+    boolean deleteById(Long id);
 }
 

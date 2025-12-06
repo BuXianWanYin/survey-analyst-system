@@ -36,9 +36,9 @@
               <el-icon><Document /></el-icon>
               <span>我的问卷</span>
             </el-menu-item>
-            <el-menu-item index="/user/survey/design">
-              <el-icon><Edit /></el-icon>
-              <span>创建问卷</span>
+            <el-menu-item index="/user/survey/template">
+              <el-icon><Document /></el-icon>
+              <span>问卷模板</span>
             </el-menu-item>
             <el-sub-menu index="/user/survey/analysis">
               <template #title>
@@ -64,7 +64,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Document, Edit, User, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Edit, User, ArrowDown, DataAnalysis } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

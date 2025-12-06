@@ -43,5 +43,13 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
     public void deleteById(Long id) {
         this.removeById(id);
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByFormKey(String formKey) {
+        LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormItem::getFormKey, formKey);
+        this.remove(wrapper);
+    }
 }
 

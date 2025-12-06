@@ -15,6 +15,9 @@
               placeholder="表单名称"
               @blur="handleFormNameChange"
             />
+            <span v-if="autoSaveStatus" class="auto-save-tip" :class="autoSaveStatus">
+              {{ autoSaveStatus === 'saving' ? '保存中...' : '已自动保存' }}
+            </span>
           </div>
           <div class="header-actions">
             <el-button type="primary" @click="handlePreview">预览</el-button>
@@ -92,132 +95,132 @@
                   drag-class="drag-item"
                   @end="handleDragEnd"
                 >
-                  <div
+                    <div
                     v-for="element in drawingList"
                     :key="element.formItemId"
-                    class="drawing-item"
-                    :class="{
-                      'active-from-item': activeId === element.formItemId,
-                      'unfocus-bordered': activeId !== element.formItemId
-                    }"
-                    @click.stop="handleItemClick(element)"
-                  >
-                    <el-icon class="drag-handle"><Rank /></el-icon>
-                    <div class="component-name">{{ getComponentLabel(element.type) }}</div>
-                    <div class="drawing-item-copy" @click.stop="handleCopyItem(element)">
-                      <el-icon><CopyDocument /></el-icon>
-                    </div>
-                    <div class="drawing-item-delete" @click.stop="handleDeleteItem(element)">
-                      <el-icon><Delete /></el-icon>
-                    </div>
-                    <el-form-item
-                      :label="element.label"
-                      :prop="element.vModel"
-                      :required="element.required"
+                      class="drawing-item"
+                      :class="{
+                        'active-from-item': activeId === element.formItemId,
+                        'unfocus-bordered': activeId !== element.formItemId
+                      }"
+                      @click.stop="handleItemClick(element)"
                     >
-                      <!-- 单行文本 -->
-                      <el-input
-                        v-if="element.type === 'INPUT'"
-                        v-model="formModel[element.vModel]"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                        :readonly="element.readonly"
-                      />
-                      <!-- 多行文本 -->
-                      <el-input
-                        v-else-if="element.type === 'TEXTAREA'"
-                        v-model="formModel[element.vModel]"
-                        type="textarea"
-                        :rows="4"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                        :readonly="element.readonly"
-                      />
-                      <!-- 数字 -->
-                      <el-input-number
-                        v-else-if="element.type === 'NUMBER'"
-                        v-model="formModel[element.vModel]"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                      />
-                      <!-- 单选框 -->
-                      <el-radio-group
-                        v-else-if="element.type === 'RADIO'"
-                        v-model="formModel[element.vModel]"
-                        :disabled="element.disabled"
+                      <el-icon class="drag-handle"><Rank /></el-icon>
+                      <div class="component-name">{{ getComponentLabel(element.type) }}</div>
+                      <div class="drawing-item-copy" @click.stop="handleCopyItem(element)">
+                        <el-icon><CopyDocument /></el-icon>
+                      </div>
+                      <div class="drawing-item-delete" @click.stop="handleDeleteItem(element)">
+                        <el-icon><Delete /></el-icon>
+                      </div>
+                      <el-form-item
+                        :label="element.label"
+                        :prop="element.vModel"
+                        :required="element.required"
                       >
-                        <el-radio
-                          v-for="(option, idx) in element.config?.options || []"
-                          :key="idx"
-                          :label="option.value"
-                        >
-                          {{ option.label }}
-                        </el-radio>
-                      </el-radio-group>
-                      <!-- 多选框 -->
-                      <el-checkbox-group
-                        v-else-if="element.type === 'CHECKBOX'"
-                        v-model="formModel[element.vModel]"
-                        :disabled="element.disabled"
-                      >
-                        <el-checkbox
-                          v-for="(option, idx) in element.config?.options || []"
-                          :key="idx"
-                          :label="option.value"
-                        >
-                          {{ option.label }}
-                        </el-checkbox>
-                      </el-checkbox-group>
-                      <!-- 下拉框 -->
-                      <el-select
-                        v-else-if="element.type === 'SELECT'"
-                        v-model="formModel[element.vModel]"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                      >
-                        <el-option
-                          v-for="(option, idx) in element.config?.options || []"
-                          :key="idx"
-                          :label="option.label"
-                          :value="option.value"
+                        <!-- 单行文本 -->
+                        <el-input
+                          v-if="element.type === 'INPUT'"
+                          v-model="formModel[element.vModel]"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                          :readonly="element.readonly"
                         />
-                      </el-select>
-                      <!-- 评分 -->
-                      <el-rate
-                        v-else-if="element.type === 'RATE'"
-                        v-model="formModel[element.vModel]"
-                        :max="5"
-                        :disabled="element.disabled"
-                      />
-                      <!-- 日期选择 -->
-                      <el-date-picker
-                        v-else-if="element.type === 'DATE'"
-                        v-model="formModel[element.vModel]"
-                        type="date"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                        style="width: 100%"
-                      />
-                      <!-- 文件上传 -->
-                      <el-upload
-                        v-else-if="element.type === 'UPLOAD'"
-                        v-model:file-list="formModel[element.vModel]"
-                        :disabled="element.disabled"
-                        action="#"
-                        :auto-upload="false"
-                      >
-                        <el-button type="primary">选择文件</el-button>
-                      </el-upload>
-                      <!-- 默认：单行文本 -->
-                      <el-input
-                        v-else
-                        v-model="formModel[element.vModel]"
-                        :placeholder="element.placeholder"
-                        :disabled="element.disabled"
-                        :readonly="element.readonly"
-                      />
-                    </el-form-item>
-                  </div>
+                        <!-- 多行文本 -->
+                        <el-input
+                          v-else-if="element.type === 'TEXTAREA'"
+                          v-model="formModel[element.vModel]"
+                          type="textarea"
+                          :rows="4"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                          :readonly="element.readonly"
+                        />
+                        <!-- 数字 -->
+                        <el-input-number
+                          v-else-if="element.type === 'NUMBER'"
+                          v-model="formModel[element.vModel]"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                        />
+                        <!-- 单选框 -->
+                        <el-radio-group
+                          v-else-if="element.type === 'RADIO'"
+                          v-model="formModel[element.vModel]"
+                          :disabled="element.disabled"
+                        >
+                          <el-radio
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                          >
+                            {{ option.label }}
+                          </el-radio>
+                        </el-radio-group>
+                        <!-- 多选框 -->
+                        <el-checkbox-group
+                          v-else-if="element.type === 'CHECKBOX'"
+                          v-model="formModel[element.vModel]"
+                          :disabled="element.disabled"
+                        >
+                          <el-checkbox
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                          >
+                            {{ option.label }}
+                          </el-checkbox>
+                        </el-checkbox-group>
+                        <!-- 下拉框 -->
+                        <el-select
+                          v-else-if="element.type === 'SELECT'"
+                          v-model="formModel[element.vModel]"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                        >
+                          <el-option
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.label"
+                            :value="option.value"
+                          />
+                        </el-select>
+                        <!-- 评分 -->
+                        <el-rate
+                          v-else-if="element.type === 'RATE'"
+                          v-model="formModel[element.vModel]"
+                          :max="5"
+                          :disabled="element.disabled"
+                        />
+                        <!-- 日期选择 -->
+                        <el-date-picker
+                          v-else-if="element.type === 'DATE'"
+                          v-model="formModel[element.vModel]"
+                          type="date"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                          style="width: 100%"
+                        />
+                        <!-- 文件上传 -->
+                        <el-upload
+                          v-else-if="element.type === 'UPLOAD'"
+                          v-model:file-list="formModel[element.vModel]"
+                          :disabled="element.disabled"
+                          action="#"
+                          :auto-upload="false"
+                        >
+                          <el-button type="primary">选择文件</el-button>
+                        </el-upload>
+                        <!-- 默认：单行文本 -->
+                        <el-input
+                          v-else
+                          v-model="formModel[element.vModel]"
+                          :placeholder="element.placeholder"
+                          :disabled="element.disabled"
+                          :readonly="element.readonly"
+                        />
+                      </el-form-item>
+                    </div>
                 </VueDraggable>
                 
                 <!-- 空状态 -->
@@ -295,6 +298,15 @@
         </el-card>
       </div>
     </div>
+
+    <!-- 预览对话框 -->
+    <SurveyPreview
+      v-model="previewVisible"
+      :form-name="formName"
+      :form-items="drawingList"
+      :form-key="formKey"
+      :show-qrcode="true"
+    />
   </div>
 </template>
 
@@ -322,7 +334,8 @@ import {
   ElDatePicker,
   ElUpload
 } from 'element-plus'
-import { formApi } from '@/api'
+import { formApi, surveyApi } from '@/api'
+import SurveyPreview from '@/components/SurveyPreview.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -331,7 +344,10 @@ const router = useRouter()
 const formName = ref('未命名表单')
 const editingFormName = ref(false)
 const formKey = ref(null)
+const surveyId = ref(null)
 const formModel = reactive({})
+const autoSaveStatus = ref(null) // 'saving' | 'saved' | null
+let autoSaveTimer = null
 
 // 组件列表
 const componentList = [
@@ -398,7 +414,7 @@ const handleDragStart = (event, component) => {
 // 拖拽结束（VueDraggable 内部排序时触发）
 const handleDragEnd = () => {
   // 保存排序后的列表
-  saveFormItems()
+  triggerAutoSave()
 }
 
 // 处理从组件库拖拽到设计区域
@@ -426,7 +442,7 @@ const handleDrop = (event) => {
   
   // 等待 DOM 更新后自动保存
   nextTick(() => {
-    saveFormItems()
+    triggerAutoSave()
   })
 }
 
@@ -481,7 +497,7 @@ const handleCopyItem = (element) => {
   formModel[newItem.vModel] = newItem.defaultValue || ''
   activeId.value = newItem.formItemId
   
-  saveFormItems()
+  triggerAutoSave()
 }
 
 // 删除组件
@@ -495,13 +511,13 @@ const handleDeleteItem = (element) => {
       activeId.value = null
     }
     
-    saveFormItems()
+    triggerAutoSave()
   }
 }
 
 // 属性变更
 const handlePropertyChange = () => {
-  saveFormItems()
+  triggerAutoSave()
 }
 
 // 添加选项
@@ -528,7 +544,7 @@ const handleRemoveOption = (index) => {
 // 表单名称变更
 const handleFormNameChange = () => {
   if (formKey.value) {
-    saveFormConfig()
+    triggerAutoSave()
   }
 }
 
@@ -539,14 +555,23 @@ const saveFormConfig = async () => {
   }
   
   try {
-    await formApi.saveFormConfig({
+    const configData = {
       formKey: formKey.value,
       name: formName.value,
       description: ''
-    })
+    }
+    
+    // 如果是编辑模式，传递 surveyId
+    if (surveyId.value) {
+      configData.surveyId = Number(surveyId.value)
+    }
+    
+    await formApi.saveFormConfig(configData)
+    return true
   } catch (error) {
     // 保存表单配置失败
     ElMessage.error('保存表单配置失败')
+    return false
   }
 }
 
@@ -569,10 +594,54 @@ const saveFormItems = async () => {
     }))
     
     await formApi.saveFormItems(formKey.value, items)
+    return true
   } catch (error) {
     // 保存表单项失败
     ElMessage.error('保存表单项失败')
+    return false
   }
+}
+
+// 自动保存
+const autoSave = async () => {
+  if (!surveyId.value) {
+    // 新建模式，不自动保存
+    return
+  }
+  
+  autoSaveStatus.value = 'saving'
+  
+  try {
+    await saveFormConfig()
+    await saveFormItems()
+    autoSaveStatus.value = 'saved'
+    
+    // 3秒后隐藏提示
+    setTimeout(() => {
+      if (autoSaveStatus.value === 'saved') {
+        autoSaveStatus.value = null
+      }
+    }, 3000)
+  } catch (error) {
+    autoSaveStatus.value = null
+  }
+}
+
+// 触发自动保存（防抖）
+const triggerAutoSave = () => {
+  if (!surveyId.value) {
+    return
+  }
+  
+  // 清除之前的定时器
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+  }
+  
+  // 设置新的定时器，2秒后自动保存
+  autoSaveTimer = setTimeout(() => {
+    autoSave()
+  }, 2000)
 }
 
 // 生成表单唯一标识
@@ -582,19 +651,31 @@ const generateFormKey = () => {
 
 // 加载表单数据
 const loadFormData = async () => {
-  const surveyId = route.query.id
-  if (!surveyId) {
+  const id = route.query.id
+  if (!id) {
     // 新建表单
     formKey.value = generateFormKey()
+    surveyId.value = null
     return
   }
   
+  surveyId.value = Number(id)
+  
   try {
+    // 先加载问卷信息，获取问卷名称
+    const surveyRes = await surveyApi.getSurveyById(Number(id))
+    if (surveyRes.code === 200 && surveyRes.data) {
+      formName.value = surveyRes.data.title || '未命名表单'
+    }
+    
     // 加载表单配置
-    const configRes = await formApi.getFormConfig(surveyId)
+    const configRes = await formApi.getFormConfig(Number(id))
     if (configRes.code === 200 && configRes.data) {
       formKey.value = configRes.data.formKey
-      formName.value = configRes.data.name || '未命名表单'
+      // 如果表单配置有名称，使用表单配置的名称；否则使用问卷名称
+      if (configRes.data.name) {
+        formName.value = configRes.data.name
+      }
     } else {
       formKey.value = generateFormKey()
     }
@@ -636,13 +717,25 @@ const handleSave = async () => {
 }
 
 // 预览
-const handlePreview = () => {
-  if (!formKey.value) {
-    ElMessage.warning('请先保存表单')
+const previewVisible = ref(false)
+
+const handlePreview = async () => {
+  // 如果没有表单项，提示用户
+  if (drawingList.value.length === 0) {
+    ElMessage.warning('请先添加表单组件')
     return
   }
-  // TODO: 打开预览窗口
-  ElMessage.info('预览功能开发中')
+  
+  // 如果没有保存，先自动保存
+  if (!formKey.value) {
+    await saveFormConfig()
+  }
+  
+  // 确保表单项已保存
+  await saveFormItems()
+  
+  // 打开预览窗口
+  previewVisible.value = true
 }
 
 onMounted(() => {
@@ -679,6 +772,9 @@ onMounted(() => {
 
 .header-title {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .form-name-input {
@@ -686,6 +782,20 @@ onMounted(() => {
   font-weight: 500;
   border: none;
   background: transparent;
+}
+
+.auto-save-tip {
+  font-size: 12px;
+  color: #909399;
+  transition: all 0.3s;
+  
+  &.saving {
+    color: #409eff;
+  }
+  
+  &.saved {
+    color: #67c23a;
+  }
   
   :deep(.el-input__wrapper) {
     box-shadow: none;

@@ -18,6 +18,8 @@ public class FormConfig {
     
     private String formKey;
     
+    private Long surveyId;
+    
     private String name;
     
     private String description;

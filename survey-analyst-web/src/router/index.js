@@ -47,6 +47,15 @@ const routes = [
         }
       },
       {
+        path: 'user/survey/template',
+        name: 'SurveyTemplate',
+        component: () => import('@/views/user/SurveyTemplate.vue'),
+        meta: {
+          title: '问卷模板',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'user/survey/design',
         name: 'SurveyDesign',
         component: () => import('@/views/user/SurveyDesignNew.vue'),
