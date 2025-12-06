@@ -52,6 +52,7 @@
         <div class="card-footer">
           <el-link type="primary" @click="handleEdit(survey.id)">编辑</el-link>
           <el-link type="primary" @click="handlePublish(survey.id)">发布</el-link>
+          <el-link type="primary" @click="handleStatistics(survey.id)">统计</el-link>
           <el-link type="danger" @click="handleDelete(survey.id)">删除</el-link>
         </div>
       </el-card>
@@ -152,6 +153,10 @@ const handleEdit = (id) => {
 
 const handlePublish = (id) => {
   router.push(`/user/survey/publish?id=${id}`)
+}
+
+const handleStatistics = (id) => {
+  router.push(`/user/survey/statistics?id=${id}`)
 }
 
 const handleDelete = async (id) => {

@@ -72,6 +72,60 @@ const routes = [
           title: '问卷发布',
           requiresAuth: true
         }
+      },
+      {
+        path: 'user/survey/statistics',
+        name: 'StatisticsOverview',
+        component: () => import('@/views/user/StatisticsOverview.vue'),
+        meta: {
+          title: '数据统计',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/statistics/detail',
+        name: 'StatisticsDetail',
+        component: () => import('@/views/user/StatisticsDetail.vue'),
+        meta: {
+          title: '统计详情',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/analysis/cross',
+        name: 'CrossAnalysis',
+        component: () => import('@/views/user/CrossAnalysis.vue'),
+        meta: {
+          title: '交叉分析',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/analysis/trend',
+        name: 'TrendAnalysis',
+        component: () => import('@/views/user/TrendAnalysis.vue'),
+        meta: {
+          title: '趋势分析',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/analysis/profile',
+        name: 'ProfileAnalysis',
+        component: () => import('@/views/user/ProfileAnalysis.vue'),
+        meta: {
+          title: '样本画像',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/survey/analysis/dashboard',
+        name: 'VisualizationDashboard',
+        component: () => import('@/views/user/VisualizationDashboard.vue'),
+        meta: {
+          title: '数据仪表盘',
+          requiresAuth: true
+        }
       }
     ]
   },

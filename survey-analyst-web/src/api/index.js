@@ -26,3 +26,12 @@ export { fileApi } from './file'
 
 // 管理员相关 API
 export { adminApi } from './admin'
+
+// 统计相关 API
+export { statisticsApi } from './statistics'
+
+// 分析相关 API
+export { analysisApi } from './analysis'
+
+// 导出相关 API
+export { exportApi } from './export'
