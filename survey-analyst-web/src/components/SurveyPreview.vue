@@ -1,14 +1,19 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="问卷预览"
-    width="90%"
-    :fullscreen="false"
+    :title="null"
+    width="100%"
+    :fullscreen="true"
     :close-on-click-modal="false"
     destroy-on-close
     class="survey-preview-dialog"
     @close="handleClose"
   >
+    <template #header>
+      <div class="dialog-header">
+        <span class="dialog-title">问卷预览</span>
+      </div>
+    </template>
     <div class="preview-container">
       <!-- 视图切换按钮 -->
       <div class="preview-tabs">
@@ -37,7 +42,7 @@
             <div class="phone-content">
               <div class="preview-form-container">
                 <div class="form-title">{{ formName || '未命名问卷' }}</div>
-                <el-scrollbar height="calc(100vh - 200px)">
+                <el-scrollbar class="form-scrollbar">
                   <SurveyFormRender
                     :form-items="formItems"
                     :form-model="previewFormModel"
@@ -64,7 +69,7 @@
 
       <!-- PC端预览 -->
       <div v-if="viewMode === 'desktop'" class="desktop-preview-wrapper">
-        <el-scrollbar height="calc(100vh - 200px)">
+        <el-scrollbar class="desktop-scrollbar">
           <div class="desktop-form-container">
             <div class="form-title">{{ formName || '未命名问卷' }}</div>
             <SurveyFormRender
@@ -179,10 +184,41 @@ const handleClose = () => {
 
 <style lang="scss" scoped>
 .survey-preview-dialog {
+  :deep(.el-dialog) {
+    margin: 0;
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  :deep(.el-dialog__header) {
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ebeef5;
+  }
+  
   :deep(.el-dialog__body) {
-    padding: 20px;
+    padding: 0;
+    margin: 0;
+    height: calc(100vh - 60px);
+    overflow: hidden;
     background-color: #f5f7fa;
-    min-height: 600px;
+  }
+  
+}
+
+.dialog-header {
+  padding: 15px 20px;
+  background: white;
+  height: 60px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  
+  .dialog-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #303133;
   }
 }
 
@@ -190,24 +226,44 @@ const handleClose = () => {
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 .preview-tabs {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 10px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: 0;
+  padding: 30px 0 20px 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 
   .el-button {
-    padding: 10px 30px;
+    padding: 10px 40px;
     font-size: 14px;
     display: flex;
     align-items: center;
     gap: 8px;
+    border-radius: 0;
+    border: 1px solid #e4e7ed;
+    background: white;
+    
+    &:first-child {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+      border-right: none;
+    }
+    
+    &:last-child {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+    
+    &.el-button--primary {
+      background: #409eff;
+      color: white;
+      border-color: #409eff;
+    }
     
     span {
       margin-left: 4px;
@@ -221,6 +277,9 @@ const handleClose = () => {
   align-items: flex-start;
   gap: 40px;
   position: relative;
+  height: calc(100vh - 120px);
+  padding: 20px;
+  overflow: auto;
 }
 
 .preview-layer {
@@ -284,6 +343,8 @@ const handleClose = () => {
   height: 100%;
   padding: 20px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   
   .form-title {
     font-size: 20px;
@@ -293,13 +354,19 @@ const handleClose = () => {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #ebeef5;
+    flex-shrink: 0;
+  }
+  
+  .form-scrollbar {
+    flex: 1;
+    overflow: hidden;
   }
 }
 
 .qrcode-view {
   position: absolute;
-  top: 20px;
-  right: 40px;
+  top: 80px;
+  right: 60px;
   background: white;
   padding: 20px;
   border-radius: 8px;
@@ -352,15 +419,21 @@ const handleClose = () => {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  height: calc(100vh - 120px);
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  
+  .desktop-scrollbar {
+    height: 100%;
+  }
 }
 
 .desktop-form-container {
   padding: 40px;
   min-height: 500px;
+  background: white;
   
   .form-title {
     font-size: 28px;
@@ -374,45 +447,56 @@ const handleClose = () => {
 }
 
 // 响应式设计
+@media (max-width: 1400px) {
+  .qrcode-view {
+    right: 20px;
+    top: 60px;
+  }
+}
+
 @media (max-width: 1200px) {
   .qrcode-view {
     position: static;
     margin-top: 20px;
     right: auto;
+    top: auto;
   }
   
   .mobile-preview-wrapper {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    padding: 10px;
   }
 }
 
 @media (max-width: 768px) {
-  .survey-preview-dialog {
-    :deep(.el-dialog) {
-      width: 95% !important;
-      margin: 0 auto;
-    }
+  .dialog-header {
+    padding: 10px 15px;
+    height: 50px;
     
-    :deep(.el-dialog__body) {
-      padding: 10px;
+    .dialog-title {
+      font-size: 14px;
     }
   }
   
   .preview-tabs {
-    flex-wrap: wrap;
-    gap: 8px;
+    padding: 20px 0 15px 0;
     
     .el-button {
-      padding: 8px 20px;
-      font-size: 12px;
+      padding: 8px 25px;
+      font-size: 13px;
     }
   }
   
+  .mobile-preview-wrapper {
+    height: calc(100vh - 100px);
+    padding: 10px;
+  }
+  
   .preview-phone {
-    width: 280px;
-    height: 568px;
+    width: 300px;
+    height: 600px;
     border-radius: 30px;
     border-width: 6px;
     
@@ -433,10 +517,10 @@ const handleClose = () => {
   }
   
   .preview-form-container {
-    padding: 12px;
+    padding: 15px;
     
     .form-title {
-      font-size: 16px;
+      font-size: 18px;
       margin-bottom: 15px;
       padding-bottom: 10px;
     }
@@ -444,8 +528,8 @@ const handleClose = () => {
   
   .qrcode-view {
     width: 100%;
-    max-width: 180px;
-    padding: 12px;
+    max-width: 200px;
+    padding: 15px;
     
     .qrcode-title {
       font-size: 14px;
@@ -456,16 +540,20 @@ const handleClose = () => {
     }
     
     .qrcode-container .qrcode-image {
-      width: 120px;
-      height: 120px;
+      width: 150px;
+      height: 150px;
     }
   }
   
+  .desktop-preview-wrapper {
+    height: calc(100vh - 100px);
+  }
+  
   .desktop-form-container {
-    padding: 15px;
+    padding: 20px;
     
     .form-title {
-      font-size: 20px;
+      font-size: 22px;
       margin-bottom: 20px;
       padding-bottom: 15px;
     }

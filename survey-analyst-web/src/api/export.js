@@ -13,8 +13,9 @@ export const exportApi = {
    */
   async exportSurveyData(surveyId) {
     try {
+      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
       const response = await axios({
-        url: `${import.meta.env.VITE_APP_BASE_API}/export/survey/${surveyId}/data`,
+        url: `${baseURL}/api/export/survey/${surveyId}/data`,
         method: 'get',
         responseType: 'blob',
         headers: {
@@ -40,8 +41,9 @@ export const exportApi = {
    */
   async exportStatistics(surveyId) {
     try {
+      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
       const response = await axios({
-        url: `${import.meta.env.VITE_APP_BASE_API}/export/survey/${surveyId}/statistics`,
+        url: `${baseURL}/api/export/survey/${surveyId}/statistics`,
         method: 'get',
         responseType: 'blob',
         headers: {
@@ -67,8 +69,9 @@ export const exportApi = {
    */
   async exportAnalysisReport(surveyId) {
     try {
+      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
       const response = await axios({
-        url: `${import.meta.env.VITE_APP_BASE_API}/export/survey/${surveyId}/report`,
+        url: `${baseURL}/api/export/survey/${surveyId}/report`,
         method: 'get',
         responseType: 'blob',
         headers: {

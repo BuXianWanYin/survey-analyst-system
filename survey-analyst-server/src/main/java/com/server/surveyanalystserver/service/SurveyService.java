@@ -44,6 +44,13 @@ public interface SurveyService extends IService<Survey> {
      * @return 是否成功
      */
     boolean publishSurvey(Long id);
+    
+    /**
+     * 停止发布问卷
+     * @param id 问卷ID
+     * @return 是否成功
+     */
+    boolean stopPublishSurvey(Long id);
 
     /**
      * 删除问卷（逻辑删除）

@@ -15,9 +15,6 @@
               placeholder="表单名称"
               @blur="handleFormNameChange"
             />
-            <span v-if="autoSaveStatus" class="auto-save-tip" :class="autoSaveStatus">
-              {{ autoSaveStatus === 'saving' ? '保存中...' : '已自动保存' }}
-            </span>
           </div>
           <div class="header-actions">
             <el-button type="primary" @click="handlePreview">预览</el-button>
@@ -105,8 +102,10 @@
                       }"
                       @click.stop="handleItemClick(element)"
                     >
-                      <el-icon class="drag-handle"><Rank /></el-icon>
                       <div class="component-name">{{ getComponentLabel(element.type) }}</div>
+                      <div class="drawing-item-drag" @click.stop>
+                        <el-icon class="drag-handle"><Rank /></el-icon>
+                      </div>
                       <div class="drawing-item-copy" @click.stop="handleCopyItem(element)">
                         <el-icon><CopyDocument /></el-icon>
                       </div>
@@ -334,7 +333,7 @@ import {
   ElDatePicker,
   ElUpload
 } from 'element-plus'
-import { formApi, surveyApi } from '@/api'
+import { formApi } from '@/api'
 import SurveyPreview from '@/components/SurveyPreview.vue'
 
 const route = useRoute()
@@ -346,8 +345,6 @@ const editingFormName = ref(false)
 const formKey = ref(null)
 const surveyId = ref(null)
 const formModel = reactive({})
-const autoSaveStatus = ref(null) // 'saving' | 'saved' | null
-let autoSaveTimer = null
 
 // 组件列表
 const componentList = [
@@ -414,7 +411,7 @@ const handleDragStart = (event, component) => {
 // 拖拽结束（VueDraggable 内部排序时触发）
 const handleDragEnd = () => {
   // 保存排序后的列表
-  triggerAutoSave()
+  saveFormItems()
 }
 
 // 处理从组件库拖拽到设计区域
@@ -442,7 +439,7 @@ const handleDrop = (event) => {
   
   // 等待 DOM 更新后自动保存
   nextTick(() => {
-    triggerAutoSave()
+    saveFormItems()
   })
 }
 
@@ -497,7 +494,7 @@ const handleCopyItem = (element) => {
   formModel[newItem.vModel] = newItem.defaultValue || ''
   activeId.value = newItem.formItemId
   
-  triggerAutoSave()
+  saveFormItems()
 }
 
 // 删除组件
@@ -511,13 +508,13 @@ const handleDeleteItem = (element) => {
       activeId.value = null
     }
     
-    triggerAutoSave()
+    saveFormItems()
   }
 }
 
 // 属性变更
 const handlePropertyChange = () => {
-  triggerAutoSave()
+  saveFormItems()
 }
 
 // 添加选项
@@ -544,7 +541,7 @@ const handleRemoveOption = (index) => {
 // 表单名称变更
 const handleFormNameChange = () => {
   if (formKey.value) {
-    triggerAutoSave()
+    saveFormConfig()
   }
 }
 
@@ -567,11 +564,9 @@ const saveFormConfig = async () => {
     }
     
     await formApi.saveFormConfig(configData)
-    return true
   } catch (error) {
     // 保存表单配置失败
     ElMessage.error('保存表单配置失败')
-    return false
   }
 }
 
@@ -594,54 +589,10 @@ const saveFormItems = async () => {
     }))
     
     await formApi.saveFormItems(formKey.value, items)
-    return true
   } catch (error) {
     // 保存表单项失败
     ElMessage.error('保存表单项失败')
-    return false
   }
-}
-
-// 自动保存
-const autoSave = async () => {
-  if (!surveyId.value) {
-    // 新建模式，不自动保存
-    return
-  }
-  
-  autoSaveStatus.value = 'saving'
-  
-  try {
-    await saveFormConfig()
-    await saveFormItems()
-    autoSaveStatus.value = 'saved'
-    
-    // 3秒后隐藏提示
-    setTimeout(() => {
-      if (autoSaveStatus.value === 'saved') {
-        autoSaveStatus.value = null
-      }
-    }, 3000)
-  } catch (error) {
-    autoSaveStatus.value = null
-  }
-}
-
-// 触发自动保存（防抖）
-const triggerAutoSave = () => {
-  if (!surveyId.value) {
-    return
-  }
-  
-  // 清除之前的定时器
-  if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
-  }
-  
-  // 设置新的定时器，2秒后自动保存
-  autoSaveTimer = setTimeout(() => {
-    autoSave()
-  }, 2000)
 }
 
 // 生成表单唯一标识
@@ -662,20 +613,11 @@ const loadFormData = async () => {
   surveyId.value = Number(id)
   
   try {
-    // 先加载问卷信息，获取问卷名称
-    const surveyRes = await surveyApi.getSurveyById(Number(id))
-    if (surveyRes.code === 200 && surveyRes.data) {
-      formName.value = surveyRes.data.title || '未命名表单'
-    }
-    
     // 加载表单配置
     const configRes = await formApi.getFormConfig(Number(id))
     if (configRes.code === 200 && configRes.data) {
       formKey.value = configRes.data.formKey
-      // 如果表单配置有名称，使用表单配置的名称；否则使用问卷名称
-      if (configRes.data.name) {
-        formName.value = configRes.data.name
-      }
+      formName.value = configRes.data.name || '未命名表单'
     } else {
       formKey.value = generateFormKey()
     }
@@ -772,9 +714,6 @@ onMounted(() => {
 
 .header-title {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .form-name-input {
@@ -782,20 +721,6 @@ onMounted(() => {
   font-weight: 500;
   border: none;
   background: transparent;
-}
-
-.auto-save-tip {
-  font-size: 12px;
-  color: #909399;
-  transition: all 0.3s;
-  
-  &.saving {
-    color: #409eff;
-  }
-  
-  &.saved {
-    color: #67c23a;
-  }
   
   :deep(.el-input__wrapper) {
     box-shadow: none;
@@ -946,24 +871,10 @@ onMounted(() => {
   }
   
   &:hover {
+    .drawing-item-drag,
     .drawing-item-copy,
     .drawing-item-delete {
       display: block;
-    }
-  }
-  
-  .drag-handle {
-    position: absolute;
-    left: -30px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: move;
-    color: #909399;
-    font-size: 18px;
-    z-index: 10;
-    
-    &:hover {
-      color: #409EFF;
     }
   }
 }

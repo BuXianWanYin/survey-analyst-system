@@ -6,11 +6,17 @@ import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.builders.RequestParameterBuilder;
 import springfox.documentation.oas.annotations.EnableOpenApi;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
+import springfox.documentation.service.ParameterType;
+import springfox.documentation.service.RequestParameter;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Swagger配置
@@ -27,16 +33,37 @@ public class SwaggerConfig {
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.server.surveyanalystserver.controller"))
                 .paths(PathSelectors.any())
-                .build();
+                .build()
+                .globalRequestParameters(globalRequestParameters());
     }
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
                 .title("在线问卷调查与数据分析系统API文档")
-                .description("在线问卷调查与数据分析系统接口文档")
+                .description("在线问卷调查与数据分析系统接口文档\n" +
+                        "使用说明：\n" +
+                        "1. 登录接口（/api/auth/login）无需认证，可直接调用\n" +
+                        "2. 其他接口需要在请求头中携带 JWT Token\n" +
+                        "3. Token 格式：Bearer {token}\n" +
+                        "4. 在 Swagger UI 右上角点击「Authorize」按钮，输入 Token 进行认证")
                 .version("1.0.0")
                 .contact(new Contact("开发团队", "", ""))
                 .build();
+    }
+
+    /**
+     * 全局请求参数（JWT Token）
+     */
+    private List<RequestParameter> globalRequestParameters() {
+        List<RequestParameter> parameters = new ArrayList<>();
+        RequestParameter tokenParameter = new RequestParameterBuilder()
+                .name("Authorization")
+                .description("JWT Token，格式：Bearer {token}。可通过 /api/auth/login 接口获取")
+                .in(ParameterType.HEADER)
+                .required(false)
+                .build();
+        parameters.add(tokenParameter);
+        return parameters;
     }
 }
 

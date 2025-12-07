@@ -71,6 +71,21 @@ public class FormController {
             item.setPlaceholder((String) itemData.get("placeholder"));
             item.setSort(((Number) itemData.get("sort")).longValue());
             item.setScheme((String) itemData.get("scheme"));
+            
+            // 设置 questionId（如果存在）
+            if (itemData.get("questionId") != null) {
+                Object questionIdObj = itemData.get("questionId");
+                if (questionIdObj instanceof Number) {
+                    item.setQuestionId(((Number) questionIdObj).longValue());
+                } else if (questionIdObj instanceof String) {
+                    try {
+                        item.setQuestionId(Long.parseLong((String) questionIdObj));
+                    } catch (NumberFormatException e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+            
             return item;
         }).collect(Collectors.toList());
         

@@ -57,12 +57,79 @@ const routes = [
       },
       {
         path: 'user/survey/design',
-        name: 'SurveyDesign',
-        component: () => import('@/views/user/SurveyDesignNew.vue'),
+        component: () => import('@/views/user/SurveyDesignContainer.vue'),
+        redirect: (to) => {
+          return { name: 'SurveyDesignEditor', query: to.query }
+        },
         meta: {
           title: '问卷设计',
           requiresAuth: true
-        }
+        },
+        children: [
+          {
+            path: 'editor',
+            name: 'SurveyDesignEditor',
+            component: () => import('@/views/user/SurveyDesignNew.vue'),
+            meta: {
+              title: '编辑',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'logic',
+            name: 'SurveyDesignLogic',
+            component: () => import('@/views/user/SurveyDesignLogic.vue'),
+            meta: {
+              title: '逻辑',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'theme',
+            name: 'SurveyDesignTheme',
+            component: () => import('@/views/user/SurveyDesignTheme.vue'),
+            meta: {
+              title: '外观',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'setting',
+            name: 'SurveyDesignSetting',
+            component: () => import('@/views/user/SurveyDesignSetting.vue'),
+            meta: {
+              title: '设置',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'publish',
+            name: 'SurveyDesignPublish',
+            component: () => import('@/views/user/SurveyDesignPublish.vue'),
+            meta: {
+              title: '发布',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'data',
+            name: 'SurveyDesignData',
+            component: () => import('@/views/user/SurveyDesignData.vue'),
+            meta: {
+              title: '数据',
+              requiresAuth: true
+            }
+          },
+          {
+            path: 'statistics',
+            name: 'SurveyDesignStatistics',
+            component: () => import('@/views/user/SurveyDesignStatistics.vue'),
+            meta: {
+              title: '统计',
+              requiresAuth: true
+            }
+          }
+        ]
       },
       {
         path: 'user/survey/fill/:id',

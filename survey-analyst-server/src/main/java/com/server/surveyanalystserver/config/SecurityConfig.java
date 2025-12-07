@@ -60,8 +60,9 @@ public class SecurityConfig {
             .and()
             .authorizeRequests()
                 // 允许公开访问的接口（OPTIONS预检请求已在JwtAuthenticationFilter中处理）
-                .antMatchers("/api/auth/**", "/doc.html", "/swagger-ui.html", "/swagger-resources/**", 
-                           "/v2/api-docs", "/webjars/**", "/favicon.ico", "/upload/**").permitAll()
+                .antMatchers("/api/auth/**", "/doc.html", "/swagger-ui.html", "/swagger-ui/**", 
+                           "/swagger-resources/**", "/v2/api-docs", "/v3/api-docs", "/v3/api-docs/**",
+                           "/webjars/**", "/favicon.ico", "/upload/**").permitAll()
                 .anyRequest().authenticated()
             .and()
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -71,6 +71,14 @@ public class SurveyController {
         surveyService.publishSurvey(id);
         return Result.success("发布成功");
     }
+    
+    @ApiOperation(value = "停止发布问卷", notes = "停止发布问卷")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/{id}/stop")
+    public Result<Void> stopPublishSurvey(@PathVariable Long id) {
+        surveyService.stopPublishSurvey(id);
+        return Result.success("停止发布成功");
+    }
 
     @ApiOperation(value = "删除问卷", notes = "删除问卷（逻辑删除）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")

@@ -4,9 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.Answer;
+import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
+import com.server.surveyanalystserver.service.FormConfigService;
+import com.server.surveyanalystserver.service.FormDataService;
+import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.ResponseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,15 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
 
     @Autowired
     private AnswerMapper answerMapper;
+    
+    @Autowired
+    private FormConfigService formConfigService;
+    
+    @Autowired
+    private FormDataService formDataService;
+    
+    @Autowired
+    private FormItemService formItemService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -36,8 +49,39 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         }
         this.save(response);
 
-        // 保存答案
+        // 保存答案到 answer 表
         saveAnswers(response.getId(), answers);
+        
+        // 同时保存到 form_data 表（参考 tduck 实现）
+        try {
+            FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
+            if (formConfig != null && formConfig.getFormKey() != null) {
+                // 将 answers 转换为 form_data 格式（formItemId -> value）
+                Map<String, Object> originalData = new java.util.HashMap<>();
+                for (Map.Entry<Long, Object> entry : answers.entrySet()) {
+                    Long questionId = entry.getKey();
+                    Object answerValue = entry.getValue();
+                    
+                    // 通过 questionId 查找对应的 formItemId
+                    String formItemId = formItemService.getFormItemIdByFormKeyAndQuestionId(
+                        formConfig.getFormKey(), questionId);
+                    
+                    // 必须找到 formItemId 才保存，不再使用兼容模式
+                    if (formItemId != null) {
+                        originalData.put(formItemId, answerValue);
+                    }
+                    // 如果找不到 formItemId，跳过该数据（不再使用 questionId 作为 key）
+                }
+                
+                if (!originalData.isEmpty()) {
+                    formDataService.saveFormData(formConfig.getFormKey(), originalData);
+                }
+            }
+        } catch (Exception e) {
+            // 如果保存到 form_data 失败，不影响主流程，只记录日志
+            // log.error("保存到 form_data 失败", e);
+        }
+        
         return response;
     }
 

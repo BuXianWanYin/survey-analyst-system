@@ -57,5 +57,14 @@ export const surveyApi = {
    */
   publishSurvey(id) {
     return request.post(`/survey/${id}/publish`)
+  },
+
+  /**
+   * 停止发布问卷
+   * @param {Number} id 问卷ID
+   * @returns {Promise} 停止发布结果
+   */
+  stopPublishSurvey(id) {
+    return request.post(`/survey/${id}/stop`)
   }
 }
