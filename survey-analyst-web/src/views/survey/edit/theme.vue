@@ -34,6 +34,27 @@
                 }"
               >
                 <div class="preview-form-container">
+                  <!-- Logo -->
+                  <div
+                    v-if="themeForm.logoSetting && themeForm.logoImg"
+                    class="phone-logo"
+                    :style="{
+                      justifyContent: getLogoPosition(),
+                      '--logo-size': `${themeForm.logoSize || 60}px`
+                    }"
+                  >
+                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+                  </div>
+                  <!-- 头图 -->
+                  <div
+                    v-if="themeForm.headImgSetting && themeForm.headImgUrl"
+                    class="phone-head-img"
+                    :style="{
+                      '--head-img-height': `${themeForm.headImgHeight || 150}px`
+                    }"
+                  >
+                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+                  </div>
                   <!-- 标题 -->
                   <div
                     v-if="themeForm.showTitle"
@@ -48,21 +69,6 @@
                   >
                     {{ surveyDescription }}
                   </p>
-                  <!-- Logo -->
-                  <div
-                    v-if="themeForm.logoSetting && themeForm.logoImg"
-                    class="phone-logo"
-                    :style="{ justifyContent: getLogoPosition() }"
-                  >
-                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
-                  </div>
-                  <!-- 头图 -->
-                  <div
-                    v-if="themeForm.headImgSetting && themeForm.headImgUrl"
-                    class="phone-head-img"
-                  >
-                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
-                  </div>
                   <el-scrollbar class="form-scrollbar">
                     <!-- 表单项 -->
                     <SurveyFormRender
@@ -108,6 +114,27 @@
                 backgroundColor: themeForm.backgroundColor || '#ffffff'
               }"
             >
+              <!-- Logo -->
+              <div
+                v-if="themeForm.logoSetting && themeForm.logoImg"
+                class="desktop-logo"
+                :style="{
+                  justifyContent: getLogoPosition(),
+                  '--logo-size': `${themeForm.logoSize || 80}px`
+                }"
+              >
+                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+              </div>
+              <!-- 头图 -->
+              <div
+                v-if="themeForm.headImgSetting && themeForm.headImgUrl"
+                class="desktop-head-img"
+                :style="{
+                  '--head-img-height': `${themeForm.headImgHeight || 200}px`
+                }"
+              >
+                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+              </div>
               <!-- 标题 -->
               <div
                 v-if="themeForm.showTitle"
@@ -122,21 +149,6 @@
               >
                 {{ surveyDescription }}
               </p>
-              <!-- Logo -->
-              <div
-                v-if="themeForm.logoSetting && themeForm.logoImg"
-                class="desktop-logo"
-                :style="{ justifyContent: getLogoPosition() }"
-              >
-                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
-              </div>
-              <!-- 头图 -->
-              <div
-                v-if="themeForm.headImgSetting && themeForm.headImgUrl"
-                class="desktop-head-img"
-              >
-                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
-              </div>
               <!-- 表单项 -->
               <SurveyFormRender
                 :form-items="formItems"
@@ -207,6 +219,18 @@
                   <el-radio-button label="flex-end">右对齐</el-radio-button>
                 </el-radio-group>
               </div>
+              <div class="setting-sub-item">
+                <span class="setting-sub-label">logo大小（移动端）</span>
+                <el-input-number
+                  v-model="themeForm.logoSize"
+                  :min="10"
+                  :max="200"
+                  :step="1"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSettingChange"
+                />
+              </div>
             </div>
           </div>
 
@@ -231,6 +255,18 @@
                 >
                   <el-button size="small" type="text">上传头图</el-button>
                 </el-upload>
+              </div>
+              <div class="setting-sub-item">
+                <span class="setting-sub-label">头图高度（移动端）</span>
+                <el-input-number
+                  v-model="themeForm.headImgHeight"
+                  :min="50"
+                  :max="500"
+                  :step="10"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSettingChange"
+                />
               </div>
             </div>
           </div>
@@ -304,7 +340,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Iphone, Monitor } from '@element-plus/icons-vue'
@@ -351,9 +387,11 @@ const themeForm = reactive({
   backgroundSetting: false,
   headImgUrl: '',
   headImgSetting: false,
+  headImgHeight: 150,
   logoImg: '',
   logoSetting: false,
   logoPosition: 'flex-start',
+  logoSize: 60,
   submitBtnText: '提交',
   showTitle: true,
   showDescribe: true,
@@ -558,11 +596,13 @@ const loadTheme = async () => {
         themeForm.headImgUrl = getImageUrl(data.headImgUrl)
         themeForm.headImgSetting = true
       }
+      if (data.headImgHeight !== undefined) themeForm.headImgHeight = data.headImgHeight
       if (data.logoImg) {
         themeForm.logoImg = getImageUrl(data.logoImg)
         themeForm.logoSetting = true
       }
       if (data.logoPosition) themeForm.logoPosition = data.logoPosition
+      if (data.logoSize !== undefined) themeForm.logoSize = data.logoSize
       if (data.submitBtnText) {
         themeForm.submitBtnText = data.submitBtnText
         themeForm.btnSetting = true
@@ -635,8 +675,10 @@ const saveTheme = () => {
         themeColor: themeForm.themeColor,
         backgroundColor: themeForm.backgroundSetting ? themeForm.backgroundColor : '',
         headImgUrl: themeForm.headImgSetting ? getRelativeImageUrl(themeForm.headImgUrl) : '',
+        headImgHeight: themeForm.headImgSetting ? themeForm.headImgHeight : null,
         logoImg: themeForm.logoSetting ? getRelativeImageUrl(themeForm.logoImg) : '',
         logoPosition: themeForm.logoPosition,
+        logoSize: themeForm.logoSetting ? themeForm.logoSize : null,
         submitBtnText: themeForm.btnSetting ? themeForm.submitBtnText : '提交',
         showTitle: themeForm.showTitle,
         showDescribe: themeForm.showDescribe,
@@ -694,6 +736,9 @@ const handleSettingChange = () => {
 watch(() => formItems.value.length, () => {
   initPreviewForm()
 })
+
+// 提供themeForm给父组件使用（用于预览对话框）
+provide('themeForm', themeForm)
 
 onMounted(() => {
   loadData()
@@ -847,24 +892,33 @@ onMounted(() => {
   flex-direction: column;
   
   .phone-logo {
-    padding: 15px;
+    padding: 0;
     display: flex;
     flex-shrink: 0;
+    margin-bottom: 5px;
 
     img {
-      max-width: 100px;
-      max-height: 40px;
+      width: var(--logo-size, 60px);
+      height: var(--logo-size, 60px);
+      min-width: var(--logo-size, 60px);
+      min-height: var(--logo-size, 60px);
+      object-fit: cover;
+      border-radius: 4px;
     }
   }
 
   .phone-head-img {
     width: 100%;
     flex-shrink: 0;
+    margin-bottom: 15px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
 
     img {
       width: 100%;
-      height: auto;
+      height: var(--head-img-height, 150px);
       display: block;
+      object-fit: cover;
     }
   }
 
@@ -927,25 +981,30 @@ onMounted(() => {
   min-height: 500px;
   
   .desktop-logo {
-    padding: 20px 0;
+    padding: 0;
     display: flex;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 
     img {
-      max-width: 150px;
-      max-height: 60px;
+      width: var(--logo-size, 80px);
+      height: var(--logo-size, 80px);
+      min-width: var(--logo-size, 80px);
+      min-height: var(--logo-size, 80px);
+      object-fit: cover;
+      border-radius: 4px;
     }
   }
 
   .desktop-head-img {
     width: 100%;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
 
     img {
       width: 100%;
-      height: auto;
+      height: var(--head-img-height, 200px);
       display: block;
-      max-height: 300px;
       object-fit: cover;
     }
   }

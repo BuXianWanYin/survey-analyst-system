@@ -50,7 +50,10 @@
                 <div
                   v-if="currentThemeConfig.logoImg"
                   class="phone-logo"
-                  :style="{ justifyContent: getLogoPosition() }"
+                  :style="{
+                    justifyContent: getLogoPosition(),
+                    '--logo-size': `${currentThemeConfig.logoSize || 60}px`
+                  }"
                 >
                   <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
                 </div>
@@ -58,6 +61,9 @@
                 <div
                   v-if="currentThemeConfig.headImgUrl"
                   class="phone-head-img"
+                  :style="{
+                    '--head-img-height': `${currentThemeConfig.headImgHeight || 150}px`
+                  }"
                 >
                   <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
                 </div>
@@ -135,7 +141,10 @@
             <div
               v-if="currentThemeConfig.logoImg"
               class="desktop-logo"
-              :style="{ justifyContent: getLogoPosition() }"
+              :style="{
+                justifyContent: getLogoPosition(),
+                '--logo-size': `${currentThemeConfig.logoSize || 80}px`
+              }"
             >
               <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
             </div>
@@ -143,6 +152,9 @@
             <div
               v-if="currentThemeConfig.headImgUrl"
               class="desktop-head-img"
+              :style="{
+                '--head-img-height': `${currentThemeConfig.headImgHeight || 200}px`
+              }"
             >
               <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
             </div>
@@ -246,8 +258,10 @@ const themeConfigData = reactive({
   themeColor: '#409EFF',
   backgroundColor: '#ffffff',
   headImgUrl: '',
+  headImgHeight: 150,
   logoImg: '',
   logoPosition: 'flex-start',
+  logoSize: 60,
   submitBtnText: '提交',
   showTitle: true,
   showDescribe: true,
@@ -317,8 +331,10 @@ const loadTheme = async () => {
       if (data.themeColor) themeConfigData.themeColor = data.themeColor
       if (data.backgroundColor) themeConfigData.backgroundColor = data.backgroundColor
       if (data.headImgUrl) themeConfigData.headImgUrl = getImageUrl(data.headImgUrl)
+      if (data.headImgHeight !== undefined) themeConfigData.headImgHeight = data.headImgHeight
       if (data.logoImg) themeConfigData.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfigData.logoPosition = data.logoPosition
+      if (data.logoSize !== undefined) themeConfigData.logoSize = data.logoSize
       if (data.submitBtnText) themeConfigData.submitBtnText = data.submitBtnText
       if (data.showTitle !== undefined) themeConfigData.showTitle = data.showTitle
       if (data.showDescribe !== undefined) themeConfigData.showDescribe = data.showDescribe
@@ -338,7 +354,8 @@ watch(() => props.modelValue, (val) => {
     if (props.showQrcode && props.formKey) {
       loadQRCode()
     }
-    if (props.surveyId) {
+    // 如果传入了themeConfig，优先使用传入的配置，否则从后端加载
+    if (props.surveyId && Object.keys(props.themeConfig).length === 0) {
       loadTheme()
     }
   }
@@ -583,15 +600,18 @@ const handleClose = () => {
   flex-direction: column;
   
   .phone-logo {
-    padding: 10px 15px;
+    padding: 0;
     display: flex;
     flex-shrink: 0;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 
     img {
-      max-width: 60px;
-      max-height: 30px;
-      object-fit: contain;
+      width: var(--logo-size, 60px);
+      height: var(--logo-size, 60px);
+      min-width: var(--logo-size, 60px);
+      min-height: var(--logo-size, 60px);
+      object-fit: cover;
+      border-radius: 4px;
     }
   }
 
@@ -599,12 +619,13 @@ const handleClose = () => {
     width: 100%;
     flex-shrink: 0;
     margin-bottom: 15px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
 
     img {
       width: 100%;
-      height: auto;
+      height: var(--head-img-height, 150px);
       display: block;
-      max-height: 150px;
       object-fit: cover;
     }
   }
@@ -717,26 +738,30 @@ const handleClose = () => {
   min-height: 500px;
   
   .desktop-logo {
-    padding: 15px 0;
+    padding: 0;
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
 
     img {
-      max-width: 80px;
-      max-height: 40px;
-      object-fit: contain;
+      width: var(--logo-size, 80px);
+      height: var(--logo-size, 80px);
+      min-width: var(--logo-size, 80px);
+      min-height: var(--logo-size, 80px);
+      object-fit: cover;
+      border-radius: 4px;
     }
   }
 
   .desktop-head-img {
     width: 100%;
     margin-bottom: 20px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
 
     img {
       width: 100%;
-      height: auto;
+      height: var(--head-img-height, 200px);
       display: block;
-      max-height: 200px;
       object-fit: cover;
     }
   }

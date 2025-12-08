@@ -83,6 +83,7 @@
       :form-name="surveyTitle"
       :form-description="surveyDescription"
       :survey-id="surveyId"
+      :theme-config="themeConfig"
       :model-value="previewVisible"
       @update:model-value="previewVisible = $event"
     />
@@ -90,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, provide } from 'vue'
+import { ref, computed, onMounted, provide, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -115,6 +116,29 @@ const surveyDescription = ref('')
 const formKey = ref(null)
 const formItems = ref([])
 const previewVisible = ref(false)
+
+// 尝试从子组件（外观页面）获取themeForm
+const rawThemeForm = inject('themeForm', null)
+
+// 转换themeForm格式为SurveyPreview需要的格式
+const themeConfig = computed(() => {
+  if (!rawThemeForm) return {}
+  
+  return {
+    themeColor: rawThemeForm.themeColor,
+    backgroundColor: rawThemeForm.backgroundColor,
+    headImgUrl: rawThemeForm.headImgSetting ? rawThemeForm.headImgUrl : '',
+    headImgHeight: rawThemeForm.headImgSetting ? rawThemeForm.headImgHeight : undefined,
+    logoImg: rawThemeForm.logoSetting ? rawThemeForm.logoImg : '',
+    logoPosition: rawThemeForm.logoPosition,
+    logoSize: rawThemeForm.logoSetting ? rawThemeForm.logoSize : undefined,
+    submitBtnText: rawThemeForm.submitBtnText,
+    showTitle: rawThemeForm.showTitle,
+    showDescribe: rawThemeForm.showDescribe,
+    showNumber: rawThemeForm.showNumber,
+    showSubmitBtn: rawThemeForm.showSubmitBtn
+  }
+})
 
 // 用于存储子组件注册的方法
 const editorMethods = ref({

@@ -1113,7 +1113,7 @@ const getComponentLabel = (type) => {
 
 // 判断是否为选择题
 const isChoiceType = (type) => {
-  return ['RADIO', 'CHECKBOX', 'SELECT', 'CASCADER', 'IMAGE_SELECT', 'SORT'].includes(type)
+  return ['RADIO', 'CHECKBOX', 'SELECT', 'CASCADER', 'SORT'].includes(type)
 }
 
 // 拖拽开始（从组件库）

@@ -38,6 +38,10 @@ public class FormTheme {
     @ApiModelProperty(value = "logo位置")
     private String logoPosition;
     
+    @TableField("logo_size")
+    @ApiModelProperty(value = "logo大小（像素）")
+    private Integer logoSize;
+    
     @TableField("background_color")
     @ApiModelProperty(value = "背景颜色")
     private String backgroundColor;
@@ -69,6 +73,10 @@ public class FormTheme {
     @TableField("head_img_url")
     @ApiModelProperty(value = "头部图片")
     private String headImgUrl;
+    
+    @TableField("head_img_height")
+    @ApiModelProperty(value = "头图高度（像素）")
+    private Integer headImgHeight;
     
     @TableField("update_time")
     @ApiModelProperty(value = "更新时间")

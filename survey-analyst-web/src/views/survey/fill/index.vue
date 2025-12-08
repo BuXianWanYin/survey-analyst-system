@@ -49,11 +49,34 @@
     <!-- 表单内容 -->
     <div v-if="!errorMessage && canFill" class="fill-content">
       <div class="fill-form-wrapper">
+        <!-- Logo -->
+        <div
+          v-if="themeConfig.logoImg"
+          class="fill-logo"
+          :style="{
+            justifyContent: getLogoPosition(),
+            '--logo-size': `${themeConfig.logoSize || 60}px`
+          }"
+        >
+          <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
+        </div>
+
+        <!-- 头图 -->
+        <div
+          v-if="themeConfig.headImgUrl"
+          class="fill-head-img"
+          :style="{
+            '--head-img-height': `${themeConfig.headImgHeight || 200}px`
+          }"
+        >
+          <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
+        </div>
+
         <!-- 标题 -->
         <h2
           v-if="themeConfig.showTitle"
           class="fill-title"
-                >
+        >
           {{ surveyTitle || '未命名问卷' }}
         </h2>
 
@@ -64,23 +87,6 @@
         >
           {{ surveyDescription }}
         </p>
-
-        <!-- Logo -->
-        <div
-          v-if="themeConfig.logoImg"
-          class="fill-logo"
-          :style="{ justifyContent: getLogoPosition() }"
-                >
-          <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
-            </div>
-
-        <!-- 头图 -->
-        <div
-          v-if="themeConfig.headImgUrl"
-          class="fill-head-img"
-        >
-          <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
-            </div>
 
         <!-- 表单渲染 -->
         <SurveyFormRender
@@ -147,8 +153,10 @@ const themeConfig = reactive({
   themeColor: '#409EFF',
   backgroundColor: '#f5f7fa',
   headImgUrl: '',
+  headImgHeight: 200,
   logoImg: '',
   logoPosition: 'flex-start',
+  logoSize: 80,
   submitBtnText: '提交',
   showTitle: true,
   showDescribe: true,
@@ -289,8 +297,10 @@ const loadTheme = async () => {
       if (data.themeColor) themeConfig.themeColor = data.themeColor
       if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
       if (data.headImgUrl) themeConfig.headImgUrl = getImageUrl(data.headImgUrl)
+      if (data.headImgHeight !== undefined) themeConfig.headImgHeight = data.headImgHeight
       if (data.logoImg) themeConfig.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfig.logoPosition = data.logoPosition
+      if (data.logoSize !== undefined) themeConfig.logoSize = data.logoSize
       if (data.submitBtnText) themeConfig.submitBtnText = data.submitBtnText
       if (data.showTitle !== undefined) themeConfig.showTitle = data.showTitle
       if (data.showDescribe !== undefined) themeConfig.showDescribe = data.showDescribe
@@ -442,28 +452,34 @@ onMounted(() => {
 }
 
 .fill-logo {
-  padding: 20px;
+  padding: 0;
   display: flex;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 0 auto 5px;
 
   img {
-    max-width: 150px;
-    max-height: 60px;
-    object-fit: contain;
+    width: var(--logo-size, 80px);
+    height: var(--logo-size, 80px);
+    min-width: var(--logo-size, 80px);
+    min-height: var(--logo-size, 80px);
+    object-fit: cover;
+    border-radius: 4px;
   }
 }
 
 .fill-head-img {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
 
   img {
     width: 100%;
-    height: auto;
+    height: var(--head-img-height, 200px);
     display: block;
-    max-height: 300px;
     object-fit: cover;
-}
+  }
 }
 
 
