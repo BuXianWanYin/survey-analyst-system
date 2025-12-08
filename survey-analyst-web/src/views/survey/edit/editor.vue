@@ -6,20 +6,26 @@
       <div class="left-board">
         <div class="left-scrollbar">
           <div class="components-list">
-            <div
-              v-for="component in componentList"
-              :key="component.type"
-              class="components-item"
-              :draggable="true"
-              @dragstart="handleDragStart($event, component)"
+            <VueDraggable
+              v-model="componentListCopy"
+              :group="{ name: 'form-items', pull: 'clone', put: false }"
+              :clone="cloneComponent"
+              :sort="false"
+              item-key="type"
             >
-              <div class="components-body">
-                <el-icon class="component-icon">
-                  <component :is="component.icon" />
-                </el-icon>
-                <span class="component-label">{{ component.label }}</span>
+              <div
+                v-for="component in componentListCopy"
+                :key="component.type"
+                class="components-item"
+              >
+                <div class="components-body">
+                  <el-icon class="component-icon">
+                    <component :is="component.icon" />
+                  </el-icon>
+                  <span class="component-label">{{ component.label }}</span>
+                </div>
               </div>
-            </div>
+            </VueDraggable>
           </div>
         </div>
       </div>
@@ -75,26 +81,19 @@
               </div>
 
               <!-- 表单项列表 -->
-              <div 
-                class="draggable-container"
-                @drop="handleDrop"
-                @dragover.prevent="handleDragOver"
-                @dragenter.prevent="handleDragEnter"
-              >
-                <!-- 插入提示线 -->
-                <div
-                  v-if="dragInsertIndex !== null"
-                  class="drag-insert-line"
-                  :style="{ top: `${dragInsertIndex * 80}px` }"
-                />
+              <div class="draggable-container">
                 <VueDraggable
                   v-model="drawingList"
                   handle=".drag-handle"
-                  :animation="200"
-                  ghost-class="sortable-ghost"
-                  chosen-class="chosen-item"
-                  drag-class="drag-item"
+                  :animation="340"
+                  ghostClass="sortable-ghost"
+                  chosenClass="chosen-item"
+                  dragClass="drag-item"
+                  :group="{ name: 'form-items', pull: false, put: true }"
+                  :sort="true"
+                  class="draggable-list"
                   @end="handleDragEnd"
+                  @add="handleAdd"
                 >
                   <div
                     v-for="(element, index) in drawingList"
@@ -106,8 +105,6 @@
                     }"
                     :data-index="index"
                     @click.stop="handleItemClick(element)"
-                    @dragover.prevent="handleItemDragOver($event, index)"
-                    @dragleave="handleItemDragLeave($event, index)"
                   >
                     <div class="component-name">
                       {{ getComponentLabel(element.type) }}
@@ -338,16 +335,14 @@
                           handle=".sort-handle"
                           :animation="200"
                         >
-                          <div
-                            v-for="(item, idx) in formModel[element.vModel] || []"
-                            :key="idx"
-                            class="sort-item"
-                          >
-                            <el-icon class="sort-handle">
-                              <Rank />
-                            </el-icon>
-                            <span>{{ item.label || item }}</span>
-                          </div>
+                          <template #item="{ element: item }">
+                            <div class="sort-item">
+                              <el-icon class="sort-handle">
+                                <Rank />
+                              </el-icon>
+                              <span>{{ item.label || item }}</span>
+                            </div>
+                          </template>
                         </VueDraggable>
                       </div>
                       <!-- 默认：单行文本 -->
@@ -362,7 +357,7 @@
                   </div>
                 </VueDraggable>
                 
-                <!-- 空状态 -->
+                <!-- 空状态提示 -->
                 <div
                   v-if="drawingList.length === 0"
                   class="empty-info"
@@ -406,9 +401,17 @@
                     disabled
                   />
                 </el-form-item>
+                <el-form-item label="隐藏组件">
+                  <el-switch
+                    v-model="activeData.hideType"
+                    @change="handlePropertyChange"
+                  />
+                  <span style="font-size: 12px; color: #909399; margin-left: 8px; display: block; margin-top: 4px">隐藏后，在表单填写页面将不显示此组件</span>
+                </el-form-item>
                 
-                <!-- 输入类组件特有属性 -->
-                <template v-if="['INPUT', 'TEXTAREA', 'NUMBER', 'DATE'].includes(activeData.type)">
+                <!-- 单行文本组件特有属性 -->
+                <template v-if="activeData.type === 'INPUT'">
+                  <el-divider />
                   <el-form-item label="提示文字">
                     <el-input
                       v-model="activeData.placeholder"
@@ -433,10 +436,296 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
+                  <el-form-item label="是否可清空">
+                    <el-switch
+                      v-model="activeData.config.clearable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最大字符数">
+                    <el-input-number
+                      v-model="activeData.config.maxLength"
+                      :min="0"
+                      :max="10000"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最小字符数">
+                    <el-input-number
+                      v-model="activeData.config.minLength"
+                      :min="0"
+                      :max="10000"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="显示字数统计">
+                    <el-switch
+                      v-model="activeData.config.showWordLimit"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="不允许重复值">
+                    <el-switch
+                      v-model="activeData.config.notRepeat"
+                      @change="handlePropertyChange"
+                    />
+                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">提交时检查是否与其他提交值重复</span>
+                  </el-form-item>
+                  <el-form-item label="正则验证规则">
+                    <div
+                      v-for="(reg, idx) in (activeData.regList || [])"
+                      :key="idx"
+                      style="margin-bottom: 10px"
+                    >
+                      <div style="display: flex; gap: 8px; align-items: center">
+                        <el-input
+                          v-model="reg.pattern"
+                          placeholder="正则表达式"
+                          style="flex: 1"
+                          @input="handlePropertyChange"
+                        />
+                        <el-input
+                          v-model="reg.message"
+                          placeholder="错误提示"
+                          style="flex: 1"
+                          @input="handlePropertyChange"
+                        />
+                        <el-button
+                          type="danger"
+                          text
+                          @click="handleRemoveRegRule(idx)"
+                        >
+                          删除
+                        </el-button>
+                      </div>
+                    </div>
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddRegRule"
+                    >
+                      添加规则
+                    </el-button>
+                  </el-form-item>
                 </template>
                 
-                <!-- 选择题选项配置 -->
-                <template v-if="isChoiceType(activeData.type)">
+                <!-- 多行文本组件特有属性 -->
+                <template v-if="activeData.type === 'TEXTAREA'">
+                  <el-divider />
+                  <el-form-item label="提示文字">
+                    <el-input
+                      v-model="activeData.placeholder"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否只读">
+                    <el-switch
+                      v-model="activeData.readonly"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="行数">
+                    <el-input-number
+                      v-model="activeData.config.rows"
+                      :min="1"
+                      :max="20"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最大字符数">
+                    <el-input-number
+                      v-model="activeData.config.maxLength"
+                      :min="0"
+                      :max="10000"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最小字符数">
+                    <el-input-number
+                      v-model="activeData.config.minLength"
+                      :min="0"
+                      :max="10000"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="显示字数统计">
+                    <el-switch
+                      v-model="activeData.config.showWordLimit"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="正则验证规则">
+                    <div
+                      v-for="(reg, idx) in (activeData.regList || [])"
+                      :key="idx"
+                      style="margin-bottom: 10px"
+                    >
+                      <div style="display: flex; gap: 8px; align-items: center">
+                        <el-input
+                          v-model="reg.pattern"
+                          placeholder="正则表达式"
+                          style="flex: 1"
+                          @input="handlePropertyChange"
+                        />
+                        <el-input
+                          v-model="reg.message"
+                          placeholder="错误提示"
+                          style="flex: 1"
+                          @input="handlePropertyChange"
+                        />
+                        <el-button
+                          type="danger"
+                          text
+                          @click="handleRemoveRegRule(idx)"
+                        >
+                          删除
+                        </el-button>
+                      </div>
+                    </div>
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddRegRule"
+                    >
+                      添加规则
+                    </el-button>
+                  </el-form-item>
+                </template>
+                
+                <!-- 数字组件特有属性 -->
+                <template v-if="activeData.type === 'NUMBER'">
+                  <el-divider />
+                  <el-form-item label="提示文字">
+                    <el-input
+                      v-model="activeData.placeholder"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最小值">
+                    <el-input-number
+                      v-model="activeData.config.min"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最大值">
+                    <el-input-number
+                      v-model="activeData.config.max"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="步长">
+                    <el-input-number
+                      v-model="activeData.config.step"
+                      :min="0.1"
+                      :step="0.1"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="精度（小数位数）">
+                    <el-input-number
+                      v-model="activeData.config.precision"
+                      :min="0"
+                      :max="10"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="控制按钮位置">
+                    <el-radio-group
+                      v-model="activeData.config.controlsPosition"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="right">右侧</el-radio>
+                      <el-radio label="left">左侧</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                </template>
+                
+                <!-- 日期时间组件特有属性 -->
+                <template v-if="activeData.type === 'DATE'">
+                  <el-divider />
+                  <el-form-item label="提示文字">
+                    <el-input
+                      v-model="activeData.placeholder"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否只读">
+                    <el-switch
+                      v-model="activeData.readonly"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="日期类型">
+                    <el-select
+                      v-model="activeData.config.type"
+                      @change="handlePropertyChange"
+                    >
+                      <el-option label="日期" value="date" />
+                      <el-option label="日期时间" value="datetime" />
+                      <el-option label="日期范围" value="daterange" />
+                      <el-option label="日期时间范围" value="datetimerange" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="显示格式">
+                    <el-input
+                      v-model="activeData.config.format"
+                      placeholder="如：YYYY-MM-DD"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="绑定值格式">
+                    <el-input
+                      v-model="activeData.config.valueFormat"
+                      placeholder="如：YYYY-MM-DD"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否可清空">
+                    <el-switch
+                      v-model="activeData.config.clearable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
+                
+                <!-- 单选框组 (RADIO) 配置 -->
+                <template v-if="activeData.type === 'RADIO'">
                   <el-divider />
                   <el-form-item label="选项列表">
                     <div
@@ -465,11 +754,321 @@
                       添加选项
                     </el-button>
                   </el-form-item>
+                  <el-form-item label="是否显示边框">
+                    <el-switch
+                      v-model="activeData.config.border"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否按钮样式">
+                    <el-switch
+                      v-model="activeData.config.button"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="尺寸">
+                    <el-radio-group
+                      v-model="activeData.config.size"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="small">小</el-radio>
+                      <el-radio label="mini">迷你</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
+                
+                <!-- 多选框组 (CHECKBOX) 配置 -->
+                <template v-if="activeData.type === 'CHECKBOX'">
+                  <el-divider />
+                  <el-form-item label="选项列表">
+                    <div
+                      v-for="(option, idx) in activeData.config.options"
+                      :key="idx"
+                      class="option-item"
+                    >
+                      <el-input
+                        v-model="option.label"
+                        placeholder="选项文本"
+                        @input="handlePropertyChange"
+                      />
+                      <el-button
+                        type="danger"
+                        text
+                        @click="handleRemoveOption(idx)"
+                      >
+                        删除
+                      </el-button>
+                    </div>
+                        <el-button
+                          type="primary"
+                      text
+                      @click="handleAddOption"
+                        >
+                      添加选项
+                        </el-button>
+                  </el-form-item>
+                  <el-form-item label="最少选择数量">
+                    <el-input-number
+                      v-model="activeData.config.min"
+                      :min="0"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最多选择数量">
+                    <el-input-number
+                      v-model="activeData.config.max"
+                      :min="1"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否显示边框">
+                    <el-switch
+                      v-model="activeData.config.border"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否按钮样式">
+                    <el-switch
+                      v-model="activeData.config.button"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="尺寸">
+                    <el-radio-group
+                      v-model="activeData.config.size"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="small">小</el-radio>
+                      <el-radio label="mini">迷你</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
+                
+                <!-- 下拉选择 (SELECT) 配置 -->
+                <template v-if="activeData.type === 'SELECT'">
+                  <el-divider />
+                  <el-form-item label="提示文字">
+                    <el-input
+                      v-model="activeData.placeholder"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="选项列表">
+                    <div
+                      v-for="(option, idx) in activeData.config.options"
+                      :key="idx"
+                      class="option-item"
+                    >
+                      <el-input
+                        v-model="option.label"
+                        placeholder="选项文本"
+                        @input="handlePropertyChange"
+                      />
+                      <el-button
+                        type="danger"
+                        text
+                        @click="handleRemoveOption(idx)"
+                      >
+                        删除
+                      </el-button>
+                    </div>
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddOption"
+                    >
+                      添加选项
+                    </el-button>
+                  </el-form-item>
+                  <el-form-item label="是否可清空">
+                    <el-switch
+                      v-model="activeData.config.clearable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否多选">
+                    <el-switch
+                      v-model="activeData.config.multiple"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否可搜索">
+                    <el-switch
+                      v-model="activeData.config.filterable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="尺寸">
+                    <el-radio-group
+                      v-model="activeData.config.size"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="small">小</el-radio>
+                      <el-radio label="mini">迷你</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
+                
+                <!-- 级联选择 (CASCADER) 配置 -->
+                <template v-if="activeData.type === 'CASCADER'">
+                  <el-divider />
+                  <el-form-item label="提示文字">
+                    <el-input
+                      v-model="activeData.placeholder"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="级联选项">
+                    <div class="cascader-options-editor">
+                      <el-button
+                        type="primary"
+                        text
+                        size="small"
+                        @click="handleAddCascaderOption"
+                      >
+                        添加一级选项
+                      </el-button>
+                      <div
+                        v-for="(option, idx) in (activeData.config?.options || [])"
+                        :key="idx"
+                        class="cascader-option-item"
+                      >
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+                          <el-input
+                            v-model="option.label"
+                            placeholder="选项文本"
+                            style="flex: 1"
+                            @input="handlePropertyChange"
+                          />
+                          <el-input
+                            v-model="option.value"
+                            placeholder="选项值"
+                            style="width: 150px"
+                            @input="handlePropertyChange"
+                          />
+                          <el-button
+                            type="primary"
+                            text
+                            size="small"
+                            @click="handleAddCascaderChild(idx)"
+                          >
+                            添加子项
+                          </el-button>
+                          <el-button
+                            type="danger"
+                            text
+                            size="small"
+                            @click="handleRemoveCascaderOption(idx)"
+                          >
+                            删除
+                          </el-button>
+                        </div>
+                        <div
+                          v-if="option.children && option.children.length > 0"
+                          style="margin-left: 20px; margin-top: 8px"
+                        >
+                          <div
+                            v-for="(child, childIdx) in option.children"
+                            :key="childIdx"
+                            style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px"
+                          >
+                            <el-input
+                              v-model="child.label"
+                              placeholder="子项文本"
+                              style="flex: 1"
+                              @input="handlePropertyChange"
+                            />
+                            <el-input
+                              v-model="child.value"
+                              placeholder="子项值"
+                              style="width: 150px"
+                              @input="handlePropertyChange"
+                            />
+                            <el-button
+                              type="danger"
+                              text
+                              size="small"
+                              @click="handleRemoveCascaderChild(idx, childIdx)"
+                            >
+                              删除
+                            </el-button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </el-form-item>
+                  <el-form-item label="是否可清空">
+                    <el-switch
+                      v-model="activeData.config.clearable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否显示完整路径">
+                    <el-switch
+                      v-model="activeData.config.showAllLevels"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否可搜索">
+                    <el-switch
+                      v-model="activeData.config.filterable"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="尺寸">
+                    <el-radio-group
+                      v-model="activeData.config.size"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="small">小</el-radio>
+                      <el-radio label="mini">迷你</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
                 </template>
                 
                 <!-- 图片选择组件配置 -->
                 <template v-if="activeData.type === 'IMAGE_SELECT'">
                   <el-divider />
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否多选">
+                    <el-switch
+                      v-model="activeData.config.multiple"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="选项">
                     <div class="image-select-options-container">
                       <VueDraggable
@@ -544,6 +1143,12 @@
                       </el-button>
                     </div>
                   </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
                 </template>
                 
                 <!-- 滑块组件配置 -->
@@ -552,14 +1157,12 @@
                   <el-form-item label="最小值">
                     <el-input-number
                       v-model="activeData.config.min"
-                      :min="0"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
                   <el-form-item label="最大值">
                     <el-input-number
                       v-model="activeData.config.max"
-                      :min="1"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -568,6 +1171,30 @@
                       v-model="activeData.config.step"
                       :min="0.1"
                       :step="0.1"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否显示输入框">
+                    <el-switch
+                      v-model="activeData.config.showInput"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否显示间断点">
+                    <el-switch
+                      v-model="activeData.config.showStops"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否为范围选择">
+                    <el-switch
+                      v-model="activeData.config.range"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否垂直方向">
+                    <el-switch
+                      v-model="activeData.config.vertical"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -627,6 +1254,25 @@
                         value="scale-down"
                       />
                     </el-select>
+                  </el-form-item>
+                  <el-form-item label="指示器位置">
+                    <el-radio-group
+                      v-model="activeData.config.indicatorPosition"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="outside">外部</el-radio>
+                      <el-radio label="none">无</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="箭头显示时机">
+                    <el-radio-group
+                      v-model="activeData.config.arrow"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="always">总是显示</el-radio>
+                      <el-radio label="hover">悬停显示</el-radio>
+                      <el-radio label="never">从不显示</el-radio>
+                    </el-radio-group>
                   </el-form-item>
                   <el-form-item label="选项">
                     <div class="carousel-options-container">
@@ -731,7 +1377,7 @@
                     <el-image
                       v-if="activeData.config.imageUrl"
                       :src="activeData.config.imageUrl"
-                      fit="cover"
+                      :fit="activeData.config.fit || 'cover'"
                       class="image-preview"
                     />
                   </el-form-item>
@@ -790,6 +1436,15 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="分割线方向">
+                    <el-radio-group
+                      v-model="activeData.config.direction"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="horizontal">水平</el-radio>
+                      <el-radio label="vertical">垂直</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
                 </template>
                 
                 <!-- 图片上传组件配置 -->
@@ -802,6 +1457,32 @@
                       :max="20"
                       @change="handlePropertyChange"
                     />
+                  </el-form-item>
+                  <el-form-item label="接受的文件类型">
+                    <el-input
+                      v-model="activeData.config.accept"
+                      placeholder="如：image/*, image/png"
+                      @input="handlePropertyChange"
+                    />
+                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">默认：image/*</span>
+                  </el-form-item>
+                  <el-form-item label="文件列表类型">
+                    <el-radio-group
+                      v-model="activeData.config.listType"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="text">文本</el-radio>
+                      <el-radio label="picture">图片</el-radio>
+                      <el-radio label="picture-card">图片卡片</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="文件大小限制（KB）">
+                    <el-input-number
+                      v-model="activeData.config.maxSize"
+                      :min="0"
+                      @change="handlePropertyChange"
+                    />
+                    <span style="font-size: 12px; color: #909399; margin-left: 8px">0表示不限制</span>
                   </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
@@ -820,6 +1501,36 @@
                 <!-- 文件上传组件配置 -->
                 <template v-if="activeData.type === 'UPLOAD'">
                   <el-divider />
+                  <el-form-item label="最大上传数量">
+                    <el-input-number
+                      v-model="activeData.config.limit"
+                      :min="1"
+                      :max="20"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="接受的文件类型">
+                    <el-input
+                      v-model="activeData.config.accept"
+                      placeholder="如：*/*, .pdf, .doc"
+                      @input="handlePropertyChange"
+                    />
+                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">默认：*/*</span>
+                  </el-form-item>
+                  <el-form-item label="文件大小限制（KB）">
+                    <el-input-number
+                      v-model="activeData.config.maxSize"
+                      :min="0"
+                      @change="handlePropertyChange"
+                    />
+                    <span style="font-size: 12px; color: #909399; margin-left: 8px">0表示不限制</span>
+                  </el-form-item>
+                  <el-form-item label="是否自动上传">
+                    <el-switch
+                      v-model="activeData.config.autoUpload"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
@@ -845,6 +1556,50 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
+                  <el-form-item label="是否允许半选">
+                    <el-switch
+                      v-model="activeData.config.allowHalf"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否显示辅助文字">
+                    <el-switch
+                      v-model="activeData.config.showText"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item
+                    v-if="activeData.config.showText"
+                    label="辅助文字"
+                  >
+                    <div
+                      v-for="(text, idx) in (activeData.config.texts || [])"
+                      :key="idx"
+                      style="margin-bottom: 8px"
+                    >
+                      <el-input
+                        v-model="activeData.config.texts[idx]"
+                        :placeholder="`文字${idx + 1}`"
+                        @input="handlePropertyChange"
+                      />
+                    </div>
+                    <el-button
+                      type="primary"
+                      text
+                      size="small"
+                      @click="handleAddRateText"
+                    >
+                      添加文字
+                    </el-button>
+                    <el-button
+                      type="danger"
+                      text
+                      size="small"
+                      @click="handleRemoveRateText"
+                    >
+                      删除文字
+                    </el-button>
+                  </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
@@ -854,6 +1609,44 @@
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
+                
+                <!-- 文字描述组件配置 -->
+                <template v-if="activeData.type === 'DESC_TEXT'">
+                  <el-divider />
+                  <el-form-item label="描述内容">
+                    <el-input
+                      v-model="activeData.config.content"
+                      type="textarea"
+                      :rows="4"
+                      placeholder="请输入描述文字"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="文字对齐方式">
+                    <el-radio-group
+                      v-model="activeData.config.textAlign"
+                      @change="handlePropertyChange"
+                    >
+                      <el-radio label="left">左对齐</el-radio>
+                      <el-radio label="center">居中</el-radio>
+                      <el-radio label="right">右对齐</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="字体大小（px）">
+                    <el-input-number
+                      v-model="activeData.config.fontSize"
+                      :min="10"
+                      :max="72"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="文字颜色">
+                    <el-color-picker
+                      v-model="activeData.config.color"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -888,6 +1681,12 @@
                     >
                       添加选项
                     </el-button>
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
               </el-form>
@@ -1049,8 +1848,7 @@ const editingFormName = ref(false)
 const formDescription = ref('')
 const editingFormDescription = ref(false)
 const formKey = ref(null)
-const dragInsertIndex = ref(null) // 拖拽插入位置索引
-const isDraggingFromLibrary = ref(false) // 是否从组件库拖拽
+// 移除了draggingComponent，现在完全使用VueDraggable
 const surveyId = ref(null)
 const formModel = reactive({})
 
@@ -1074,6 +1872,9 @@ const componentList = [
   { type: 'RATE', label: '评分组件', icon: Star, tag: 'el-rate' },
   { type: 'SORT', label: '排序题型', icon: Sort, tag: 'el-sort' }
 ]
+
+// 组件库副本（用于VueDraggable）
+const componentListCopy = ref([...componentList])
 
 // 设计区域数据
 const drawingList = ref([])
@@ -1116,40 +1917,42 @@ const isChoiceType = (type) => {
   return ['RADIO', 'CHECKBOX', 'SELECT', 'CASCADER', 'SORT'].includes(type)
 }
 
-// 拖拽开始（从组件库）
-const handleDragStart = (event, component) => {
-  event.dataTransfer.effectAllowed = 'copy'
-  event.dataTransfer.dropEffect = 'copy'
-  event.dataTransfer.setData('componentType', component.type)
-  event.dataTransfer.setData('text/plain', component.type) // 兼容性
-  isDraggingFromLibrary.value = true
+// 克隆组件（从组件库拖拽时调用）
+const cloneComponent = (original) => {
+  // 创建新的表单项
+  const newItem = createFormItem(original.type)
+  return newItem
+}
+
+// 处理添加事件（从组件库拖拽到设计区域）
+const handleAdd = (evt) => {
+  // evt.newIndex 是新添加组件的索引位置
+  const newItem = drawingList.value[evt.newIndex]
   
-  // 创建一个透明的拖拽图像，隐藏默认的禁用图标
-  const dragImage = document.createElement('div')
-  dragImage.style.position = 'absolute'
-  dragImage.style.top = '-1000px'
-  dragImage.style.width = '100px'
-  dragImage.style.height = '40px'
-  dragImage.style.background = 'rgba(64, 158, 255, 0.1)'
-  dragImage.style.border = '1px dashed #409EFF'
-  dragImage.style.borderRadius = '4px'
-  dragImage.style.display = 'flex'
-  dragImage.style.alignItems = 'center'
-  dragImage.style.justifyContent = 'center'
-  dragImage.style.fontSize = '12px'
-  dragImage.style.color = '#409EFF'
-  dragImage.textContent = component.label
-  document.body.appendChild(dragImage)
-  event.dataTransfer.setDragImage(dragImage, 50, 20)
+  if (!newItem) return
   
-  // 延迟移除拖拽图像
-  setTimeout(() => {
-    document.body.removeChild(dragImage)
-  }, 0)
+  // 初始化表单模型
+  if (newItem.vModel) {
+    formModel[newItem.vModel] = getDefaultValue(
+      newItem.type, 
+      newItem.defaultValue, 
+      newItem.config
+    )
+  }
+  
+  // 选中新添加的组件
+  if (newItem.formItemId) {
+    activeId.value = newItem.formItemId
+  }
+  
+  // 保存到后端
+  nextTick(() => {
+    saveFormItems()
+  })
 }
 
 // 拖拽结束（VueDraggable 内部排序时触发）
-const handleDragEnd = () => {
+const handleDragEnd = (evt) => {
   // 保存排序后的列表
   saveFormItems()
 }
@@ -1173,13 +1976,38 @@ const handleDragOver = (event) => {
     const containerRect = container.getBoundingClientRect()
     const y = event.clientY - containerRect.top
     
-    // 根据 Y 坐标计算应该插入到哪个位置
-    const itemHeight = 80 // 每个表单项的大概高度
-    let insertIndex = Math.floor(y / itemHeight)
+    // 检查是否在某个表单项上（如果是，让 handleItemDragOver 处理）
+    const drawingItems = container.querySelectorAll('.drawing-item')
+    let isOnItem = false
     
-    // 限制插入位置范围
-    insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
-    dragInsertIndex.value = insertIndex
+    drawingItems.forEach((item, index) => {
+      const itemRect = item.getBoundingClientRect()
+      if (event.clientY >= itemRect.top && event.clientY <= itemRect.bottom) {
+        isOnItem = true
+        // 如果鼠标在表单项上，让 handleItemDragOver 处理
+        return
+      }
+    })
+    
+    // 如果不在任何表单项上，计算应该插入的位置
+    if (!isOnItem) {
+      // 根据 Y 坐标计算应该插入到哪个位置
+      const itemHeight = 80 // 每个表单项的大概高度
+      let insertIndex = Math.floor(y / itemHeight)
+      
+      // 如果鼠标在最后一个组件后面，应该插入到末尾
+      if (drawingItems.length > 0) {
+        const lastItem = drawingItems[drawingItems.length - 1]
+        const lastItemRect = lastItem.getBoundingClientRect()
+        if (event.clientY > lastItemRect.bottom) {
+          insertIndex = drawingList.value.length
+        }
+      }
+      
+      // 限制插入位置范围
+      insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
+      dragInsertIndex.value = insertIndex
+    }
   }
 }
 
@@ -1197,7 +2025,12 @@ const handleItemDragOver = (event, index) => {
     if (y < itemHeight / 2) {
       dragInsertIndex.value = index
     } else {
+      // 如果是最后一个组件，且在下半部分，插入到后面
       dragInsertIndex.value = index + 1
+      // 确保不超过数组长度
+      if (dragInsertIndex.value > drawingList.value.length) {
+        dragInsertIndex.value = drawingList.value.length
+      }
     }
   }
 }
@@ -1205,9 +2038,43 @@ const handleItemDragOver = (event, index) => {
 // 处理离开表单项
 const handleItemDragLeave = (event, index) => {
   if (isDraggingFromLibrary.value) {
-    // 检查是否真的离开了容器区域
+    // 如果是最后一个组件，且已经设置了插入位置为 index + 1，不要重置
+    if (index === drawingList.value.length - 1 && dragInsertIndex.value === index + 1) {
+      // 检查鼠标位置，如果还在容器内或下方，保持插入位置
+      const container = event.currentTarget.closest('.draggable-container')
+      if (container) {
+        const containerRect = container.getBoundingClientRect()
+        const mouseY = event.clientY
+        // 如果鼠标还在容器下方（底部占位区域），不重置
+        if (mouseY >= containerRect.top) {
+          return
+        }
+      }
+    }
+    
+    // 对于其他情况，检查是否真的离开了容器区域
     const container = event.currentTarget.closest('.draggable-container')
-    if (container && !container.contains(event.relatedTarget)) {
+    const relatedTarget = event.relatedTarget
+    
+    // 如果 relatedTarget 是容器内的其他元素（比如下一个组件或底部占位区域），不应该重置
+    if (container && relatedTarget) {
+      if (container.contains(relatedTarget) || relatedTarget.classList?.contains('drop-zone-bottom')) {
+        // 鼠标移动到容器内的其他元素，不重置
+        return
+      }
+    }
+    
+    // 只有在真正离开容器时才重置（但最后一个组件的情况已经在上面处理了）
+    if (index !== drawingList.value.length - 1) {
+      const container = event.currentTarget.closest('.draggable-container')
+      if (container) {
+        const containerRect = container.getBoundingClientRect()
+        const mouseY = event.clientY
+        // 如果鼠标还在容器内，不重置
+        if (mouseY >= containerRect.top && mouseY <= containerRect.bottom) {
+          return
+        }
+      }
       dragInsertIndex.value = null
     }
   }
@@ -1231,12 +2098,37 @@ const handleDrop = (event) => {
   
   // 确定插入位置
   let insertIndex = dragInsertIndex.value
-  if (insertIndex === null) {
-    // 如果没有明确的插入位置，添加到末尾
-    insertIndex = drawingList.value.length
+  
+  // 如果 dragInsertIndex 为 null，或者事件目标就是底部占位区域，尝试根据鼠标位置计算
+  if (insertIndex === null || event.target.classList?.contains('drop-zone-bottom')) {
+    const container = event.currentTarget
+    const containerRect = container.getBoundingClientRect()
+    const y = event.clientY - containerRect.top
+    
+    // 检查是否在最后一个组件后面
+    const drawingItems = container.querySelectorAll('.drawing-item')
+    if (drawingItems.length > 0) {
+      const lastItem = drawingItems[drawingItems.length - 1]
+      const lastItemRect = lastItem.getBoundingClientRect()
+      // 如果鼠标在最后一个组件底部下方，或者事件目标就是底部占位区域，插入到末尾
+      if (event.clientY > lastItemRect.bottom || event.target.classList?.contains('drop-zone-bottom')) {
+        insertIndex = drawingList.value.length
+      } else {
+        // 根据 Y 坐标计算应该插入到哪个位置
+        const itemHeight = 80
+        insertIndex = Math.floor(y / itemHeight)
+        insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
+      }
+    } else {
+      // 如果没有组件，添加到第一个位置
+      insertIndex = 0
+    }
   }
   
-  // 插入到指定位置
+  // 确保 insertIndex 在有效范围内
+  insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
+  
+  // 直接插入到指定位置，VueDraggable 的动画会自动处理移动效果
   drawingList.value.splice(insertIndex, 0, newItem)
   
   // 初始化表单模型
@@ -1248,6 +2140,7 @@ const handleDrop = (event) => {
   // 重置拖拽状态
   dragInsertIndex.value = null
   isDraggingFromLibrary.value = false
+  isOverBottomZone.value = false
   
   // 等待 DOM 更新后自动保存
   nextTick(() => {
@@ -1255,6 +2148,42 @@ const handleDrop = (event) => {
   })
 }
 
+// 处理在底部占位区域拖拽
+const handleBottomDragOver = (event) => {
+  if (isDraggingFromLibrary.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    // 设置插入位置为最后一个组件后面
+    dragInsertIndex.value = drawingList.value.length
+    isOverBottomZone.value = true
+  }
+}
+
+// 处理在底部占位区域进入
+const handleBottomDragEnter = (event) => {
+  if (isDraggingFromLibrary.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    // 设置插入位置为最后一个组件后面
+    dragInsertIndex.value = drawingList.value.length
+    isOverBottomZone.value = true
+  }
+}
+
+// 处理在底部占位区域离开（但仍在容器内）
+const handleBottomDragLeave = (event) => {
+  if (isDraggingFromLibrary.value) {
+    const container = event.currentTarget.closest('.draggable-container')
+    const relatedTarget = event.relatedTarget
+    isOverBottomZone.value = false
+    // 如果移动到容器内的其他元素，不重置
+    if (container && relatedTarget && container.contains(relatedTarget)) {
+      return
+    }
+    // 只有在真正离开容器时才重置
+    dragInsertIndex.value = null
+  }
+}
 
 // 创建表单项
 const createFormItem = (type) => {
@@ -1271,16 +2200,50 @@ const createFormItem = (type) => {
     disabled: false,
     readonly: false,
     defaultValue: '',
-    config: {}
+    config: {},
+    span: 24, // 默认宽度，但不在UI中显示配置项
+    hideType: false // 是否隐藏组件
   }
   
-  // 选择题添加选项配置
-  if (isChoiceType(type)) {
+  // 单选框组配置
+  if (type === 'RADIO') {
     baseItem.config = {
       options: [
         { label: '选项1', value: 'option1' },
         { label: '选项2', value: 'option2' }
-      ]
+      ],
+      border: false,
+      button: false,
+      size: 'medium'
+    }
+  }
+  
+  // 多选框组配置
+  if (type === 'CHECKBOX') {
+    baseItem.config = {
+      options: [
+        { label: '选项1', value: 'option1' },
+        { label: '选项2', value: 'option2' }
+      ],
+      min: undefined,
+      max: undefined,
+      border: false,
+      button: false,
+      size: 'medium'
+    }
+  }
+  
+  // 下拉选择配置
+  if (type === 'SELECT') {
+    baseItem.config = {
+      options: [
+        { label: '选项1', value: 'option1' },
+        { label: '选项2', value: 'option2' }
+      ],
+      clearable: true,
+      multiple: false,
+      filterable: false,
+      size: 'medium'
     }
   }
   
@@ -1296,8 +2259,23 @@ const createFormItem = (type) => {
             { value: 'daohang', label: '导航' }
           ]
         }
+      ],
+      clearable: true,
+      showAllLevels: true,
+      filterable: false,
+      size: 'medium'
+    }
+  }
+  
+  // 排序题型配置（保留原有逻辑）
+  if (type === 'SORT') {
+    baseItem.config = {
+      options: [
+        { label: '选项1', value: 'option1' },
+        { label: '选项2', value: 'option2' }
       ]
     }
+    baseItem.defaultValue = baseItem.config.options
   }
   
   // 滑块配置
@@ -1305,7 +2283,21 @@ const createFormItem = (type) => {
     baseItem.config = {
       min: 0,
       max: 100,
-      step: 1
+      step: 1,
+      showInput: false,
+      showStops: false,
+      range: false,
+      vertical: false
+    }
+  }
+  
+  // 评分组件配置
+  if (type === 'RATE') {
+    baseItem.config = {
+      max: 5,
+      allowHalf: false,
+      showText: false,
+      texts: []
     }
   }
   
@@ -1315,7 +2307,9 @@ const createFormItem = (type) => {
       height: 300,
       interval: 4000,
       fit: 'cover',
-      options: []
+      options: [],
+      indicatorPosition: 'outside',
+      arrow: 'hover'
     }
   }
   
@@ -1325,7 +2319,8 @@ const createFormItem = (type) => {
       options: [
         { label: '选项1', value: 'option1', image: '' },
         { label: '选项2', value: 'option2', image: '' }
-      ]
+      ],
+      multiple: false
     }
   }
   
@@ -1349,18 +2344,86 @@ const createFormItem = (type) => {
     baseItem.defaultValue = baseItem.config.options
   }
   
+  // 文字描述配置
+  if (type === 'DESC_TEXT') {
+    baseItem.config = {
+      content: '',
+      textAlign: 'left',
+      fontSize: 14,
+      color: '#606266'
+    }
+  }
+  
   // 分割线配置
   if (type === 'DIVIDER') {
     baseItem.config = {
       content: '',
-      contentPosition: 'center'
+      contentPosition: 'center',
+      direction: 'horizontal'
     }
   }
   
   // 图片上传配置
   if (type === 'IMAGE_UPLOAD') {
     baseItem.config = {
-      limit: 9
+      limit: 9,
+      accept: 'image/*',
+      listType: 'picture',
+      maxSize: 0
+    }
+  }
+  
+  // 文件上传配置
+  if (type === 'UPLOAD') {
+    baseItem.config = {
+      limit: 1,
+      accept: '*/*',
+      maxSize: 0,
+      autoUpload: true
+    }
+  }
+  
+  // 单行文本配置
+  if (type === 'INPUT') {
+    baseItem.config = {
+      clearable: true,
+      maxLength: undefined,
+      minLength: undefined,
+      showWordLimit: false,
+      notRepeat: false
+    }
+    baseItem.regList = []
+  }
+  
+  // 多行文本配置
+  if (type === 'TEXTAREA') {
+    baseItem.config = {
+      rows: 4,
+      maxLength: undefined,
+      minLength: undefined,
+      showWordLimit: false
+    }
+    baseItem.regList = []
+  }
+  
+  // 数字组件配置
+  if (type === 'NUMBER') {
+    baseItem.config = {
+      min: undefined,
+      max: undefined,
+      step: 1,
+      precision: undefined,
+      controlsPosition: 'right'
+    }
+  }
+  
+  // 日期组件配置
+  if (type === 'DATE') {
+    baseItem.config = {
+      type: 'date',
+      format: 'YYYY-MM-DD',
+      valueFormat: 'YYYY-MM-DD',
+      clearable: true
     }
   }
   
@@ -1422,10 +2485,87 @@ const handleAddOption = () => {
   handlePropertyChange()
 }
 
+// 添加正则验证规则
+const handleAddRegRule = () => {
+  if (!activeData.value.regList) {
+    activeData.value.regList = []
+  }
+  activeData.value.regList.push({
+    pattern: '',
+    message: ''
+  })
+  handlePropertyChange()
+}
+
+// 删除正则验证规则
+const handleRemoveRegRule = (index) => {
+  if (activeData.value.regList) {
+    activeData.value.regList.splice(index, 1)
+    handlePropertyChange()
+  }
+}
+
 // 删除选项
 const handleRemoveOption = (index) => {
   if (activeData.value.config.options) {
     activeData.value.config.options.splice(index, 1)
+    handlePropertyChange()
+  }
+}
+
+// 级联选择相关函数
+const handleAddCascaderOption = () => {
+  if (!activeData.value.config.options) {
+    activeData.value.config.options = []
+  }
+  activeData.value.config.options.push({
+    label: '新选项',
+    value: 'newOption',
+    children: []
+  })
+  handlePropertyChange()
+}
+
+const handleRemoveCascaderOption = (index) => {
+  if (activeData.value.config.options) {
+    activeData.value.config.options.splice(index, 1)
+    handlePropertyChange()
+  }
+}
+
+const handleAddCascaderChild = (parentIndex) => {
+  if (!activeData.value.config.options[parentIndex].children) {
+    activeData.value.config.options[parentIndex].children = []
+  }
+  activeData.value.config.options[parentIndex].children.push({
+    label: '子项',
+    value: 'child'
+  })
+  handlePropertyChange()
+}
+
+const handleRemoveCascaderChild = (parentIndex, childIndex) => {
+  if (activeData.value.config.options[parentIndex].children) {
+    activeData.value.config.options[parentIndex].children.splice(childIndex, 1)
+    handlePropertyChange()
+  }
+}
+
+// 评分组件辅助文字管理
+const handleAddRateText = () => {
+  if (!activeData.value.config.texts) {
+    activeData.value.config.texts = []
+  }
+  const max = activeData.value.config.max || 5
+  if (activeData.value.config.texts.length < max) {
+    activeData.value.config.texts.push(`文字${activeData.value.config.texts.length + 1}`)
+    handlePropertyChange()
+  }
+}
+
+const handleRemoveRateText = () => {
+  if (activeData.value.config.texts && activeData.value.config.texts.length > 0) {
+    activeData.value.config.texts.pop()
     handlePropertyChange()
   }
 }
@@ -1575,8 +2715,8 @@ const handleImageOptionUpload = (response, optionIndex) => {
       drawingList.value[activeIndex].config.options[optionIndex].image = fullImageUrl
       // 更新整个 drawingList 以触发响应式
       drawingList.value = [...drawingList.value]
-      handlePropertyChange()
-      ElMessage.success('图片上传成功')
+    handlePropertyChange()
+    ElMessage.success('图片上传成功')
     }
   } else {
     ElMessage.error(response?.message || '图片上传失败')
@@ -1643,9 +2783,12 @@ const saveFormItems = async () => {
       type: item.type,
       label: item.label,
       required: item.required ? 1 : 0,
-      placeholder: item.placeholder,
+      placeholder: item.placeholder || '',
       sort: index,
-      scheme: JSON.stringify(item)
+      span: item.span || 24,
+      scheme: JSON.stringify(item),
+      regList: item.regList ? JSON.stringify(item.regList) : null,
+      isHideType: item.hideType ? 1 : 0
     }))
     
     await formApi.saveFormItems(formKey.value, items)
@@ -1734,13 +2877,28 @@ const loadFormData = async () => {
             }
           }
           
+          // 解析 regList
+          let regList = []
+          if (item.regList) {
+            try {
+              regList = typeof item.regList === 'string' 
+                ? JSON.parse(item.regList) 
+                : item.regList
+            } catch (e) {
+              regList = []
+            }
+          }
+          
           return {
             ...scheme,
             formItemId: item.formItemId,
             type: item.type,
             label: item.label,
             required: item.required === 1,
-            placeholder: item.placeholder
+            placeholder: item.placeholder || '',
+            span: item.span || 24,
+            regList: regList,
+            hideType: item.isHideType === 1 || item.isHideType === true
           }
         })
         
@@ -2003,15 +3161,85 @@ onMounted(() => {
   width: 100%;
 }
 
+.draggable-list {
+  min-height: 300px;
+  width: 100%;
+}
+
 .drag-insert-line {
   position: absolute;
   left: 0;
   right: 0;
   height: 2px;
   background: #409EFF;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.drop-zone-bottom {
+  min-height: 120px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  border: 2px dashed transparent;
+  border-radius: 6px;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &::after {
+    content: '拖拽到此处添加到最后';
+    color: #c0c4cc;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover,
+  &.drag-over {
+    border-color: #409EFF;
+    background: rgba(64, 158, 255, 0.03);
+    
+    &::after {
+      opacity: 1;
+    }
+  }
+}
+
+.drag-insert-line-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: #409EFF;
   z-index: 100;
   pointer-events: none;
-  transition: top 0.1s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    background: #409EFF;
+    border-radius: 50%;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    background: #409EFF;
+    border-radius: 50%;
+  }
   
   &::before {
     content: '';
@@ -2099,7 +3327,8 @@ onMounted(() => {
   position: relative;
   margin-bottom: 15px;
   cursor: pointer;
-  transition: all 0.3s;
+  // ⭐ 关键：让Sortable.js的动画生效
+  transition: transform 0.3s, opacity 0.3s;
   
   &.unfocus-bordered {
     :deep(.el-form-item) {
@@ -2200,20 +3429,68 @@ onMounted(() => {
 }
 
 
+// ⭐ 拖拽占位符 - 显示插入位置
 .sortable-ghost {
-  opacity: 0.5;
-  background: rgba(24, 144, 255, 0.1);
-  border: 2px dashed #409EFF;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  
+  &::before {
+    content: ' ';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: #409EFF;
+    z-index: 2;
+  }
+  
+  // 让占位符显示为虚线框
+  :deep(.el-form-item) {
+    background: rgba(24, 144, 255, 0.05);
+    border: 2px dashed #409EFF !important;
+    border-radius: 6px;
+  }
+  
+  // 隐藏操作按钮
+  .drawing-item-copy,
+  .drawing-item-delete,
+  .drawing-item-drag {
+    display: none !important;
+  }
+  
+  // 降低内容透明度
+  .component-name,
+  :deep(.el-form-item__label),
+  :deep(.el-form-item__content) {
+    opacity: 0.4;
+  }
 }
 
+// ⭐ 被选中的元素
 .chosen-item {
-  cursor: grabbing;
+  cursor: grabbing !important;
+  opacity: 1;
+  
+  .drag-handle {
+    cursor: grabbing !important;
+  }
 }
 
+// ⭐ 正在拖拽的元素
 .drag-item {
-  cursor: grabbing;
-  opacity: 0.8;
+  cursor: grabbing !important;
+  opacity: 0.85;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: rotate(3deg);
 }
+
+.drawing-list-wrapper {
+  width: 100%;
+}
+
+// 移除TransitionGroup相关样式，现在使用Sortable.js的原生动画
 
 .empty-info {
   text-align: center;

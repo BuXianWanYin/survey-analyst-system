@@ -76,7 +76,7 @@
         <h2
           v-if="themeConfig.showTitle"
           class="fill-title"
-        >
+                >
           {{ surveyTitle || '未命名问卷' }}
         </h2>
 
@@ -479,7 +479,7 @@ onMounted(() => {
     height: var(--head-img-height, 200px);
     display: block;
     object-fit: cover;
-  }
+}
 }
 
 

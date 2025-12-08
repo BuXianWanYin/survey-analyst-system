@@ -2,11 +2,12 @@
   <el-form
     ref="formRef"
     :model="formModel"
+    :rules="formRules"
     label-position="top"
     class="survey-form-render"
   >
     <div
-      v-for="element in formItems"
+      v-for="element in visibleFormItems"
       :key="element.formItemId"
       class="form-item-wrapper"
     >
@@ -30,8 +31,13 @@
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :readonly="element.readonly || previewMode"
+          :clearable="element.config?.clearable !== false"
+          :maxlength="element.config?.maxLength"
+          :minlength="element.config?.minLength"
+          :show-word-limit="element.config?.showWordLimit || false"
           :style="getInputStyle()"
           class="theme-input"
+          @blur="validateInput(element)"
         />
 
         <!-- 多行文本 -->
@@ -39,12 +45,16 @@
           v-else-if="element.type === 'TEXTAREA'"
           v-model="formModel[element.vModel]"
           type="textarea"
-          :rows="4"
+          :rows="element.config?.rows || 4"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :readonly="element.readonly || previewMode"
+          :maxlength="element.config?.maxLength"
+          :minlength="element.config?.minLength"
+          :show-word-limit="element.config?.showWordLimit || false"
           :style="getInputStyle()"
           class="theme-input"
+          @blur="validateInput(element)"
         />
 
         <!-- 数字 -->
@@ -53,6 +63,11 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
+          :min="element.config?.min"
+          :max="element.config?.max"
+          :step="element.config?.step || 1"
+          :precision="element.config?.precision"
+          :controls-position="element.config?.controlsPosition || 'right'"
           :style="getInputStyle('width: 100%')"
           class="theme-input"
         />
@@ -62,6 +77,9 @@
           v-else-if="element.type === 'RADIO'"
           v-model="formModel[element.vModel]"
           :disabled="element.disabled || previewMode"
+          :border="element.config?.border || false"
+          :button="element.config?.button || false"
+          :size="element.config?.size || 'medium'"
           class="theme-radio-group"
         >
           <el-radio
@@ -79,6 +97,11 @@
           v-else-if="element.type === 'CHECKBOX'"
           v-model="formModel[element.vModel]"
           :disabled="element.disabled || previewMode"
+          :min="element.config?.min"
+          :max="element.config?.max"
+          :border="element.config?.border || false"
+          :button="element.config?.button || false"
+          :size="element.config?.size || 'medium'"
           class="theme-checkbox-group"
         >
           <el-checkbox
@@ -97,6 +120,10 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
+          :clearable="element.config?.clearable !== false"
+          :multiple="element.config?.multiple || false"
+          :filterable="element.config?.filterable || false"
+          :size="element.config?.size || 'medium'"
           :style="getInputStyle('width: 100%')"
           class="theme-select"
         >
@@ -113,6 +140,9 @@
           v-else-if="element.type === 'RATE'"
           v-model="formModel[element.vModel]"
           :max="element.config?.max || 5"
+          :allow-half="element.config?.allowHalf || false"
+          :show-text="element.config?.showText || false"
+          :texts="element.config?.texts || []"
           :disabled="element.disabled || previewMode"
           :color="getThemeColor()"
           class="theme-rate"
@@ -122,9 +152,13 @@
         <el-date-picker
           v-else-if="element.type === 'DATE'"
           v-model="formModel[element.vModel]"
-          type="date"
+          :type="element.config?.type || 'date'"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
+          :readonly="element.readonly || previewMode"
+          :format="element.config?.format || 'YYYY-MM-DD'"
+          :value-format="element.config?.valueFormat || 'YYYY-MM-DD'"
+          :clearable="element.config?.clearable !== false"
           :style="getInputStyle('width: 100%')"
           class="theme-date-picker"
         />
@@ -136,12 +170,14 @@
           @change="handleUploadChange(element.vModel, $event)"
           :disabled="element.disabled || previewMode"
           action="#"
-          :auto-upload="false"
+          :auto-upload="element.config?.autoUpload !== false"
           :limit="element.config?.limit || 1"
+          :accept="element.config?.accept || '*/*'"
+          :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 1}个文件`)"
         >
           <el-button 
             type="primary" 
-            :disabled="previewMode"
+            :disabled="previewMode || element.disabled"
             :style="{
               backgroundColor: getThemeColor(),
               borderColor: getThemeColor()
@@ -160,8 +196,10 @@
           :disabled="element.disabled || previewMode"
           action="#"
           :auto-upload="false"
-          list-type="picture-card"
+          :list-type="element.config?.listType || 'picture-card'"
           :limit="element.config?.limit || 9"
+          :accept="element.config?.accept || 'image/*'"
+          :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 9}张图片`)"
         >
           <el-icon v-if="!previewMode"><Plus /></el-icon>
         </el-upload>
@@ -170,6 +208,7 @@
         <div
           v-else-if="element.type === 'SLIDER'"
           class="slider-wrapper"
+          :class="{ 'slider-vertical': element.config?.vertical }"
         >
           <el-slider
             :model-value="getSliderValue(element.vModel, element.config)"
@@ -178,6 +217,10 @@
             :max="element.config?.max || 100"
             :step="element.config?.step || 1"
             :disabled="element.disabled || previewMode"
+            :show-input="element.config?.showInput || false"
+            :show-stops="element.config?.showStops || false"
+            :range="element.config?.range || false"
+            :vertical="element.config?.vertical || false"
             :color="getThemeColor()"
             class="theme-slider"
           />
@@ -190,57 +233,31 @@
           :options="element.config?.options || []"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
+          :clearable="element.config?.clearable !== false"
+          :show-all-levels="element.config?.showAllLevels !== false"
+          :filterable="element.config?.filterable || false"
+          :size="element.config?.size || 'medium'"
           :style="getInputStyle('width: 100%')"
           class="theme-cascader"
         />
-
-
-        <!-- 图片轮播 -->
-        <div
-          v-else-if="element.type === 'IMAGE_CAROUSEL'"
-          class="image-carousel-wrapper"
-        >
-          <el-carousel
-            v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
-            :key="`carousel-${element.formItemId}`"
-            :height="`${element.config?.height || 300}px`"
-            :interval="element.config?.interval || 4000"
-          >
-            <el-carousel-item
-              v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
-              :key="option.url || idx"
-            >
-              <el-image
-                :src="option.url"
-                :fit="element.config?.fit || 'cover'"
-                style="width: 100%; height: 100%"
-              />
-            </el-carousel-item>
-          </el-carousel>
-          <div
-            v-else
-            class="carousel-placeholder"
-          >
-            <el-icon><Picture /></el-icon>
-            <span>请添加图片</span>
-          </div>
-        </div>
 
         <!-- 图片选择 -->
         <div
           v-else-if="element.type === 'IMAGE_SELECT'"
           class="image-select-container"
         >
+          <!-- 单选模式 -->
           <el-radio-group
+            v-if="!element.config?.multiple"
             v-model="formModel[element.vModel]"
             :disabled="element.disabled || previewMode"
             class="image-select-radio-group"
-          >
-            <div
-              v-for="(option, idx) in element.config?.options || []"
-              :key="idx"
-              class="image-select-item"
-              :class="{ active: formModel[element.vModel] === option.value }"
+        >
+          <div
+            v-for="(option, idx) in element.config?.options || []"
+            :key="idx"
+            class="image-select-item"
+            :class="{ active: formModel[element.vModel] === option.value }"
             >
               <el-radio
                 :label="option.value"
@@ -261,16 +278,39 @@
               </el-radio>
             </div>
           </el-radio-group>
+          <!-- 多选模式 -->
+          <el-checkbox-group
+            v-else
+            v-model="formModel[element.vModel]"
+            :disabled="element.disabled || previewMode"
+            class="image-select-checkbox-group"
+          >
+            <div
+              v-for="(option, idx) in element.config?.options || []"
+              :key="idx"
+              class="image-select-item"
+              :class="{ active: (formModel[element.vModel] || []).includes(option.value) }"
+          >
+              <el-checkbox
+                :label="option.value"
+                class="image-select-checkbox"
+              >
+                <div class="image-select-content">
+            <el-image
+              v-if="option.image"
+              :src="option.image"
+              fit="cover"
+              class="image-select-img"
+            />
+                  <div v-else class="image-select-placeholder">
+                    <el-icon><Picture /></el-icon>
+                  </div>
+            <span class="image-select-label">{{ option.label }}</span>
+          </div>
+              </el-checkbox>
+            </div>
+          </el-checkbox-group>
         </div>
-
-        <!-- 图片展示 -->
-        <el-image
-          v-else-if="element.type === 'IMAGE'"
-          :src="element.config?.imageUrl || ''"
-          :fit="element.config?.fit || 'cover'"
-          style="width: 100%"
-          :preview-src-list="element.config?.previewList || []"
-        />
 
         <!-- 排序题型 -->
         <div
@@ -306,12 +346,67 @@
           :style="getInputStyle()"
           class="theme-input"
         />
-      </el-form-item>
+          </el-form-item>
 
+          <!-- 图片展示独立渲染 -->
+          <el-image
+            v-if="element.type === 'IMAGE'"
+            :src="element.config?.imageUrl || ''"
+            :fit="element.config?.fit || 'cover'"
+            style="width: 100%"
+            :preview-src-list="element.config?.previewList || []"
+          />
+
+          <!-- 图片轮播独立渲染 -->
+          <div
+            v-if="element.type === 'IMAGE_CAROUSEL'"
+            class="image-carousel-wrapper"
+          >
+            <el-carousel
+              v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
+              :key="`carousel-${element.formItemId}`"
+              :height="`${element.config?.height || 300}px`"
+              :interval="element.config?.interval || 4000"
+              :indicator-position="element.config?.indicatorPosition || 'outside'"
+              :arrow="element.config?.arrow || 'hover'"
+            >
+              <el-carousel-item
+                v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
+                :key="option.url || idx"
+              >
+                <el-image
+                  :src="option.url"
+                  :fit="element.config?.fit || 'cover'"
+                  style="width: 100%; height: 100%"
+                />
+              </el-carousel-item>
+            </el-carousel>
+            <div
+              v-else
+              class="carousel-placeholder"
+            >
+              <el-icon><Picture /></el-icon>
+              <span>请添加图片</span>
+            </div>
+          </div>
+
+      <!-- 文字描述独立渲染 -->
+      <div
+        v-else-if="element.type === 'DESC_TEXT'"
+        class="desc-text-wrapper"
+        :style="{
+          textAlign: element.config?.textAlign || 'left',
+          fontSize: (element.config?.fontSize || 14) + 'px',
+          color: element.config?.color || '#606266'
+        }"
+        v-html="element.config?.content || ''"
+      />
+      
       <!-- 分割线独立渲染 -->
       <el-divider
-        v-else
+        v-else-if="element.type === 'DIVIDER'"
         :content-position="element.config?.contentPosition || 'center'"
+        :direction="element.config?.direction || 'horizontal'"
       >
         {{ element.config?.content || '' }}
       </el-divider>
@@ -323,6 +418,7 @@
 import { ref, computed } from 'vue'
 import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   formItems: {
@@ -348,6 +444,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:formModel'])
+
+// 过滤掉隐藏的组件
+const visibleFormItems = computed(() => {
+  return props.formItems.filter(item => !item.hideType)
+})
 
 // 获取题目序号
 const getQuestionIndex = (element) => {
@@ -450,6 +551,87 @@ const setSliderValue = (vModel, value) => {
 
 const formRef = ref(null)
 
+// 生成表单验证规则
+const formRules = computed(() => {
+  const rules = {}
+  props.formItems.forEach(item => {
+    const itemRules = []
+    
+    // 必填规则
+    if (item.required) {
+      itemRules.push({
+        required: true,
+        message: `${item.label}不能为空`,
+        trigger: ['blur', 'change']
+      })
+    }
+    
+    // 最小长度验证
+    if (item.config?.minLength) {
+      itemRules.push({
+        min: item.config.minLength,
+        message: `${item.label}最少需要${item.config.minLength}个字符`,
+        trigger: ['blur', 'change']
+      })
+    }
+    
+    // 最大长度验证
+    if (item.config?.maxLength) {
+      itemRules.push({
+        max: item.config.maxLength,
+        message: `${item.label}最多只能输入${item.config.maxLength}个字符`,
+        trigger: ['blur', 'change']
+      })
+    }
+    
+    // 正则表达式验证
+    if (item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
+      item.regList.forEach(reg => {
+        if (reg.pattern) {
+          try {
+            const regex = new RegExp(reg.pattern)
+            itemRules.push({
+              pattern: regex,
+              message: reg.message || `${item.label}格式不正确`,
+              trigger: ['blur', 'change']
+            })
+          } catch (e) {
+            console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+          }
+        }
+      })
+    }
+    
+    // 重复值检查（仅对单行文本）
+    if (item.type === 'INPUT' && item.config?.notRepeat) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          // 检查是否与其他表单项的值重复
+          const otherItems = props.formItems.filter(
+            other => other.vModel !== item.vModel && 
+                     other.type === 'INPUT' && 
+                     props.formModel[other.vModel] === value &&
+                     value !== '' &&
+                     value !== null &&
+                     value !== undefined
+          )
+          if (otherItems.length > 0) {
+            callback(new Error(`${item.label}不能与其他字段重复`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['blur', 'change']
+      })
+    }
+    
+    if (itemRules.length > 0) {
+      rules[item.vModel] = itemRules
+    }
+  })
+  return rules
+})
+
 // 获取主题颜色
 const getThemeColor = () => {
   return props.themeConfig?.themeColor || '#409EFF'
@@ -476,6 +658,45 @@ const getActiveBgColor = () => {
     return `rgba(${r}, ${g}, ${b}, 0.1)`
   }
   return '#ecf5ff'
+}
+
+// 验证输入（正则验证和长度验证）
+const validateInput = (element) => {
+  if (!element || props.previewMode) return
+  
+  const value = props.formModel[element.vModel]
+  const valueStr = String(value || '')
+  
+  // 验证最小长度
+  if (element.config?.minLength && valueStr.length < element.config.minLength) {
+    ElMessage.warning(`${element.label} 最少需要 ${element.config.minLength} 个字符`)
+    return false
+  }
+  
+  // 验证最大长度
+  if (element.config?.maxLength && valueStr.length > element.config.maxLength) {
+    ElMessage.warning(`${element.label} 最多只能输入 ${element.config.maxLength} 个字符`)
+    return false
+  }
+  
+  // 验证正则表达式
+  if (element.regList && Array.isArray(element.regList) && element.regList.length > 0) {
+    for (const reg of element.regList) {
+      if (reg.pattern && reg.message) {
+        try {
+          const regex = new RegExp(reg.pattern)
+          if (!regex.test(valueStr)) {
+            ElMessage.warning(reg.message || `${element.label} 格式不正确`)
+            return false
+          }
+        } catch (e) {
+          // 正则表达式错误，跳过该规则
+        }
+      }
+    }
+  }
+  
+  return true
 }
 </script>
 
@@ -600,9 +821,9 @@ const getActiveBgColor = () => {
   width: 100%;
   
   .image-select-radio-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
     width: 100%;
   }
   
