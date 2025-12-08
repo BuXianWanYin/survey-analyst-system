@@ -44,11 +44,10 @@
           v-else-if="element.type === 'TEXTAREA'"
           v-model="formModel[element.vModel]"
           type="textarea"
-          :rows="element.config?.rows || 4"
+          :autosize="{ minRows: element.config?.minRows || 1, maxRows: element.config?.maxRows || 4 }"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :maxlength="element.config?.maxLength"
-          :minlength="element.config?.minLength"
           :show-word-limit="element.config?.showWordLimit || false"
           :style="getInputStyle()"
           class="theme-input"
@@ -568,8 +567,8 @@ const formRules = computed(() => {
       })
     }
     
-    // 数据类型验证（反馈类型）
-    if (item.config?.dataType && (item.type === 'INPUT' || item.type === 'TEXTAREA')) {
+    // 数据类型验证（反馈类型）- 仅对单行文本
+    if (item.config?.dataType && item.type === 'INPUT') {
       itemRules.push({
         validator: (rule, value, callback) => {
           if (!value || value === '') {
@@ -900,8 +899,8 @@ const validateInput = (element) => {
   const value = props.formModel[element.vModel]
   const valueStr = String(value || '')
   
-  // 验证最小长度
-  if (element.config?.minLength && valueStr.length < element.config.minLength) {
+  // 验证最小长度（仅对单行文本）
+  if (element.type === 'INPUT' && element.config?.minLength && valueStr.length < element.config.minLength) {
     ElMessage.warning(`${element.label} 最少需要 ${element.config.minLength} 个字符`)
     return false
   }
@@ -912,8 +911,8 @@ const validateInput = (element) => {
     return false
   }
   
-  // 验证数据类型（反馈类型）
-  if (element.config?.dataType && valueStr.length > 0) {
+  // 验证数据类型（反馈类型）- 仅对单行文本
+  if (element.type === 'INPUT' && element.config?.dataType && valueStr.length > 0) {
     const dataType = element.config.dataType
     const errorMessage = element.config.dataTypeMessage || `${element.label}格式不正确`
     let isValid = false

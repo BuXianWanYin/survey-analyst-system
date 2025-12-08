@@ -150,12 +150,10 @@
                         v-else-if="element.type === 'TEXTAREA'"
                         v-model="formModel[element.vModel]"
                         type="textarea"
-                        :rows="element.config?.rows || 4"
+                        :autosize="{ minRows: element.config?.minRows || 1, maxRows: element.config?.maxRows || 4 }"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
-                        :readonly="element.readonly"
                         :maxlength="element.config?.maxLength"
-                        :minlength="element.config?.minLength"
                         :show-word-limit="element.config?.showWordLimit ?? false"
                       />
                       <!-- 数字 -->
@@ -489,12 +487,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -647,40 +646,41 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="行数">
+                  <el-form-item label="最小行数">
                     <el-input
-                      v-model.number="activeData.config.rows"
+                      v-model.number="activeData.config.minRows"
                       type="number"
                       :min="1"
+                      :max="activeData.config?.maxRows || 20"
+                      placeholder="请输入"
+                      style="width: 100%"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="最大行数">
+                    <el-input
+                      v-model.number="activeData.config.maxRows"
+                      type="number"
+                      :min="activeData.config?.minRows || 1"
                       :max="20"
                       placeholder="请输入"
                       style="width: 100%"
                       @input="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="最大字符数">
+                  <el-form-item label="最大输入字符">
                     <el-input
                       v-model.number="activeData.config.maxLength"
-                      type="number"
-                      :min="0"
-                      :max="10000"
-                      placeholder="请输入"
-                      style="width: 100%"
-                      @input="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="最小字符数">
-                    <el-input
-                      v-model.number="activeData.config.minLength"
                       type="number"
                       :min="0"
                       :max="10000"
@@ -693,58 +693,6 @@
                     <el-switch
                       v-model="activeData.config.showWordLimit"
                       @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="反馈类型">
-                    <el-select
-                      v-model="activeData.config.dataType"
-                      placeholder="请选择反馈类型"
-                      clearable
-                      style="width: 100%"
-                      @change="handleDataTypeChange"
-                    >
-                      <el-option
-                        label="无校验"
-                        value=""
-                      />
-                      <el-option
-                        label="字符串"
-                        value="string"
-                      />
-                      <el-option
-                        label="数字"
-                        value="number"
-                      />
-                      <el-option
-                        label="整数"
-                        value="integer"
-                      />
-                      <el-option
-                        label="小数"
-                        value="float"
-                      />
-                      <el-option
-                        label="URL地址"
-                        value="url"
-                      />
-                      <el-option
-                        label="邮箱地址"
-                        value="email"
-                      />
-                      <el-option
-                        label="手机号"
-                        value="phone"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item
-                    v-if="activeData.config.dataType"
-                    label="错误提示"
-                  >
-                    <el-input
-                      v-model="activeData.config.dataTypeMessage"
-                      placeholder="请输入验证失败时的错误提示"
-                      @input="handlePropertyChange"
                     />
                   </el-form-item>
                   <el-form-item label="正则校验">
@@ -793,12 +741,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -806,6 +755,7 @@
                     <el-input
                       v-model.number="activeData.config.min"
                       type="number"
+                      :max="activeData.config?.max"
                       placeholder="请输入"
                       style="width: 100%"
                       @input="handlePropertyChange"
@@ -815,6 +765,7 @@
                     <el-input
                       v-model.number="activeData.config.max"
                       type="number"
+                      :min="activeData.config?.min"
                       placeholder="请输入"
                       style="width: 100%"
                       @input="handlePropertyChange"
@@ -868,12 +819,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1017,6 +969,7 @@
                       v-model.number="activeData.config.min"
                       type="number"
                       :min="0"
+                      :max="activeData.config?.max"
                       placeholder="请输入"
                       style="width: 100%"
                       @input="handlePropertyChange"
@@ -1026,7 +979,7 @@
                     <el-input
                       v-model.number="activeData.config.max"
                       type="number"
-                      :min="1"
+                      :min="activeData.config?.min || 1"
                       placeholder="请输入"
                       style="width: 100%"
                       @input="handlePropertyChange"
@@ -1223,12 +1176,6 @@
                   <el-form-item label="显示完整路径">
                     <el-switch
                       v-model="activeData.config.showAllLevels"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否可搜索">
-                    <el-switch
-                      v-model="activeData.config.filterable"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1713,12 +1660,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1776,12 +1724,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1810,12 +1759,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1888,12 +1838,13 @@
                   <el-form-item label="是否必填">
                     <el-switch
                       v-model="activeData.required"
-                      @change="handlePropertyChange"
+                      @change="handleRequiredChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -2368,12 +2319,10 @@ const createFormItem = (type) => {
   // 多行文本配置
   if (type === 'TEXTAREA') {
     baseItem.config = {
-      rows: 4,
+      minRows: 1,
+      maxRows: 4,
       maxLength: undefined,
-      minLength: undefined,
-      showWordLimit: false,
-      dataType: '', // 反馈类型
-      dataTypeMessage: '' // 反馈类型验证失败提示
+      showWordLimit: false
     }
     baseItem.regList = []
   }
@@ -2441,7 +2390,58 @@ const handleDeleteItem = (element) => {
 
 // 属性变更
 const handlePropertyChange = () => {
+  // 验证逻辑
+  validateComponentLogic()
   saveFormItems()
+}
+
+// 处理必填变化
+const handleRequiredChange = () => {
+  // 如果选择了必填，自动取消禁用
+  if (activeData.value.required && activeData.value.disabled) {
+    activeData.value.disabled = false
+  }
+  handlePropertyChange()
+}
+
+// 验证组件逻辑
+const validateComponentLogic = () => {
+  if (!activeData.value) return
+  
+  // 1. 必填和禁用的逻辑冲突：如果选择了必填，自动取消禁用
+  if (activeData.value.required && activeData.value.disabled) {
+    activeData.value.disabled = false
+  }
+  
+  // 2. 最大字符数不能小于最小字符数
+  if (activeData.value.config?.maxLength !== undefined && 
+      activeData.value.config?.minLength !== undefined &&
+      activeData.value.config.maxLength !== null &&
+      activeData.value.config.minLength !== null &&
+      activeData.value.config.maxLength < activeData.value.config.minLength) {
+    // 如果最大值小于最小值，将最小值调整为最大值
+    activeData.value.config.minLength = activeData.value.config.maxLength
+  }
+  
+  // 3. 最大值不能小于最小值（适用于NUMBER、CHECKBOX、SLIDER等）
+  if (activeData.value.config?.max !== undefined && 
+      activeData.value.config?.min !== undefined &&
+      activeData.value.config.max !== null &&
+      activeData.value.config.min !== null &&
+      activeData.value.config.max < activeData.value.config.min) {
+    // 如果最大值小于最小值，将最小值调整为最大值
+    activeData.value.config.min = activeData.value.config.max
+  }
+  
+  // 4. 最大行数不能小于最小行数（适用于TEXTAREA）
+  if (activeData.value.config?.maxRows !== undefined && 
+      activeData.value.config?.minRows !== undefined &&
+      activeData.value.config.maxRows !== null &&
+      activeData.value.config.minRows !== null &&
+      activeData.value.config.maxRows < activeData.value.config.minRows) {
+    // 如果最大行数小于最小行数，将最小行数调整为最大行数
+    activeData.value.config.minRows = activeData.value.config.maxRows
+  }
 }
 
 // 处理反馈类型变化，自动设置默认错误提示
