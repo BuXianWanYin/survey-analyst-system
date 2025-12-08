@@ -140,7 +140,6 @@
                         v-model="formModel[element.vModel]"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
-                        :readonly="element.readonly"
                         :clearable="element.config?.clearable ?? true"
                         :maxlength="element.config?.maxLength"
                         :minlength="element.config?.minLength"
@@ -399,7 +398,6 @@
                         :background-color="'#ffffff'"
                         :pen-color="element.config?.penColor || '#000000'"
                         :disabled="element.disabled"
-                        :readonly="element.readonly"
                       />
                       <!-- 默认：单行文本 -->
                       <el-input
@@ -497,12 +495,6 @@
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否只读">
-                    <el-switch
-                      v-model="activeData.readonly"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -661,12 +653,6 @@
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否只读">
-                    <el-switch
-                      v-model="activeData.readonly"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -888,12 +874,6 @@
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否只读">
-                    <el-switch
-                      v-model="activeData.readonly"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1914,12 +1894,6 @@
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否只读">
-                    <el-switch
-                      v-model="activeData.readonly"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>

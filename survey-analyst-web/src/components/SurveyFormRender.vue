@@ -30,7 +30,6 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          :readonly="element.readonly || previewMode"
           :clearable="element.config?.clearable !== false"
           :maxlength="element.config?.maxLength"
           :minlength="element.config?.minLength"
@@ -48,7 +47,6 @@
           :rows="element.config?.rows || 4"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          :readonly="element.readonly || previewMode"
           :maxlength="element.config?.maxLength"
           :minlength="element.config?.minLength"
           :show-word-limit="element.config?.showWordLimit || false"
@@ -155,7 +153,6 @@
           :type="element.config?.type || 'date'"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          :readonly="element.readonly || previewMode"
           :format="element.config?.format || 'YYYY-MM-DD'"
           :value-format="element.config?.valueFormat || 'YYYY-MM-DD'"
           :clearable="element.config?.clearable !== false"
@@ -342,7 +339,6 @@
             :background-color="'#ffffff'"
             :pen-color="element.config?.penColor || '#000000'"
             :disabled="element.disabled || previewMode"
-            :readonly="element.readonly || previewMode"
           />
 
           <!-- 图片轮播独立渲染 -->

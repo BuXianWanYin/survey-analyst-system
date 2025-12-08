@@ -2,7 +2,7 @@
   <div class="sign-pad-container">
     <!-- 如果已有签名图片，直接显示 -->
     <div
-      v-if="imageUrl && (readonly || disabled)"
+      v-if="imageUrl && disabled"
       class="sign-pad-preview-only"
     >
       <el-image
@@ -25,7 +25,7 @@
         <el-button
           type="primary"
           size="small"
-          :disabled="disabled || readonly || isEmpty"
+          :disabled="disabled || isEmpty"
           @click="handleSave"
         >
           保存
@@ -33,7 +33,7 @@
         <el-button
           type="default"
           size="small"
-          :disabled="disabled || readonly || canUndo === false"
+          :disabled="disabled || canUndo === false"
           @click="handleUndo"
         >
           回撤
@@ -41,7 +41,7 @@
         <el-button
           type="danger"
           size="small"
-          :disabled="disabled || readonly"
+          :disabled="disabled"
           @click="handleClear"
         >
           清除
@@ -87,10 +87,6 @@ const props = defineProps({
     default: '#000000'
   },
   disabled: {
-    type: Boolean,
-    default: false
-  },
-  readonly: {
     type: Boolean,
     default: false
   }
@@ -207,8 +203,8 @@ watch(() => props.modelValue, (newVal) => {
     // 如果签名板已初始化，清除画布（允许重新编辑）
     if (signaturePad.value) {
       signaturePad.value.clear()
-      // 如果是在只读或禁用模式下，不重新初始化画布
-      if (!props.readonly && !props.disabled) {
+      // 如果是在禁用模式下，不重新初始化画布
+      if (!props.disabled) {
         // 重新设置背景
         const canvas = canvasRef.value
         if (canvas) {
@@ -230,18 +226,7 @@ watch(() => props.modelValue, (newVal) => {
 // 监听禁用状态
 watch(() => props.disabled, (newVal) => {
   if (signaturePad.value) {
-    if (newVal || props.readonly) {
-      signaturePad.value.off()
-    } else {
-      signaturePad.value.on()
-    }
-  }
-})
-
-// 监听只读状态
-watch(() => props.readonly, (newVal) => {
-  if (signaturePad.value) {
-    if (newVal || props.disabled) {
+    if (newVal) {
       signaturePad.value.off()
     } else {
       signaturePad.value.on()
