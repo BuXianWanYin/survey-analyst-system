@@ -42,14 +42,7 @@
             <div
               class="phone-content"
               :style="{
-                backgroundColor: currentThemeConfig.backgroundImg 
-                  ? 'transparent' 
-                  : (currentThemeConfig.backgroundColor || '#ffffff'),
-                backgroundImage: currentThemeConfig.backgroundImg 
-                  ? `url(${getImageUrl(currentThemeConfig.backgroundImg)})` 
-                  : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                backgroundColor: currentThemeConfig.backgroundColor || '#ffffff'
               }"
             >
               <div class="preview-form-container">
@@ -73,7 +66,7 @@
                   v-if="currentThemeConfig.showTitle"
                   class="form-title"
                 >
-                  {{ formName || '未命名问卷' }}
+                  {{ props.formName || '未命名问卷' }}
                 </div>
                 <!-- 描述 -->
                 <p
@@ -135,14 +128,7 @@
           <div
             class="desktop-form-container"
             :style="{
-              backgroundColor: currentThemeConfig.backgroundImg 
-                ? 'transparent' 
-                : (currentThemeConfig.backgroundColor || '#ffffff'),
-              backgroundImage: currentThemeConfig.backgroundImg 
-                ? `url(${getImageUrl(currentThemeConfig.backgroundImg)})` 
-                : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
+              backgroundColor: currentThemeConfig.backgroundColor || '#ffffff'
             }"
           >
             <!-- Logo -->
@@ -165,7 +151,7 @@
               v-if="currentThemeConfig.showTitle"
               class="form-title"
             >
-              {{ formName || '未命名问卷' }}
+              {{ props.formName || '未命名问卷' }}
             </div>
             <!-- 描述 -->
             <p
@@ -259,7 +245,6 @@ const previewFormModel = reactive({})
 const themeConfigData = reactive({
   themeColor: '#409EFF',
   backgroundColor: '#ffffff',
-  backgroundImg: '',
   headImgUrl: '',
   logoImg: '',
   logoPosition: 'flex-start',
@@ -331,7 +316,6 @@ const loadTheme = async () => {
       const data = res.data
       if (data.themeColor) themeConfigData.themeColor = data.themeColor
       if (data.backgroundColor) themeConfigData.backgroundColor = data.backgroundColor
-      if (data.backgroundImg) themeConfigData.backgroundImg = getImageUrl(data.backgroundImg)
       if (data.headImgUrl) themeConfigData.headImgUrl = getImageUrl(data.headImgUrl)
       if (data.logoImg) themeConfigData.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfigData.logoPosition = data.logoPosition
@@ -583,11 +567,14 @@ const handleClose = () => {
   border-radius: 32px;
   overflow: hidden;
   position: relative;
+  position: relative;
   padding-top: 35px;
   box-sizing: border-box;
 }
 
 .preview-form-container {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   padding: 20px;
@@ -596,24 +583,29 @@ const handleClose = () => {
   flex-direction: column;
   
   .phone-logo {
-    padding: 15px;
+    padding: 10px 15px;
     display: flex;
     flex-shrink: 0;
+    margin-bottom: 10px;
 
     img {
-      max-width: 100px;
-      max-height: 40px;
+      max-width: 60px;
+      max-height: 30px;
+      object-fit: contain;
     }
   }
 
   .phone-head-img {
     width: 100%;
     flex-shrink: 0;
+    margin-bottom: 15px;
 
     img {
       width: 100%;
       height: auto;
       display: block;
+      max-height: 150px;
+      object-fit: cover;
     }
   }
   
@@ -720,29 +712,31 @@ const handleClose = () => {
 }
 
 .desktop-form-container {
+  position: relative;
   padding: 40px;
   min-height: 500px;
   
   .desktop-logo {
-    padding: 20px 0;
+    padding: 15px 0;
     display: flex;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 
     img {
-      max-width: 150px;
-      max-height: 60px;
+      max-width: 80px;
+      max-height: 40px;
+      object-fit: contain;
     }
   }
 
   .desktop-head-img {
     width: 100%;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 
     img {
       width: 100%;
       height: auto;
       display: block;
-      max-height: 300px;
+      max-height: 200px;
       object-fit: cover;
     }
   }

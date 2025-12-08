@@ -3,34 +3,10 @@
     v-loading="loading"
     class="survey-fill-container"
     :style="{
-      backgroundColor: themeConfig.backgroundImg 
-        ? 'transparent' 
-        : (themeConfig.backgroundColor || '#f5f7fa'),
-      backgroundImage: themeConfig.backgroundImg 
-        ? `url(${getImageUrl(themeConfig.backgroundImg)})` 
-        : 'none',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
+      backgroundColor: themeConfig.backgroundColor || '#f5f7fa',
       minHeight: '100vh'
     }"
   >
-    <!-- Logo -->
-    <div
-      v-if="themeConfig.logoImg"
-      class="fill-logo"
-      :style="{ justifyContent: getLogoPosition() }"
-    >
-      <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
-    </div>
-
-    <!-- 头图 -->
-    <div
-      v-if="themeConfig.headImgUrl"
-      class="fill-head-img"
-    >
-      <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
-    </div>
 
     <!-- 密码验证对话框 -->
     <el-dialog
@@ -55,7 +31,7 @@
       <template #footer>
         <el-button @click="handleCancelPassword">取消</el-button>
         <el-button type="primary" @click="handleVerifyPassword">确定</el-button>
-      </template>
+        </template>
     </el-dialog>
 
     <!-- 错误提示 -->
@@ -68,21 +44,16 @@
           show-icon
         />
       </el-card>
-    </div>
+            </div>
 
     <!-- 表单内容 -->
     <div v-if="!errorMessage && canFill" class="fill-content">
-      <div
-        class="fill-form-wrapper"
-        :style="{
-          backgroundColor: themeConfig.backgroundImg ? 'rgba(255, 255, 255, 0.95)' : 'transparent'
-        }"
-      >
+      <div class="fill-form-wrapper">
         <!-- 标题 -->
         <h2
           v-if="themeConfig.showTitle"
           class="fill-title"
-        >
+                >
           {{ surveyTitle || '未命名问卷' }}
         </h2>
 
@@ -94,6 +65,23 @@
           {{ surveyDescription }}
         </p>
 
+        <!-- Logo -->
+        <div
+          v-if="themeConfig.logoImg"
+          class="fill-logo"
+          :style="{ justifyContent: getLogoPosition() }"
+                >
+          <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
+            </div>
+
+        <!-- 头图 -->
+        <div
+          v-if="themeConfig.headImgUrl"
+          class="fill-head-img"
+        >
+          <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
+            </div>
+
         <!-- 表单渲染 -->
         <SurveyFormRender
           v-if="formItems.length > 0"
@@ -102,7 +90,7 @@
           :preview-mode="false"
           :theme-config="themeConfig"
           :show-number="themeConfig.showNumber"
-        />
+              />
 
         <!-- 提交按钮 -->
         <div
@@ -121,8 +109,8 @@
           >
             {{ themeConfig.submitBtnText || '提交' }}
           </el-button>
-        </div>
-      </div>
+            </div>
+          </div>
     </div>
   </div>
 </template>
@@ -158,7 +146,6 @@ const responseCount = ref(0)
 const themeConfig = reactive({
   themeColor: '#409EFF',
   backgroundColor: '#f5f7fa',
-  backgroundImg: '',
   headImgUrl: '',
   logoImg: '',
   logoPosition: 'flex-start',
@@ -242,7 +229,7 @@ const loadSurveyData = async () => {
     } else if (key) {
       // 通过key访问
       formKey.value = key
-    } else {
+        } else {
       ElMessage.error('缺少必要参数')
       return
     }
@@ -253,8 +240,8 @@ const loadSurveyData = async () => {
       if (itemsRes.code === 200 && itemsRes.data) {
         formItems.value = itemsRes.data
         initFormModel()
-      }
-    }
+          }
+        }
 
     // 加载外观配置（如果有surveyId）
     if (surveyId.value) {
@@ -301,7 +288,6 @@ const loadTheme = async () => {
       const data = res.data
       if (data.themeColor) themeConfig.themeColor = data.themeColor
       if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
-      if (data.backgroundImg) themeConfig.backgroundImg = getImageUrl(data.backgroundImg)
       if (data.headImgUrl) themeConfig.headImgUrl = getImageUrl(data.headImgUrl)
       if (data.logoImg) themeConfig.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfig.logoPosition = data.logoPosition
@@ -321,7 +307,7 @@ const validateForm = () => {
   for (const item of formItems.value) {
     if (item.required && item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
       const value = formModel[item.vModel]
-      if (value === null || value === undefined || value === '' ||
+      if (value === null || value === undefined || value === '' || 
           (Array.isArray(value) && value.length === 0)) {
         ElMessage.warning(`请填写：${item.label}`)
         return false
@@ -352,8 +338,8 @@ const handleSubmit = async () => {
           ElMessage.error(`问卷已达到最大填写数（${survey.value.maxResponses}），无法提交`)
           return
         }
-      }
-    } catch (error) {
+    }
+  } catch (error) {
       console.error('验证填写数量失败', error)
     }
   }
@@ -477,14 +463,9 @@ onMounted(() => {
     display: block;
     max-height: 300px;
     object-fit: cover;
-  }
+}
 }
 
-.fill-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
 
 .fill-form-wrapper {
   padding: 40px;

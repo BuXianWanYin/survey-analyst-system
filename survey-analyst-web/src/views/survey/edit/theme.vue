@@ -1,45 +1,5 @@
 <template>
   <div class="theme-container">
-    <!-- 左侧：主题选择 -->
-    <div class="left-container">
-      <el-scrollbar class="left-scrollbar">
-        <div class="theme-selection">
-          <p class="theme-title">外观主题</p>
-          
-          <!-- 风格筛选 -->
-          <div class="style-filter">
-            <el-radio-group v-model="activeStyle" size="small" @change="handleStyleChange">
-              <el-radio-button label="">全部</el-radio-button>
-              <el-radio-button label="商务">商务</el-radio-button>
-              <el-radio-button label="简约">简约</el-radio-button>
-              <el-radio-button label="可爱">可爱</el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <!-- 主题预览卡片 -->
-          <div class="theme-list">
-            <div
-              v-for="theme in filteredThemeList"
-              :key="theme.id"
-              :class="['theme-card', { active: activeThemeId === theme.id }]"
-              @click="handleThemeSelect(theme)"
-            >
-              <div
-                class="theme-preview"
-                :style="{
-                  background: theme.backgroundColor || '#409EFF',
-                  color: theme.textColor || '#fff'
-                }"
-              >
-                <div class="theme-preview-text">{{ theme.name || '主题' }}</div>
-              </div>
-              <div class="theme-name">{{ theme.name }}</div>
-            </div>
-          </div>
-        </div>
-      </el-scrollbar>
-    </div>
-
     <!-- 中间：实时预览 -->
     <div class="center-container">
       <div class="preview-wrapper">
@@ -70,32 +30,10 @@
               <div
                 class="phone-content"
                 :style="{
-                  backgroundColor: themeForm.backgroundImg 
-                    ? 'transparent' 
-                    : (themeForm.backgroundColor || '#ffffff'),
-                  backgroundImage: themeForm.backgroundImg 
-                    ? `url(${getImageUrl(themeForm.backgroundImg)})` 
-                    : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundColor: themeForm.backgroundColor || '#ffffff'
                 }"
               >
                 <div class="preview-form-container">
-                  <!-- Logo -->
-                  <div
-                    v-if="themeForm.logoImg"
-                    class="phone-logo"
-                    :style="{ justifyContent: getLogoPosition() }"
-                  >
-                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
-                  </div>
-                  <!-- 头图 -->
-                  <div
-                    v-if="themeForm.headImgUrl"
-                    class="phone-head-img"
-                  >
-                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
-                  </div>
                   <!-- 标题 -->
                   <div
                     v-if="themeForm.showTitle"
@@ -110,6 +48,21 @@
                   >
                     {{ surveyDescription }}
                   </p>
+                  <!-- Logo -->
+                  <div
+                    v-if="themeForm.logoSetting && themeForm.logoImg"
+                    class="phone-logo"
+                    :style="{ justifyContent: getLogoPosition() }"
+                  >
+                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+                  </div>
+                  <!-- 头图 -->
+                  <div
+                    v-if="themeForm.headImgSetting && themeForm.headImgUrl"
+                    class="phone-head-img"
+                  >
+                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+                  </div>
                   <el-scrollbar class="form-scrollbar">
                     <!-- 表单项 -->
                     <SurveyFormRender
@@ -152,31 +105,9 @@
             <div
               class="desktop-form-container"
               :style="{
-                backgroundColor: themeForm.backgroundImg 
-                  ? 'transparent' 
-                  : (themeForm.backgroundColor || '#ffffff'),
-                backgroundImage: themeForm.backgroundImg 
-                  ? `url(${getImageUrl(themeForm.backgroundImg)})` 
-                  : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                backgroundColor: themeForm.backgroundColor || '#ffffff'
               }"
             >
-              <!-- Logo -->
-              <div
-                v-if="themeForm.logoImg"
-                class="desktop-logo"
-                :style="{ justifyContent: getLogoPosition() }"
-              >
-                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
-              </div>
-              <!-- 头图 -->
-              <div
-                v-if="themeForm.headImgUrl"
-                class="desktop-head-img"
-              >
-                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
-              </div>
               <!-- 标题 -->
               <div
                 v-if="themeForm.showTitle"
@@ -191,6 +122,21 @@
               >
                 {{ surveyDescription }}
               </p>
+              <!-- Logo -->
+              <div
+                v-if="themeForm.logoSetting && themeForm.logoImg"
+                class="desktop-logo"
+                :style="{ justifyContent: getLogoPosition() }"
+              >
+                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+              </div>
+              <!-- 头图 -->
+              <div
+                v-if="themeForm.headImgSetting && themeForm.headImgUrl"
+                class="desktop-head-img"
+              >
+                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+              </div>
               <!-- 表单项 -->
               <SurveyFormRender
                 :form-items="formItems"
@@ -297,33 +243,8 @@
             </div>
             <div v-if="themeForm.backgroundSetting" class="setting-content">
               <div class="setting-sub-item">
-                <span class="setting-sub-label">背景类型</span>
-                <el-radio-group v-model="themeForm.backgroundType" size="small" @change="handleSettingChange">
-                  <el-radio-button label="color">颜色</el-radio-button>
-                  <el-radio-button label="img">图片</el-radio-button>
-                </el-radio-group>
-              </div>
-              <div v-if="themeForm.backgroundType === 'color'" class="setting-sub-item">
                 <span class="setting-sub-label">背景颜色</span>
                 <el-color-picker v-model="themeForm.backgroundColor" @change="handleSettingChange" />
-              </div>
-              <div v-if="themeForm.backgroundType === 'img'" class="setting-sub-item">
-                <span class="setting-sub-label">背景图片</span>
-                <el-input
-                  v-model="themeForm.backgroundImg"
-                  placeholder="请输入图片URL"
-                  size="small"
-                  @change="handleSettingChange"
-                />
-                <el-upload
-                  :action="uploadUrl"
-                  :headers="uploadHeaders"
-                  :on-success="handleBackgroundImgUpload"
-                  :show-file-list="false"
-                  accept="image/*"
-                >
-                  <el-button size="small" type="text">上传背景</el-button>
-                </el-upload>
               </div>
             </div>
           </div>
@@ -421,35 +342,12 @@ const surveyDescription = ref('')
 const formKey = ref(null)
 const formItems = ref([])
 const previewMode = ref('mobile')
-const activeStyle = ref('')
-const activeThemeId = ref(null)
-
-// 默认主题列表
-const defaultThemeList = [
-  { id: 1, name: '商务蓝', style: '商务', backgroundColor: '#2672FF', textColor: '#fff' },
-  { id: 2, name: '简约灰', style: '简约', backgroundColor: '#EAEAEA', textColor: '#333' },
-  { id: 3, name: '活力橙', style: '可爱', backgroundColor: '#FF6D56', textColor: '#fff' },
-  { id: 4, name: '清新绿', style: '简约', backgroundColor: '#00BF6F', textColor: '#fff' },
-  { id: 5, name: '优雅紫', style: '商务', backgroundColor: '#7464FF', textColor: '#fff' },
-  { id: 6, name: '经典黑', style: '商务', backgroundColor: '#484848', textColor: '#fff' }
-]
-
-const themeList = ref([...defaultThemeList])
-
-// 筛选后的主题列表
-const filteredThemeList = computed(() => {
-  if (!activeStyle.value) return themeList.value
-  return themeList.value.filter(theme => theme.style === activeStyle.value)
-})
 
 // 外观设置表单
 const themeForm = reactive({
   surveyId: null,
-  themeId: null,
   themeColor: '#409EFF',
   backgroundColor: '#ffffff',
-  backgroundImg: '',
-  backgroundType: 'color',
   backgroundSetting: false,
   headImgUrl: '',
   headImgSetting: false,
@@ -586,10 +484,10 @@ const loadData = async () => {
     }
   } else {
     // 如果没有 props，从路由参数加载
-    const id = route.query.id
-    if (!id) return
+  const id = route.query.id
+  if (!id) return
 
-    surveyId.value = Number(id)
+  surveyId.value = Number(id)
     
     try {
       // 加载问卷信息
@@ -654,11 +552,6 @@ const loadTheme = async () => {
       if (data.themeColor) themeForm.themeColor = data.themeColor
       if (data.backgroundColor) {
         themeForm.backgroundColor = data.backgroundColor
-        themeForm.backgroundSetting = true
-      }
-      if (data.backgroundImg) {
-        themeForm.backgroundImg = getImageUrl(data.backgroundImg)
-        themeForm.backgroundType = 'img'
         themeForm.backgroundSetting = true
       }
       if (data.headImgUrl) {
@@ -736,17 +629,11 @@ const saveTheme = () => {
   saveTimer = setTimeout(async () => {
     if (!surveyId.value) return
 
-    try {
-      const themeData = {
-        surveyId: surveyId.value,
-        themeId: activeThemeId.value,
+  try {
+    const themeData = {
+      surveyId: surveyId.value,
         themeColor: themeForm.themeColor,
-        backgroundColor: themeForm.backgroundSetting && themeForm.backgroundType === 'color' 
-          ? themeForm.backgroundColor 
-          : '',
-        backgroundImg: themeForm.backgroundSetting && themeForm.backgroundType === 'img' 
-          ? getRelativeImageUrl(themeForm.backgroundImg) 
-          : '',
+        backgroundColor: themeForm.backgroundSetting ? themeForm.backgroundColor : '',
         headImgUrl: themeForm.headImgSetting ? getRelativeImageUrl(themeForm.headImgUrl) : '',
         logoImg: themeForm.logoSetting ? getRelativeImageUrl(themeForm.logoImg) : '',
         logoPosition: themeForm.logoPosition,
@@ -755,35 +642,15 @@ const saveTheme = () => {
         showDescribe: themeForm.showDescribe,
         showNumber: themeForm.showNumber,
         showSubmitBtn: themeForm.showSubmitBtn
-      }
-      const res = await formApi.saveFormTheme(themeData)
-      if (res.code === 200) {
+    }
+    const res = await formApi.saveFormTheme(themeData)
+    if (res.code === 200) {
         // 静默保存，不显示提示
-      }
-    } catch (error) {
+    }
+  } catch (error) {
       console.error('保存失败:', error)
     }
   }, 500)
-}
-
-// 设置变更处理
-const handleSettingChange = () => {
-  saveTheme()
-}
-
-// 风格变更
-const handleStyleChange = () => {
-  // 风格变更只影响主题列表筛选，不需要保存
-}
-
-// 主题选择
-const handleThemeSelect = (theme) => {
-  activeThemeId.value = theme.id
-  themeForm.themeColor = theme.backgroundColor
-  themeForm.backgroundColor = theme.backgroundColor
-  themeForm.backgroundType = 'color'
-  themeForm.backgroundSetting = true
-  saveTheme()
 }
 
 // Logo上传成功
@@ -806,15 +673,21 @@ const handleHeadImgUpload = (response) => {
   }
 }
 
-// 背景图片上传成功
-const handleBackgroundImgUpload = (response) => {
-  if (response.code === 200 && response.data) {
-    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
-    themeForm.backgroundImg = getImageUrl(imageUrl)
-    themeForm.backgroundType = 'img'
-    themeForm.backgroundSetting = true
-    saveTheme()
+// 处理设置变更（包括开关切换、清除逻辑等）
+const handleSettingChange = () => {
+  // 如果logo设置关闭，清除logo
+  if (!themeForm.logoSetting) {
+    themeForm.logoImg = ''
   }
+  // 如果头图设置关闭，清除头图
+  if (!themeForm.headImgSetting) {
+    themeForm.headImgUrl = ''
+  }
+  // 如果背景设置关闭，清除背景
+  if (!themeForm.backgroundSetting) {
+    themeForm.backgroundColor = ''
+  }
+  saveTheme()
 }
 
 // 监听表单项变化，重新初始化预览
@@ -834,76 +707,6 @@ onMounted(() => {
   display: flex;
   background: #f5f5f5;
   overflow: hidden;
-}
-
-// 左侧：主题选择
-.left-container {
-  width: 280px;
-  background: #fff;
-  border-right: 1px solid #ebeef5;
-  flex-shrink: 0;
-}
-
-.left-scrollbar {
-  height: 100%;
-}
-
-.theme-selection {
-  padding: 20px;
-}
-
-.theme-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 15px;
-}
-
-.style-filter {
-  margin-bottom: 20px;
-}
-
-.theme-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-}
-
-.theme-card {
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 8px;
-  transition: all 0.3s;
-
-  &:hover {
-    background: #f5f7fa;
-  }
-
-  &.active {
-    border-color: #409EFF;
-    background: #ecf5ff;
-  }
-}
-
-.theme-preview {
-  width: 100%;
-  height: 80px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-.theme-preview-text {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.theme-name {
-  font-size: 12px;
-  text-align: center;
-  color: #606266;
 }
 
 // 中间：实时预览
@@ -1034,6 +837,8 @@ onMounted(() => {
 }
 
 .preview-form-container {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   padding: 20px;
@@ -1117,6 +922,7 @@ onMounted(() => {
 }
 
 .desktop-form-container {
+  position: relative;
   padding: 40px;
   min-height: 500px;
   

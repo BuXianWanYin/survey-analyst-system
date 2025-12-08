@@ -470,57 +470,79 @@
                 <!-- 图片选择组件配置 -->
                 <template v-if="activeData.type === 'IMAGE_SELECT'">
                   <el-divider />
-                  <el-form-item label="选项列表">
-                    <div
-                      v-for="(option, idx) in activeData.config.options"
-                      :key="idx"
-                      class="image-option-item"
-                    >
-                      <el-input
-                        v-model="option.label"
-                        placeholder="选项文本"
-                        style="margin-bottom: 10px"
-                        @input="handlePropertyChange"
-                      />
-                      <el-upload
-                        :action="uploadUrl"
-                        :headers="uploadHeaders"
-                        :show-file-list="false"
-                        :on-success="(res) => handleImageOptionUpload(res, idx)"
-                        accept="image/*"
-                        class="image-option-upload"
+                  <el-form-item label="选项">
+                    <div class="image-select-options-container">
+                      <VueDraggable
+                        v-model="activeData.config.options"
+                        handle=".image-select-drag-handle"
+                        ghost-class="sortable-ghost"
+                        drag-class="drag-item"
+                        @end="handlePropertyChange"
                       >
-                        <el-image
-                          v-if="option.image"
-                          :src="option.image"
-                          fit="cover"
-                          class="option-preview-image"
-                        />
-                        <el-button
-                          v-else
-                          type="primary"
-                          size="small"
+                        <div
+                          v-for="(option, idx) in (activeData.config?.options || [])"
+                          :key="idx"
+                          class="image-select-option-item"
                         >
-                          上传图片
-                        </el-button>
-                      </el-upload>
+                          <div
+                            style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px"
+                          >
+                            <el-icon
+                              class="image-select-drag-handle"
+                              style="cursor: move; color: #909399; font-size: 16px"
+                            >
+                              <Rank />
+                            </el-icon>
+                            <el-input
+                              v-model="option.label"
+                              placeholder="选项文本"
+                              style="flex: 1"
+                              @input="handlePropertyChange"
+                            />
+                            <el-icon
+                              class="image-select-delete-icon"
+                              style="cursor: pointer; color: #f56c6c; font-size: 18px"
+                              @click="handleRemoveImageSelectOption(idx)"
+                            >
+                              <Delete />
+                            </el-icon>
+                          </div>
+                          <div
+                            style="display: flex; gap: 8px; align-items: center"
+                          >
+                            <el-input
+                              v-model="option.image"
+                              placeholder="图片URL"
+                              style="flex: 1"
+                              @input="handlePropertyChange"
+                            />
+                            <el-upload
+                              :action="uploadUrl"
+                              :headers="uploadHeaders"
+                              :show-file-list="false"
+                              :on-success="(res) => handleImageOptionUpload(res, idx)"
+                              accept="image/*"
+                            >
+                              <el-icon
+                                style="cursor: pointer; color: #409eff; font-size: 18px"
+                                title="上传图片"
+                              >
+                                <Upload />
+                              </el-icon>
+                            </el-upload>
+                          </div>
+                        </div>
+                      </VueDraggable>
                       <el-button
-                        type="danger"
+                        type="primary"
                         text
-                        size="small"
-                        style="margin-top: 10px"
-                        @click="handleRemoveOption(idx)"
+                        class="image-select-add-btn"
+                        @click="handleAddImageSelectOption"
                       >
-                        删除
+                        <el-icon><Plus /></el-icon>
+                        <span>添加选项</span>
                       </el-button>
                     </div>
-                    <el-button
-                      type="primary"
-                      text
-                      @click="handleAddOption"
-                    >
-                      添加选项
-                    </el-button>
                   </el-form-item>
                 </template>
                 
@@ -1532,11 +1554,54 @@ const handleImageOptionUpload = (response, optionIndex) => {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
     // 转换为完整的后端URL
     const fullImageUrl = getImageUrl(imageUrl)
-    activeData.value.config.options[optionIndex].image = fullImageUrl
-    handlePropertyChange()
-    ElMessage.success('图片上传成功')
+    
+    // 找到当前激活的组件在 drawingList 中的索引
+    const activeIndex = drawingList.value.findIndex(item => item.formItemId === activeId.value)
+    if (activeIndex === -1) {
+      ElMessage.error('未找到当前组件')
+      return
+    }
+    
+    // 确保 config 和 options 存在
+    if (!drawingList.value[activeIndex].config) {
+      drawingList.value[activeIndex].config = {}
+    }
+    if (!drawingList.value[activeIndex].config.options) {
+      drawingList.value[activeIndex].config.options = []
+    }
+    
+    // 更新选项的 image
+    if (drawingList.value[activeIndex].config.options[optionIndex]) {
+      drawingList.value[activeIndex].config.options[optionIndex].image = fullImageUrl
+      // 更新整个 drawingList 以触发响应式
+      drawingList.value = [...drawingList.value]
+      handlePropertyChange()
+      ElMessage.success('图片上传成功')
+    }
   } else {
     ElMessage.error(response?.message || '图片上传失败')
+  }
+}
+
+// 添加图片选择选项
+const handleAddImageSelectOption = () => {
+  if (!activeData.value.config.options) {
+    activeData.value.config.options = []
+  }
+  const optionCount = activeData.value.config.options.length + 1
+  activeData.value.config.options.push({
+    label: `选项${optionCount}`,
+    value: `option${optionCount}`,
+    image: ''
+  })
+  handlePropertyChange()
+}
+
+// 删除图片选择选项
+const handleRemoveImageSelectOption = (index) => {
+  if (activeData.value.config.options) {
+    activeData.value.config.options.splice(index, 1)
+    handlePropertyChange()
   }
 }
 

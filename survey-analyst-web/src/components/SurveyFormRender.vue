@@ -14,7 +14,6 @@
         v-if="element.type !== 'DIVIDER'"
         :label="element.label"
         :prop="element.vModel"
-        :required="!!element.required || element.required === 1"
       >
         <template #label>
           <span class="form-label">
@@ -31,6 +30,8 @@
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :readonly="element.readonly || previewMode"
+          :style="getInputStyle()"
+          class="theme-input"
         />
 
         <!-- 多行文本 -->
@@ -42,6 +43,8 @@
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :readonly="element.readonly || previewMode"
+          :style="getInputStyle()"
+          class="theme-input"
         />
 
         <!-- 数字 -->
@@ -50,7 +53,8 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          style="width: 100%"
+          :style="getInputStyle('width: 100%')"
+          class="theme-input"
         />
 
         <!-- 单选框 -->
@@ -58,11 +62,13 @@
           v-else-if="element.type === 'RADIO'"
           v-model="formModel[element.vModel]"
           :disabled="element.disabled || previewMode"
+          class="theme-radio-group"
         >
           <el-radio
             v-for="(option, idx) in element.config?.options || []"
             :key="idx"
             :label="option.value"
+            class="theme-radio"
           >
             {{ option.label }}
           </el-radio>
@@ -73,11 +79,13 @@
           v-else-if="element.type === 'CHECKBOX'"
           v-model="formModel[element.vModel]"
           :disabled="element.disabled || previewMode"
+          class="theme-checkbox-group"
         >
           <el-checkbox
             v-for="(option, idx) in element.config?.options || []"
             :key="idx"
             :label="option.value"
+            class="theme-checkbox"
           >
             {{ option.label }}
           </el-checkbox>
@@ -89,7 +97,8 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          style="width: 100%"
+          :style="getInputStyle('width: 100%')"
+          class="theme-select"
         >
           <el-option
             v-for="(option, idx) in element.config?.options || []"
@@ -105,6 +114,8 @@
           v-model="formModel[element.vModel]"
           :max="element.config?.max || 5"
           :disabled="element.disabled || previewMode"
+          :color="getThemeColor()"
+          class="theme-rate"
         />
 
         <!-- 日期选择 -->
@@ -114,7 +125,8 @@
           type="date"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          style="width: 100%"
+          :style="getInputStyle('width: 100%')"
+          class="theme-date-picker"
         />
 
         <!-- 文件上传 -->
@@ -127,7 +139,14 @@
           :auto-upload="false"
           :limit="element.config?.limit || 1"
         >
-          <el-button type="primary" :disabled="previewMode">
+          <el-button 
+            type="primary" 
+            :disabled="previewMode"
+            :style="{
+              backgroundColor: getThemeColor(),
+              borderColor: getThemeColor()
+            }"
+          >
             <el-icon><Upload /></el-icon>
             选择文件
           </el-button>
@@ -159,6 +178,8 @@
             :max="element.config?.max || 100"
             :step="element.config?.step || 1"
             :disabled="element.disabled || previewMode"
+            :color="getThemeColor()"
+            class="theme-slider"
           />
         </div>
 
@@ -169,7 +190,8 @@
           :options="element.config?.options || []"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          style="width: 100%"
+          :style="getInputStyle('width: 100%')"
+          class="theme-cascader"
         />
 
 
@@ -209,21 +231,36 @@
           v-else-if="element.type === 'IMAGE_SELECT'"
           class="image-select-container"
         >
-          <div
-            v-for="(option, idx) in element.config?.options || []"
-            :key="idx"
-            class="image-select-item"
-            :class="{ active: formModel[element.vModel] === option.value }"
-            @click="!previewMode && !element.disabled && (formModel[element.vModel] = option.value)"
+          <el-radio-group
+            v-model="formModel[element.vModel]"
+            :disabled="element.disabled || previewMode"
+            class="image-select-radio-group"
           >
-            <el-image
-              v-if="option.image"
-              :src="option.image"
-              fit="cover"
-              class="image-select-img"
-            />
-            <span class="image-select-label">{{ option.label }}</span>
-          </div>
+            <div
+              v-for="(option, idx) in element.config?.options || []"
+              :key="idx"
+              class="image-select-item"
+              :class="{ active: formModel[element.vModel] === option.value }"
+            >
+              <el-radio
+                :label="option.value"
+                class="image-select-radio"
+              >
+                <div class="image-select-content">
+                  <el-image
+                    v-if="option.image"
+                    :src="option.image"
+                    fit="cover"
+                    class="image-select-img"
+                  />
+                  <div v-else class="image-select-placeholder">
+                    <el-icon><Picture /></el-icon>
+                  </div>
+                  <span class="image-select-label">{{ option.label }}</span>
+                </div>
+              </el-radio>
+            </div>
+          </el-radio-group>
         </div>
 
         <!-- 图片展示 -->
@@ -266,6 +303,8 @@
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
           :readonly="element.readonly || previewMode"
+          :style="getInputStyle()"
+          class="theme-input"
         />
       </el-form-item>
 
@@ -410,6 +449,34 @@ const setSliderValue = (vModel, value) => {
 }
 
 const formRef = ref(null)
+
+// 获取主题颜色
+const getThemeColor = () => {
+  return props.themeConfig?.themeColor || '#409EFF'
+}
+
+// 获取输入框样式
+const getInputStyle = (additionalStyles = '') => {
+  const themeColor = getThemeColor()
+  return `
+    ${additionalStyles};
+    --el-input-focus-border-color: ${themeColor};
+    --el-border-color-hover: ${themeColor};
+  `
+}
+
+// 获取激活状态的背景色（主题色的浅色版本）
+const getActiveBgColor = () => {
+  const themeColor = getThemeColor()
+  // 将主题色转换为rgba，降低透明度
+  if (themeColor.startsWith('#')) {
+    const r = parseInt(themeColor.slice(1, 3), 16)
+    const g = parseInt(themeColor.slice(3, 5), 16)
+    const b = parseInt(themeColor.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, 0.1)`
+  }
+  return '#ecf5ff'
+}
 </script>
 
 <style lang="scss" scoped>
@@ -432,7 +499,6 @@ const formRef = ref(null)
 
 .form-label {
   .question-number {
-    color: #409EFF;
     font-weight: 500;
     margin-right: 4px;
   }
@@ -443,30 +509,143 @@ const formRef = ref(null)
   }
 }
 
+// 主题颜色应用到表单控件
+:deep(.theme-input) {
+  .el-input__wrapper {
+    &.is-focus {
+      box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+    }
+  }
+  
+  &.el-input--large .el-input__wrapper {
+    &.is-focus {
+      box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+    }
+  }
+}
+
+:deep(.theme-radio-group) {
+  .el-radio {
+    .el-radio__input.is-checked .el-radio__inner {
+      background-color: v-bind('getThemeColor()');
+      border-color: v-bind('getThemeColor()');
+    }
+    
+    .el-radio__input.is-checked + .el-radio__label {
+      color: v-bind('getThemeColor()');
+    }
+  }
+}
+
+:deep(.theme-checkbox-group) {
+  .el-checkbox {
+    .el-checkbox__input.is-checked .el-checkbox__inner {
+      background-color: v-bind('getThemeColor()');
+      border-color: v-bind('getThemeColor()');
+    }
+    
+    .el-checkbox__input.is-checked + .el-checkbox__label {
+      color: v-bind('getThemeColor()');
+    }
+  }
+}
+
+:deep(.theme-select) {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+  }
+  
+  .el-select__wrapper.is-focused {
+    box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+  }
+}
+
+:deep(.theme-cascader) {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+  }
+}
+
+:deep(.theme-date-picker) {
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px v-bind('getThemeColor()') inset;
+  }
+}
+
+:deep(.theme-slider) {
+  .el-slider__button {
+    border-color: v-bind('getThemeColor()');
+  }
+  
+  .el-slider__bar {
+    background-color: v-bind('getThemeColor()');
+  }
+  
+  .el-slider__button-wrapper {
+    .el-slider__button {
+      background-color: v-bind('getThemeColor()');
+    }
+  }
+}
+
+// 题目序号使用主题颜色
+.form-label {
+  .question-number {
+    color: v-bind('getThemeColor()');
+  }
+}
+
 // 图片选择样式
 .image-select-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  width: 100%;
+  
+  .image-select-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+  }
   
   .image-select-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 8px;
     border: 2px solid #e4e7ed;
     border-radius: 8px;
-    cursor: pointer;
     transition: all 0.3s;
     min-width: 100px;
     
     &.active {
-      border-color: #409eff;
-      background-color: #ecf5ff;
+      border-color: v-bind('getThemeColor()');
+      background-color: v-bind('getActiveBgColor()');
     }
     
-    &:hover:not(.disabled) {
-      border-color: #409eff;
+    .image-select-radio {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      position: relative;
+      
+      :deep(.el-radio__input) {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        z-index: 10;
+      }
+      
+      :deep(.el-radio__label) {
+        padding-left: 0;
+        width: 100%;
+      }
+    }
+    
+    .image-select-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
     
     .image-select-img {
@@ -474,6 +653,22 @@ const formRef = ref(null)
       height: 80px;
       border-radius: 4px;
       margin-bottom: 8px;
+    }
+    
+    .image-select-placeholder {
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fa;
+      color: #909399;
+      
+      .el-icon {
+        font-size: 32px;
+      }
     }
     
     .image-select-label {

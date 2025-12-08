@@ -38,7 +38,7 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
                 Survey survey = surveyMapper.selectById(config.getSurveyId());
                 if (survey != null) {
                     if (config.getName() != null) {
-                        survey.setTitle(config.getName());
+                    survey.setTitle(config.getName());
                     }
                     if (config.getDescription() != null) {
                         survey.setDescription(config.getDescription());
@@ -67,7 +67,7 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
                     Survey survey = surveyMapper.selectById(existing.getSurveyId());
                     if (survey != null) {
                         if (config.getName() != null) {
-                            survey.setTitle(config.getName());
+                        survey.setTitle(config.getName());
                         }
                         if (config.getDescription() != null) {
                             survey.setDescription(config.getDescription());
@@ -89,7 +89,7 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
                 Survey survey = surveyMapper.selectById(config.getSurveyId());
                 if (survey != null) {
                     if (config.getName() != null) {
-                        survey.setTitle(config.getName());
+                    survey.setTitle(config.getName());
                     }
                     if (config.getDescription() != null) {
                         survey.setDescription(config.getDescription());
