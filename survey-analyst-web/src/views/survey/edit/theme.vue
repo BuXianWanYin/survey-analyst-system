@@ -74,7 +74,7 @@
                     ? 'transparent' 
                     : (themeForm.backgroundColor || '#ffffff'),
                   backgroundImage: themeForm.backgroundImg 
-                    ? `url(${themeForm.backgroundImg})` 
+                    ? `url(${getImageUrl(themeForm.backgroundImg)})` 
                     : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
@@ -87,14 +87,14 @@
                     class="phone-logo"
                     :style="{ justifyContent: getLogoPosition() }"
                   >
-                    <img :src="themeForm.logoImg" alt="logo" />
+                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
                   </div>
                   <!-- 头图 -->
                   <div
                     v-if="themeForm.headImgUrl"
                     class="phone-head-img"
                   >
-                    <img :src="themeForm.headImgUrl" alt="head" />
+                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
                   </div>
                   <!-- 标题 -->
                   <div
@@ -128,10 +128,13 @@
                         type="primary"
                         :style="{
                           backgroundColor: themeForm.themeColor || '#409EFF',
-                          borderColor: themeForm.themeColor || '#409EFF'
+                          borderColor: themeForm.themeColor || '#409EFF',
+                          padding: '16px 60px',
+                          fontSize: '15px',
+                          height: 'auto',
+                          minWidth: '240px'
                         }"
                         size="large"
-                        block
                       >
                         {{ themeForm.submitBtnText || '提交' }}
                       </el-button>
@@ -153,7 +156,7 @@
                   ? 'transparent' 
                   : (themeForm.backgroundColor || '#ffffff'),
                 backgroundImage: themeForm.backgroundImg 
-                  ? `url(${themeForm.backgroundImg})` 
+                  ? `url(${getImageUrl(themeForm.backgroundImg)})` 
                   : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -165,14 +168,14 @@
                 class="desktop-logo"
                 :style="{ justifyContent: getLogoPosition() }"
               >
-                <img :src="themeForm.logoImg" alt="logo" />
+                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
               </div>
               <!-- 头图 -->
               <div
                 v-if="themeForm.headImgUrl"
                 class="desktop-head-img"
               >
-                <img :src="themeForm.headImgUrl" alt="head" />
+                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
               </div>
               <!-- 标题 -->
               <div
@@ -205,7 +208,11 @@
                   type="primary"
                   :style="{
                     backgroundColor: themeForm.themeColor || '#409EFF',
-                    borderColor: themeForm.themeColor || '#409EFF'
+                    borderColor: themeForm.themeColor || '#409EFF',
+                    padding: '16px 60px',
+                    fontSize: '15px',
+                    height: 'auto',
+                    minWidth: '240px'
                   }"
                   size="large"
                 >
@@ -474,6 +481,68 @@ const getLogoPosition = () => {
   return themeForm.logoPosition || 'flex-start'
 }
 
+// 获取后端服务器地址（用于构建图片URL）
+const getBackendBaseUrl = () => {
+  // 从 VITE_APP_BASE_API 提取后端地址
+  const baseApi = import.meta.env.VITE_APP_BASE_API
+  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
+  
+  // 如果 baseApi 是相对路径，使用 proxyTarget
+  if (baseApi.startsWith('/')) {
+    return proxyTarget
+  }
+  // 如果 baseApi 是完整URL，提取协议和主机
+  try {
+    const url = new URL(baseApi)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return proxyTarget
+  }
+}
+
+// 将相对路径转换为完整的后端URL
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  // 如果已经是完整URL，直接返回
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
+  if (imageUrl.startsWith('/upload/')) {
+    return `${getBackendBaseUrl()}${imageUrl}`
+  }
+  // 其他情况，添加 /upload/ 前缀
+  return `${getBackendBaseUrl()}/upload/${imageUrl}`
+}
+
+// 将完整URL转换回相对路径（用于保存到后端）
+const getRelativeImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  // 如果已经是相对路径，直接返回
+  if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  // 如果是完整URL，提取相对路径部分
+  try {
+    const url = new URL(imageUrl)
+    const path = url.pathname
+    // 如果是 /upload/ 开头的路径，返回完整路径
+    if (path.startsWith('/upload/')) {
+      return path
+    }
+    // 如果路径中包含 upload，提取 upload 之后的部分
+    const uploadIndex = path.indexOf('/upload/')
+    if (uploadIndex !== -1) {
+      return path.substring(uploadIndex)
+    }
+    // 其他情况，返回路径部分
+    return path
+  } catch {
+    // 解析失败，返回原值
+    return imageUrl
+  }
+}
+
 // 加载问卷信息和表单数据
 const loadData = async () => {
   // 优先使用 props 传入的数据
@@ -541,16 +610,16 @@ const loadTheme = async () => {
         themeForm.backgroundSetting = true
       }
       if (data.backgroundImg) {
-        themeForm.backgroundImg = data.backgroundImg
+        themeForm.backgroundImg = getImageUrl(data.backgroundImg)
         themeForm.backgroundType = 'img'
         themeForm.backgroundSetting = true
       }
       if (data.headImgUrl) {
-        themeForm.headImgUrl = data.headImgUrl
+        themeForm.headImgUrl = getImageUrl(data.headImgUrl)
         themeForm.headImgSetting = true
       }
       if (data.logoImg) {
-        themeForm.logoImg = data.logoImg
+        themeForm.logoImg = getImageUrl(data.logoImg)
         themeForm.logoSetting = true
       }
       if (data.logoPosition) themeForm.logoPosition = data.logoPosition
@@ -603,10 +672,10 @@ const saveTheme = () => {
           ? themeForm.backgroundColor 
           : '',
         backgroundImg: themeForm.backgroundSetting && themeForm.backgroundType === 'img' 
-          ? themeForm.backgroundImg 
+          ? getRelativeImageUrl(themeForm.backgroundImg) 
           : '',
-        headImgUrl: themeForm.headImgSetting ? themeForm.headImgUrl : '',
-        logoImg: themeForm.logoSetting ? themeForm.logoImg : '',
+        headImgUrl: themeForm.headImgSetting ? getRelativeImageUrl(themeForm.headImgUrl) : '',
+        logoImg: themeForm.logoSetting ? getRelativeImageUrl(themeForm.logoImg) : '',
         logoPosition: themeForm.logoPosition,
         submitBtnText: themeForm.btnSetting ? themeForm.submitBtnText : '提交',
         showTitle: themeForm.showTitle,
@@ -647,7 +716,8 @@ const handleThemeSelect = (theme) => {
 // Logo上传成功
 const handleLogoUpload = (response) => {
   if (response.code === 200 && response.data) {
-    themeForm.logoImg = response.data.url || response.data
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    themeForm.logoImg = getImageUrl(imageUrl)
     themeForm.logoSetting = true
     saveTheme()
   }
@@ -656,7 +726,8 @@ const handleLogoUpload = (response) => {
 // 头图上传成功
 const handleHeadImgUpload = (response) => {
   if (response.code === 200 && response.data) {
-    themeForm.headImgUrl = response.data.url || response.data
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    themeForm.headImgUrl = getImageUrl(imageUrl)
     themeForm.headImgSetting = true
     saveTheme()
   }
@@ -665,7 +736,8 @@ const handleHeadImgUpload = (response) => {
 // 背景图片上传成功
 const handleBackgroundImgUpload = (response) => {
   if (response.code === 200 && response.data) {
-    themeForm.backgroundImg = response.data.url || response.data
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    themeForm.backgroundImg = getImageUrl(imageUrl)
     themeForm.backgroundType = 'img'
     themeForm.backgroundSetting = true
     saveTheme()
@@ -948,6 +1020,9 @@ onMounted(() => {
     padding-top: 20px;
     border-top: 1px solid #ebeef5;
     flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
@@ -1018,7 +1093,9 @@ onMounted(() => {
     margin-top: 40px;
     padding-top: 20px;
     border-top: 1px solid #ebeef5;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 

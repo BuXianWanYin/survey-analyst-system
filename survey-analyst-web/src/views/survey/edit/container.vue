@@ -111,6 +111,7 @@ const router = useRouter()
 
 const surveyId = ref(null)
 const surveyTitle = ref('')
+const surveyDescription = ref('')
 const formKey = ref(null)
 const formItems = ref([])
 const previewVisible = ref(false)

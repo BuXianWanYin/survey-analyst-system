@@ -7,7 +7,7 @@
         ? 'transparent' 
         : (themeConfig.backgroundColor || '#f5f7fa'),
       backgroundImage: themeConfig.backgroundImg 
-        ? `url(${themeConfig.backgroundImg})` 
+        ? `url(${getImageUrl(themeConfig.backgroundImg)})` 
         : 'none',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -21,7 +21,7 @@
       class="fill-logo"
       :style="{ justifyContent: getLogoPosition() }"
     >
-      <img :src="themeConfig.logoImg" alt="logo" />
+      <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
     </div>
 
     <!-- 头图 -->
@@ -29,7 +29,7 @@
       v-if="themeConfig.headImgUrl"
       class="fill-head-img"
     >
-      <img :src="themeConfig.headImgUrl" alt="head" />
+      <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
     </div>
 
     <!-- 密码验证对话框 -->
@@ -181,6 +181,40 @@ const getLogoPosition = () => {
   return positionMap[themeConfig.logoPosition] || 'flex-start'
 }
 
+// 获取后端服务器地址（用于构建图片URL）
+const getBackendBaseUrl = () => {
+  // 从 VITE_APP_BASE_API 提取后端地址
+  const baseApi = import.meta.env.VITE_APP_BASE_API
+  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
+  
+  // 如果 baseApi 是相对路径，使用 proxyTarget
+  if (baseApi.startsWith('/')) {
+    return proxyTarget
+  }
+  // 如果 baseApi 是完整URL，提取协议和主机
+  try {
+    const url = new URL(baseApi)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return proxyTarget
+  }
+}
+
+// 将相对路径转换为完整的后端URL
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  // 如果已经是完整URL，直接返回
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
+  if (imageUrl.startsWith('/upload/')) {
+    return `${getBackendBaseUrl()}${imageUrl}`
+  }
+  // 其他情况，添加 /upload/ 前缀
+  return `${getBackendBaseUrl()}/upload/${imageUrl}`
+}
+
 // 加载问卷数据
 const loadSurveyData = async () => {
   loading.value = true
@@ -267,9 +301,9 @@ const loadTheme = async () => {
       const data = res.data
       if (data.themeColor) themeConfig.themeColor = data.themeColor
       if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
-      if (data.backgroundImg) themeConfig.backgroundImg = data.backgroundImg
-      if (data.headImgUrl) themeConfig.headImgUrl = data.headImgUrl
-      if (data.logoImg) themeConfig.logoImg = data.logoImg
+      if (data.backgroundImg) themeConfig.backgroundImg = getImageUrl(data.backgroundImg)
+      if (data.headImgUrl) themeConfig.headImgUrl = getImageUrl(data.headImgUrl)
+      if (data.logoImg) themeConfig.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfig.logoPosition = data.logoPosition
       if (data.submitBtnText) themeConfig.submitBtnText = data.submitBtnText
       if (data.showTitle !== undefined) themeConfig.showTitle = data.showTitle

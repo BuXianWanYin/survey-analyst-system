@@ -46,7 +46,7 @@
                   ? 'transparent' 
                   : (currentThemeConfig.backgroundColor || '#ffffff'),
                 backgroundImage: currentThemeConfig.backgroundImg 
-                  ? `url(${currentThemeConfig.backgroundImg})` 
+                  ? `url(${getImageUrl(currentThemeConfig.backgroundImg)})` 
                   : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
@@ -59,14 +59,14 @@
                   class="phone-logo"
                   :style="{ justifyContent: getLogoPosition() }"
                 >
-                  <img :src="currentThemeConfig.logoImg" alt="logo" />
+                  <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
                 </div>
                 <!-- 头图 -->
                 <div
                   v-if="currentThemeConfig.headImgUrl"
                   class="phone-head-img"
                 >
-                  <img :src="currentThemeConfig.headImgUrl" alt="head" />
+                  <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
                 </div>
                 <!-- 标题 -->
                 <div
@@ -99,10 +99,13 @@
                       type="primary"
                       :style="{
                         backgroundColor: currentThemeConfig.themeColor || '#409EFF',
-                        borderColor: currentThemeConfig.themeColor || '#409EFF'
+                        borderColor: currentThemeConfig.themeColor || '#409EFF',
+                        padding: '16px 60px',
+                        fontSize: '15px',
+                        height: 'auto',
+                        minWidth: '240px'
                       }"
                       size="large"
-                      block
                     >
                       {{ currentThemeConfig.submitBtnText || '提交' }}
                     </el-button>
@@ -136,7 +139,7 @@
                 ? 'transparent' 
                 : (currentThemeConfig.backgroundColor || '#ffffff'),
               backgroundImage: currentThemeConfig.backgroundImg 
-                ? `url(${currentThemeConfig.backgroundImg})` 
+                ? `url(${getImageUrl(currentThemeConfig.backgroundImg)})` 
                 : 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
@@ -148,14 +151,14 @@
               class="desktop-logo"
               :style="{ justifyContent: getLogoPosition() }"
             >
-              <img :src="currentThemeConfig.logoImg" alt="logo" />
+              <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
             </div>
             <!-- 头图 -->
             <div
               v-if="currentThemeConfig.headImgUrl"
               class="desktop-head-img"
             >
-              <img :src="currentThemeConfig.headImgUrl" alt="head" />
+              <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
             </div>
             <!-- 标题 -->
             <div
@@ -188,7 +191,11 @@
                 type="primary"
                 :style="{
                   backgroundColor: currentThemeConfig.themeColor || '#409EFF',
-                  borderColor: currentThemeConfig.themeColor || '#409EFF'
+                  borderColor: currentThemeConfig.themeColor || '#409EFF',
+                  padding: '16px 60px',
+                  fontSize: '15px',
+                  height: 'auto',
+                  minWidth: '240px'
                 }"
                 size="large"
               >
@@ -268,6 +275,40 @@ const currentThemeConfig = computed(() => {
   return Object.keys(props.themeConfig).length > 0 ? props.themeConfig : themeConfigData
 })
 
+// 获取后端服务器地址（用于构建图片URL）
+const getBackendBaseUrl = () => {
+  // 从 VITE_APP_BASE_API 提取后端地址
+  const baseApi = import.meta.env.VITE_APP_BASE_API
+  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
+  
+  // 如果 baseApi 是相对路径，使用 proxyTarget
+  if (baseApi.startsWith('/')) {
+    return proxyTarget
+  }
+  // 如果 baseApi 是完整URL，提取协议和主机
+  try {
+    const url = new URL(baseApi)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return proxyTarget
+  }
+}
+
+// 将相对路径转换为完整的后端URL
+const getImageUrl = (imageUrl) => {
+  if (!imageUrl) return ''
+  // 如果已经是完整URL，直接返回
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
+  if (imageUrl.startsWith('/upload/')) {
+    return `${getBackendBaseUrl()}${imageUrl}`
+  }
+  // 其他情况，添加 /upload/ 前缀
+  return `${getBackendBaseUrl()}/upload/${imageUrl}`
+}
+
 // 获取Logo位置样式值
 const getLogoPosition = () => {
   const positionMap = {
@@ -290,9 +331,9 @@ const loadTheme = async () => {
       const data = res.data
       if (data.themeColor) themeConfigData.themeColor = data.themeColor
       if (data.backgroundColor) themeConfigData.backgroundColor = data.backgroundColor
-      if (data.backgroundImg) themeConfigData.backgroundImg = data.backgroundImg
-      if (data.headImgUrl) themeConfigData.headImgUrl = data.headImgUrl
-      if (data.logoImg) themeConfigData.logoImg = data.logoImg
+      if (data.backgroundImg) themeConfigData.backgroundImg = getImageUrl(data.backgroundImg)
+      if (data.headImgUrl) themeConfigData.headImgUrl = getImageUrl(data.headImgUrl)
+      if (data.logoImg) themeConfigData.logoImg = getImageUrl(data.logoImg)
       if (data.logoPosition) themeConfigData.logoPosition = data.logoPosition
       if (data.submitBtnText) themeConfigData.submitBtnText = data.submitBtnText
       if (data.showTitle !== undefined) themeConfigData.showTitle = data.showTitle
@@ -605,6 +646,9 @@ const handleClose = () => {
     padding-top: 20px;
     border-top: 1px solid #ebeef5;
     flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
@@ -725,7 +769,9 @@ const handleClose = () => {
     margin-top: 40px;
     padding-top: 20px;
     border-top: 1px solid #ebeef5;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
