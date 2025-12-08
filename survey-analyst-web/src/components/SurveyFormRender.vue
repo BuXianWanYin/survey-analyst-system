@@ -584,15 +584,88 @@ const formRules = computed(() => {
       })
     }
     
+    // 数据类型验证（反馈类型）
+    if (item.config?.dataType && (item.type === 'INPUT' || item.type === 'TEXTAREA')) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          if (!value || value === '') {
+            // 空值由必填规则处理，这里直接通过
+            callback()
+            return
+          }
+          
+          const valueStr = String(value).trim()
+          const dataType = item.config.dataType
+          const errorMessage = item.config.dataTypeMessage || `${item.label}格式不正确`
+          let isValid = false
+          
+          switch (dataType) {
+            case 'string':
+              // 字符串：只要不是空字符串即可
+              isValid = valueStr.length > 0
+              break
+              
+            case 'number':
+              // 数字：可以是整数或小数
+              isValid = /^-?\d+(\.\d+)?$/.test(valueStr)
+              break
+              
+            case 'integer':
+              // 整数：必须是整数
+              isValid = /^-?\d+$/.test(valueStr)
+              break
+              
+            case 'float':
+              // 小数：必须包含小数点
+              isValid = /^-?\d+\.\d+$/.test(valueStr)
+              break
+              
+            case 'url':
+              // URL地址
+              try {
+                new URL(valueStr)
+                isValid = true
+              } catch {
+                isValid = false
+              }
+              break
+              
+            case 'email':
+              // 邮箱地址
+              isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valueStr)
+              break
+              
+            case 'phone':
+              // 手机号（中国手机号：11位，1开头）
+              isValid = /^1[3-9]\d{9}$/.test(valueStr)
+              break
+              
+            default:
+              isValid = true
+          }
+          
+          if (!isValid) {
+            callback(new Error(errorMessage))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['blur', 'change']
+      })
+    }
+    
     // 正则表达式验证
     if (item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
       item.regList.forEach(reg => {
-        if (reg.pattern) {
+        // 确保 pattern 和 message 都存在且不为空
+        if (reg.pattern && reg.pattern.trim() !== '') {
           try {
             const regex = new RegExp(reg.pattern)
             itemRules.push({
               pattern: regex,
-              message: reg.message || `${item.label}格式不正确`,
+              message: reg.message && reg.message.trim() !== '' 
+                ? reg.message 
+                : `${item.label}格式不正确`,
               trigger: ['blur', 'change']
             })
           } catch (e) {
@@ -622,6 +695,183 @@ const formRules = computed(() => {
           }
         },
         trigger: ['blur', 'change']
+      })
+    }
+    
+    // NUMBER 组件的最小值/最大值验证
+    if (item.type === 'NUMBER') {
+      if (item.config?.min !== undefined && item.config?.min !== null) {
+        itemRules.push({
+          validator: (rule, value, callback) => {
+            if (value === null || value === undefined || value === '') {
+              // 空值由必填规则处理
+              callback()
+              return
+            }
+            const numValue = Number(value)
+            if (isNaN(numValue) || numValue < item.config.min) {
+              callback(new Error(`${item.label}不能小于${item.config.min}`))
+            } else {
+              callback()
+            }
+          },
+          trigger: ['blur', 'change']
+        })
+      }
+      
+      if (item.config?.max !== undefined && item.config?.max !== null) {
+        itemRules.push({
+          validator: (rule, value, callback) => {
+            if (value === null || value === undefined || value === '') {
+              // 空值由必填规则处理
+              callback()
+              return
+            }
+            const numValue = Number(value)
+            if (isNaN(numValue) || numValue > item.config.max) {
+              callback(new Error(`${item.label}不能大于${item.config.max}`))
+            } else {
+              callback()
+            }
+          },
+          trigger: ['blur', 'change']
+        })
+      }
+      
+      // NUMBER 组件的正则表达式验证
+      if (item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
+        item.regList.forEach(reg => {
+          if (reg.pattern && reg.pattern.trim() !== '') {
+            try {
+              const regex = new RegExp(reg.pattern)
+              itemRules.push({
+                validator: (rule, value, callback) => {
+                  if (value === null || value === undefined || value === '') {
+                    callback()
+                    return
+                  }
+                  const valueStr = String(value)
+                  if (!regex.test(valueStr)) {
+                    callback(new Error(reg.message && reg.message.trim() !== '' 
+                      ? reg.message 
+                      : `${item.label}格式不正确`))
+                  } else {
+                    callback()
+                  }
+                },
+                trigger: ['blur', 'change']
+              })
+            } catch (e) {
+              console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+            }
+          }
+        })
+      }
+    }
+    
+    // CHECKBOX 组件的最少/最多选择数量验证
+    if (item.type === 'CHECKBOX') {
+      if (item.config?.min !== undefined && item.config?.min !== null) {
+        itemRules.push({
+          validator: (rule, value, callback) => {
+            const selectedCount = Array.isArray(value) ? value.length : 0
+            if (selectedCount < item.config.min) {
+              callback(new Error(`${item.label}至少需要选择${item.config.min}项`))
+            } else {
+              callback()
+            }
+          },
+          trigger: ['change']
+        })
+      }
+      
+      if (item.config?.max !== undefined && item.config?.max !== null) {
+        itemRules.push({
+          validator: (rule, value, callback) => {
+            const selectedCount = Array.isArray(value) ? value.length : 0
+            if (selectedCount > item.config.max) {
+              callback(new Error(`${item.label}最多只能选择${item.config.max}项`))
+            } else {
+              callback()
+            }
+          },
+          trigger: ['change']
+        })
+      }
+    }
+    
+    // UPLOAD 组件必填验证
+    if (item.type === 'UPLOAD' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          const fileList = Array.isArray(value) ? value : []
+          if (fileList.length === 0) {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // IMAGE_UPLOAD 组件必填验证
+    if (item.type === 'IMAGE_UPLOAD' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          const fileList = Array.isArray(value) ? value : []
+          if (fileList.length === 0) {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // SORT 组件必填验证
+    if (item.type === 'SORT' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          const sortList = Array.isArray(value) ? value : []
+          if (sortList.length === 0) {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // DATE 组件的正则表达式验证
+    if (item.type === 'DATE' && item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
+      item.regList.forEach(reg => {
+        if (reg.pattern && reg.pattern.trim() !== '') {
+          try {
+            const regex = new RegExp(reg.pattern)
+            itemRules.push({
+              validator: (rule, value, callback) => {
+                if (value === null || value === undefined || value === '') {
+                  callback()
+                  return
+                }
+                const valueStr = String(value)
+                if (!regex.test(valueStr)) {
+                  callback(new Error(reg.message && reg.message.trim() !== '' 
+                    ? reg.message 
+                    : `${item.label}格式不正确`))
+                } else {
+                  callback()
+                }
+              },
+              trigger: ['blur', 'change']
+            })
+          } catch (e) {
+            console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+          }
+        }
       })
     }
     
@@ -679,18 +929,80 @@ const validateInput = (element) => {
     return false
   }
   
+  // 验证数据类型（反馈类型）
+  if (element.config?.dataType && valueStr.length > 0) {
+    const dataType = element.config.dataType
+    const errorMessage = element.config.dataTypeMessage || `${element.label}格式不正确`
+    let isValid = false
+    
+    switch (dataType) {
+      case 'string':
+        // 字符串：只要不是空字符串即可
+        isValid = valueStr.length > 0
+        break
+        
+      case 'number':
+        // 数字：可以是整数或小数
+        isValid = /^-?\d+(\.\d+)?$/.test(valueStr)
+        break
+        
+      case 'integer':
+        // 整数：必须是整数
+        isValid = /^-?\d+$/.test(valueStr)
+        break
+        
+      case 'float':
+        // 小数：必须包含小数点
+        isValid = /^-?\d+\.\d+$/.test(valueStr)
+        break
+        
+      case 'url':
+        // URL地址
+        try {
+          new URL(valueStr)
+          isValid = true
+        } catch {
+          isValid = false
+        }
+        break
+        
+      case 'email':
+        // 邮箱地址
+        isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valueStr)
+        break
+        
+      case 'phone':
+        // 手机号（中国手机号：11位，1开头）
+        isValid = /^1[3-9]\d{9}$/.test(valueStr)
+        break
+        
+      default:
+        isValid = true
+    }
+    
+    if (!isValid) {
+      ElMessage.warning(errorMessage)
+      return false
+    }
+  }
+  
   // 验证正则表达式
   if (element.regList && Array.isArray(element.regList) && element.regList.length > 0) {
     for (const reg of element.regList) {
-      if (reg.pattern && reg.message) {
+      // 确保 pattern 存在且不为空
+      if (reg.pattern && reg.pattern.trim() !== '') {
         try {
           const regex = new RegExp(reg.pattern)
           if (!regex.test(valueStr)) {
-            ElMessage.warning(reg.message || `${element.label} 格式不正确`)
+            const errorMsg = reg.message && reg.message.trim() !== ''
+              ? reg.message
+              : `${element.label} 格式不正确`
+            ElMessage.warning(errorMsg)
             return false
           }
         } catch (e) {
           // 正则表达式错误，跳过该规则
+          console.error(`Invalid regex pattern for ${element.label}: ${reg.pattern}`, e)
         }
       }
     }

@@ -540,7 +540,7 @@
                       v-model="activeData.config.dataType"
                       placeholder="请选择反馈类型"
                       clearable
-                      @change="handlePropertyChange"
+                      @change="handleDataTypeChange"
                       style="width: 100%"
                     >
                       <el-option label="无校验" value="" />
@@ -663,7 +663,7 @@
                       v-model="activeData.config.dataType"
                       placeholder="请选择反馈类型"
                       clearable
-                      @change="handlePropertyChange"
+                      @change="handleDataTypeChange"
                       style="width: 100%"
                     >
                       <el-option label="无校验" value="" />
@@ -2594,6 +2594,38 @@ const handleDeleteItem = (element) => {
 // 属性变更
 const handlePropertyChange = () => {
   saveFormItems()
+}
+
+// 处理反馈类型变化，自动设置默认错误提示
+const handleDataTypeChange = (dataType) => {
+  if (!activeData.value.config) {
+    activeData.value.config = {}
+  }
+  
+  // 如果选择"无校验"，清空错误提示
+  if (!dataType || dataType === '') {
+    activeData.value.config.dataType = ''
+    activeData.value.config.dataTypeMessage = ''
+    handlePropertyChange()
+    return
+  }
+  
+  // 根据反馈类型设置默认错误提示
+  const defaultMessages = {
+    'string': '请输入有效的字符串',
+    'number': '请输入有效的数字',
+    'integer': '请输入有效的整数',
+    'float': '请输入有效的小数',
+    'url': '请输入有效的URL地址',
+    'email': '请输入有效的邮箱地址',
+    'phone': '请输入有效的手机号'
+  }
+  
+  // 每次切换反馈类型时，都自动更新为对应类型的默认错误提示
+  activeData.value.config.dataType = dataType
+  activeData.value.config.dataTypeMessage = defaultMessages[dataType] || ''
+  
+  handlePropertyChange()
 }
 
 // 添加选项
