@@ -438,7 +438,7 @@
       <div class="right-board">
         <el-card class="property-panel">
           <template #header>
-            <div class="property-header">
+            <div class="property-header" style="font-weight: bold;font-size: 20px;">
               组件属性
             </div>
           </template>
@@ -449,8 +449,9 @@
             <el-scrollbar class="property-scrollbar">
               <el-form
                 :model="activeData"
-                label-width="100px"
-                label-position="top"
+                label-width="130px"
+                label-position="left"
+                class="property-form"
               >
                 <!-- 基础属性（所有组件通用） -->
                 <el-form-item label="标题">
@@ -465,12 +466,22 @@
                     disabled
                   />
                 </el-form-item>
-                <el-form-item label="隐藏组件">
+                <el-form-item>
+                  <template #label>
+                    <span>隐藏组件</span>
+                    <el-tooltip
+                      content="开启此属性，则组件发布后不会显示，可作为备注使用"
+                      placement="top"
+                    >
+                      <el-icon class="property-tip-icon">
+                        <QuestionFilled />
+                      </el-icon>
+                    </el-tooltip>
+                  </template>
                   <el-switch
                     v-model="activeData.hideType"
                     @change="handlePropertyChange"
                   />
-                  <span style="font-size: 12px; color: #909399; margin-left: 8px; display: block; margin-top: 4px">隐藏后，在表单填写页面将不显示此组件</span>
                 </el-form-item>
                 
                 <!-- 单行文本组件特有属性 -->
@@ -507,33 +518,49 @@
                     />
                   </el-form-item>
                   <el-form-item label="最大字符数">
-                    <el-input-number
-                      v-model="activeData.config.maxLength"
+                    <el-input
+                      v-model.number="activeData.config.maxLength"
+                      type="number"
                       :min="0"
                       :max="10000"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最小字符数">
-                    <el-input-number
-                      v-model="activeData.config.minLength"
+                    <el-input
+                      v-model.number="activeData.config.minLength"
+                      type="number"
                       :min="0"
                       :max="10000"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
-                  <el-form-item label="显示字数统计">
+                  <el-form-item label="字数统计">
                     <el-switch
                       v-model="activeData.config.showWordLimit"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="不允许重复值">
+                  <el-form-item>
+                    <template #label>
+                      <span>不允许重复值</span>
+                      <el-tooltip
+                        content="提交时检查是否与其他提交值重复"
+                        placement="top"
+                      >
+                        <el-icon class="property-tip-icon">
+                          <QuestionFilled />
+                        </el-icon>
+                      </el-tooltip>
+                    </template>
                     <el-switch
                       v-model="activeData.config.notRepeat"
                       @change="handlePropertyChange"
                     />
-                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">提交时检查是否与其他提交值重复</span>
                   </el-form-item>
                   <el-form-item label="反馈类型">
                     <el-select
@@ -563,7 +590,7 @@
                       @input="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="正则验证规则">
+                  <el-form-item label="正则校验">
                     <div
                       v-for="(reg, idx) in (activeData.regList || [])"
                       :key="idx"
@@ -596,7 +623,7 @@
                       text
                       @click="handleAddRegRule"
                     >
-                      添加规则
+                      添加正则
                     </el-button>
                   </el-form-item>
                 </template>
@@ -629,30 +656,39 @@
                     />
                   </el-form-item>
                   <el-form-item label="行数">
-                    <el-input-number
-                      v-model="activeData.config.rows"
+                    <el-input
+                      v-model.number="activeData.config.rows"
+                      type="number"
                       :min="1"
                       :max="20"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最大字符数">
-                    <el-input-number
-                      v-model="activeData.config.maxLength"
+                    <el-input
+                      v-model.number="activeData.config.maxLength"
+                      type="number"
                       :min="0"
                       :max="10000"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最小字符数">
-                    <el-input-number
-                      v-model="activeData.config.minLength"
+                    <el-input
+                      v-model.number="activeData.config.minLength"
+                      type="number"
                       :min="0"
                       :max="10000"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
-                  <el-form-item label="显示字数统计">
+                  <el-form-item label="字数统计">
                     <el-switch
                       v-model="activeData.config.showWordLimit"
                       @change="handlePropertyChange"
@@ -686,7 +722,7 @@
                       @input="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="正则验证规则">
+                  <el-form-item label="正则校验">
                     <div
                       v-for="(reg, idx) in (activeData.regList || [])"
                       :key="idx"
@@ -719,7 +755,7 @@
                       text
                       @click="handleAddRegRule"
                     >
-                      添加规则
+                      添加正则
                     </el-button>
                   </el-form-item>
                 </template>
@@ -746,31 +782,42 @@
                     />
                   </el-form-item>
                   <el-form-item label="最小值">
-                    <el-input-number
-                      v-model="activeData.config.min"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.min"
+                      type="number"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最大值">
-                    <el-input-number
-                      v-model="activeData.config.max"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.max"
+                      type="number"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="步长">
-                    <el-input-number
-                      v-model="activeData.config.step"
-                      :min="0.1"
-                      :step="0.1"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.step"
+                      type="number"
+                      step="0.1"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="精度（小数位数）">
-                    <el-input-number
-                      v-model="activeData.config.precision"
+                    <el-input
+                      v-model.number="activeData.config.precision"
+                      type="number"
                       :min="0"
                       :max="10"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="控制按钮位置">
@@ -778,8 +825,8 @@
                       v-model="activeData.config.controlsPosition"
                       @change="handlePropertyChange"
                     >
+                       <el-radio label="left">左侧</el-radio>
                       <el-radio label="right">右侧</el-radio>
-                      <el-radio label="left">左侧</el-radio>
                     </el-radio-group>
                   </el-form-item>
                 </template>
@@ -880,20 +927,14 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="是否按钮样式">
-                    <el-switch
-                      v-model="activeData.config.button"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
                   <el-form-item label="尺寸">
                     <el-radio-group
                       v-model="activeData.config.size"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="large">大</el-radio>
+                      <el-radio label="default">默认</el-radio>
                       <el-radio label="small">小</el-radio>
-                      <el-radio label="mini">迷你</el-radio>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="是否禁用">
@@ -935,17 +976,23 @@
                         </el-button>
                   </el-form-item>
                   <el-form-item label="最少选择数量">
-                    <el-input-number
-                      v-model="activeData.config.min"
+                    <el-input
+                      v-model.number="activeData.config.min"
+                      type="number"
                       :min="0"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最多选择数量">
-                    <el-input-number
-                      v-model="activeData.config.max"
+                    <el-input
+                      v-model.number="activeData.config.max"
+                      type="number"
                       :min="1"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="是否显示边框">
@@ -965,9 +1012,9 @@
                       v-model="activeData.config.size"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="large">大</el-radio>
+                      <el-radio label="default">默认</el-radio>
                       <el-radio label="small">小</el-radio>
-                      <el-radio label="mini">迷你</el-radio>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="是否禁用">
@@ -1037,9 +1084,9 @@
                       v-model="activeData.config.size"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="large">大</el-radio>
+                      <el-radio label="default">默认</el-radio>
                       <el-radio label="small">小</el-radio>
-                      <el-radio label="mini">迷你</el-radio>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="是否禁用">
@@ -1144,7 +1191,7 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="是否显示完整路径">
+                  <el-form-item label="显示完整路径">
                     <el-switch
                       v-model="activeData.config.showAllLevels"
                       @change="handlePropertyChange"
@@ -1161,9 +1208,9 @@
                       v-model="activeData.config.size"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="medium">中等</el-radio>
+                      <el-radio label="large">大</el-radio>
+                      <el-radio label="default">默认</el-radio>
                       <el-radio label="small">小</el-radio>
-                      <el-radio label="mini">迷你</el-radio>
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="是否禁用">
@@ -1275,46 +1322,48 @@
                 <template v-if="activeData.type === 'SLIDER'">
                   <el-divider />
                   <el-form-item label="最小值">
-                    <el-input-number
-                      v-model="activeData.config.min"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.min"
+                      type="number"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="最大值">
-                    <el-input-number
-                      v-model="activeData.config.max"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.max"
+                      type="number"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="步长">
-                    <el-input-number
-                      v-model="activeData.config.step"
-                      :min="0.1"
-                      :step="0.1"
-                      @change="handlePropertyChange"
+                    <el-input
+                      v-model.number="activeData.config.step"
+                      type="number"
+                      step="0.1"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
-                  <el-form-item label="是否显示输入框">
+                  <el-form-item label="显示输入框">
                     <el-switch
                       v-model="activeData.config.showInput"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="是否显示间断点">
+                  <el-form-item label="显示间断点">
                     <el-switch
                       v-model="activeData.config.showStops"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="是否为范围选择">
+                  <el-form-item label="范围选择">
                     <el-switch
                       v-model="activeData.config.range"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item label="是否垂直方向">
-                    <el-switch
-                      v-model="activeData.config.vertical"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1330,21 +1379,24 @@
                 <template v-if="activeData.type === 'IMAGE_CAROUSEL'">
                   <el-divider />
                   <el-form-item label="轮播高度">
-                    <el-input-number
-                      v-model="activeData.config.height"
+                    <el-input
+                      v-model.number="activeData.config.height"
+                      type="number"
                       :min="100"
-                      :step="50"
-                      placeholder="高度"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
-                    <span style="margin-left: 10px; color: #909399">px</span>
+                    <span style="margin-left: 8px; color: #909399; font-size: 12px">px</span>
                   </el-form-item>
                   <el-form-item label="切换间隔（毫秒）">
-                    <el-input-number
-                      v-model="activeData.config.interval"
+                    <el-input
+                      v-model.number="activeData.config.interval"
+                      type="number"
                       :min="1000"
-                      :step="500"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="图片适应模式">
@@ -1556,35 +1608,39 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
-                  <el-form-item label="分割线方向">
-                    <el-radio-group
-                      v-model="activeData.config.direction"
-                      @change="handlePropertyChange"
-                    >
-                      <el-radio label="horizontal">水平</el-radio>
-                      <el-radio label="vertical">垂直</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
                 </template>
                 
                 <!-- 图片上传组件配置 -->
                 <template v-if="activeData.type === 'IMAGE_UPLOAD'">
                   <el-divider />
                   <el-form-item label="最大上传数量">
-                    <el-input-number
-                      v-model="activeData.config.limit"
+                    <el-input
+                      v-model.number="activeData.config.limit"
+                      type="number"
                       :min="1"
                       :max="20"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
-                  <el-form-item label="接受的文件类型">
+                  <el-form-item>
+                    <template #label>
+                      <span>接受的文件类型</span>
+                      <el-tooltip
+                        content="默认：image/*"
+                        placement="top"
+                      >
+                        <el-icon class="property-tip-icon">
+                          <QuestionFilled />
+                        </el-icon>
+                      </el-tooltip>
+                    </template>
                     <el-input
                       v-model="activeData.config.accept"
                       placeholder="如：image/*, image/png"
                       @input="handlePropertyChange"
                     />
-                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">默认：image/*</span>
                   </el-form-item>
                   <el-form-item label="文件列表类型">
                     <el-radio-group
@@ -1596,13 +1652,26 @@
                       <el-radio label="picture-card">图片卡片</el-radio>
                     </el-radio-group>
                   </el-form-item>
-                  <el-form-item label="文件大小限制（KB）">
-                    <el-input-number
-                      v-model="activeData.config.maxSize"
+                  <el-form-item>
+                    <template #label>
+                      <span>文件大小限制（KB）</span>
+                      <el-tooltip
+                        content="0表示不限制"
+                        placement="top"
+                      >
+                        <el-icon class="property-tip-icon">
+                          <QuestionFilled />
+                        </el-icon>
+                      </el-tooltip>
+                    </template>
+                    <el-input
+                      v-model.number="activeData.config.maxSize"
+                      type="number"
                       :min="0"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
-                    <span style="font-size: 12px; color: #909399; margin-left: 8px">0表示不限制</span>
                   </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
@@ -1622,11 +1691,14 @@
                 <template v-if="activeData.type === 'UPLOAD'">
                   <el-divider />
                   <el-form-item label="最大上传数量">
-                    <el-input-number
-                      v-model="activeData.config.limit"
+                    <el-input
+                      v-model.number="activeData.config.limit"
+                      type="number"
                       :min="1"
                       :max="20"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="接受的文件类型">
@@ -1637,13 +1709,26 @@
                     />
                     <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">默认：*/*</span>
                   </el-form-item>
-                  <el-form-item label="文件大小限制（KB）">
-                    <el-input-number
-                      v-model="activeData.config.maxSize"
+                  <el-form-item>
+                    <template #label>
+                      <span>文件大小限制（KB）</span>
+                      <el-tooltip
+                        content="0表示不限制"
+                        placement="top"
+                      >
+                        <el-icon class="property-tip-icon">
+                          <QuestionFilled />
+                        </el-icon>
+                      </el-tooltip>
+                    </template>
+                    <el-input
+                      v-model.number="activeData.config.maxSize"
+                      type="number"
                       :min="0"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
-                    <span style="font-size: 12px; color: #909399; margin-left: 8px">0表示不限制</span>
                   </el-form-item>
                   <el-form-item label="是否自动上传">
                     <el-switch
@@ -1669,11 +1754,14 @@
                 <template v-if="activeData.type === 'RATE'">
                   <el-divider />
                   <el-form-item label="最大分值">
-                    <el-input-number
-                      v-model="activeData.config.max"
+                    <el-input
+                      v-model.number="activeData.config.max"
+                      type="number"
                       :min="1"
                       :max="10"
-                      @change="handlePropertyChange"
+                      placeholder="请输入"
+                      @input="handlePropertyChange"
+                      style="width: 100%"
                     />
                   </el-form-item>
                   <el-form-item label="是否允许半选">
@@ -1916,7 +2004,8 @@ import {
   CopyDocument,
   Delete,
   Rank,
-  Plus
+  Plus,
+  QuestionFilled
 } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import {
@@ -2032,10 +2121,7 @@ const getComponentLabel = (type) => {
   return component ? component.label : type
 }
 
-// 判断是否为选择题
-const isChoiceType = (type) => {
-  return ['RADIO', 'CHECKBOX', 'SELECT', 'CASCADER', 'SORT'].includes(type)
-}
+
 
 // 克隆组件（从组件库拖拽时调用）
 const cloneComponent = (original) => {
@@ -2077,233 +2163,6 @@ const handleDragEnd = (evt) => {
   saveFormItems()
 }
 
-// 处理拖拽进入容器
-const handleDragEnter = (event) => {
-  if (isDraggingFromLibrary.value) {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-}
-
-// 处理拖拽在容器上移动
-const handleDragOver = (event) => {
-  if (isDraggingFromLibrary.value) {
-    event.preventDefault()
-    event.stopPropagation()
-    
-    // 计算插入位置
-    const container = event.currentTarget
-    const containerRect = container.getBoundingClientRect()
-    const y = event.clientY - containerRect.top
-    
-    // 检查是否在某个表单项上（如果是，让 handleItemDragOver 处理）
-    const drawingItems = container.querySelectorAll('.drawing-item')
-    let isOnItem = false
-    
-    drawingItems.forEach((item, index) => {
-      const itemRect = item.getBoundingClientRect()
-      if (event.clientY >= itemRect.top && event.clientY <= itemRect.bottom) {
-        isOnItem = true
-        // 如果鼠标在表单项上，让 handleItemDragOver 处理
-        return
-      }
-    })
-    
-    // 如果不在任何表单项上，计算应该插入的位置
-    if (!isOnItem) {
-      // 根据 Y 坐标计算应该插入到哪个位置
-      const itemHeight = 80 // 每个表单项的大概高度
-      let insertIndex = Math.floor(y / itemHeight)
-      
-      // 如果鼠标在最后一个组件后面，应该插入到末尾
-      if (drawingItems.length > 0) {
-        const lastItem = drawingItems[drawingItems.length - 1]
-        const lastItemRect = lastItem.getBoundingClientRect()
-        if (event.clientY > lastItemRect.bottom) {
-          insertIndex = drawingList.value.length
-        }
-      }
-      
-      // 限制插入位置范围
-      insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
-      dragInsertIndex.value = insertIndex
-    }
-  }
-}
-
-// 处理在表单项上拖拽移动
-const handleItemDragOver = (event, index) => {
-  if (isDraggingFromLibrary.value) {
-    event.preventDefault()
-    event.stopPropagation()
-    
-    const itemRect = event.currentTarget.getBoundingClientRect()
-    const y = event.clientY - itemRect.top
-    const itemHeight = itemRect.height
-    
-    // 判断是在上半部分还是下半部分
-    if (y < itemHeight / 2) {
-      dragInsertIndex.value = index
-    } else {
-      // 如果是最后一个组件，且在下半部分，插入到后面
-      dragInsertIndex.value = index + 1
-      // 确保不超过数组长度
-      if (dragInsertIndex.value > drawingList.value.length) {
-        dragInsertIndex.value = drawingList.value.length
-      }
-    }
-  }
-}
-
-// 处理离开表单项
-const handleItemDragLeave = (event, index) => {
-  if (isDraggingFromLibrary.value) {
-    // 如果是最后一个组件，且已经设置了插入位置为 index + 1，不要重置
-    if (index === drawingList.value.length - 1 && dragInsertIndex.value === index + 1) {
-      // 检查鼠标位置，如果还在容器内或下方，保持插入位置
-      const container = event.currentTarget.closest('.draggable-container')
-      if (container) {
-        const containerRect = container.getBoundingClientRect()
-        const mouseY = event.clientY
-        // 如果鼠标还在容器下方（底部占位区域），不重置
-        if (mouseY >= containerRect.top) {
-          return
-        }
-      }
-    }
-    
-    // 对于其他情况，检查是否真的离开了容器区域
-    const container = event.currentTarget.closest('.draggable-container')
-    const relatedTarget = event.relatedTarget
-    
-    // 如果 relatedTarget 是容器内的其他元素（比如下一个组件或底部占位区域），不应该重置
-    if (container && relatedTarget) {
-      if (container.contains(relatedTarget) || relatedTarget.classList?.contains('drop-zone-bottom')) {
-        // 鼠标移动到容器内的其他元素，不重置
-        return
-      }
-    }
-    
-    // 只有在真正离开容器时才重置（但最后一个组件的情况已经在上面处理了）
-    if (index !== drawingList.value.length - 1) {
-      const container = event.currentTarget.closest('.draggable-container')
-      if (container) {
-        const containerRect = container.getBoundingClientRect()
-        const mouseY = event.clientY
-        // 如果鼠标还在容器内，不重置
-        if (mouseY >= containerRect.top && mouseY <= containerRect.bottom) {
-          return
-        }
-      }
-      dragInsertIndex.value = null
-    }
-  }
-}
-
-// 处理从组件库拖拽到设计区域
-const handleDrop = (event) => {
-  event.preventDefault()
-  event.stopPropagation()
-  
-  const componentType = event.dataTransfer.getData('componentType') || 
-                        event.dataTransfer.getData('text/plain')
-  
-  if (!componentType || !isDraggingFromLibrary.value) {
-    dragInsertIndex.value = null
-    isDraggingFromLibrary.value = false
-    return
-  }
-  
-  const newItem = createFormItem(componentType)
-  
-  // 确定插入位置
-  let insertIndex = dragInsertIndex.value
-  
-  // 如果 dragInsertIndex 为 null，或者事件目标就是底部占位区域，尝试根据鼠标位置计算
-  if (insertIndex === null || event.target.classList?.contains('drop-zone-bottom')) {
-    const container = event.currentTarget
-    const containerRect = container.getBoundingClientRect()
-    const y = event.clientY - containerRect.top
-    
-    // 检查是否在最后一个组件后面
-    const drawingItems = container.querySelectorAll('.drawing-item')
-    if (drawingItems.length > 0) {
-      const lastItem = drawingItems[drawingItems.length - 1]
-      const lastItemRect = lastItem.getBoundingClientRect()
-      // 如果鼠标在最后一个组件底部下方，或者事件目标就是底部占位区域，插入到末尾
-      if (event.clientY > lastItemRect.bottom || event.target.classList?.contains('drop-zone-bottom')) {
-        insertIndex = drawingList.value.length
-      } else {
-        // 根据 Y 坐标计算应该插入到哪个位置
-        const itemHeight = 80
-        insertIndex = Math.floor(y / itemHeight)
-        insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
-      }
-    } else {
-      // 如果没有组件，添加到第一个位置
-      insertIndex = 0
-    }
-  }
-  
-  // 确保 insertIndex 在有效范围内
-  insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
-  
-  // 直接插入到指定位置，VueDraggable 的动画会自动处理移动效果
-  drawingList.value.splice(insertIndex, 0, newItem)
-  
-  // 初始化表单模型
-  formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue, newItem.config)
-  
-  // 选中新添加的项
-  activeId.value = newItem.formItemId
-  
-  // 重置拖拽状态
-  dragInsertIndex.value = null
-  isDraggingFromLibrary.value = false
-  isOverBottomZone.value = false
-  
-  // 等待 DOM 更新后自动保存
-  nextTick(() => {
-    saveFormItems()
-  })
-}
-
-// 处理在底部占位区域拖拽
-const handleBottomDragOver = (event) => {
-  if (isDraggingFromLibrary.value) {
-    event.preventDefault()
-    event.stopPropagation()
-    // 设置插入位置为最后一个组件后面
-    dragInsertIndex.value = drawingList.value.length
-    isOverBottomZone.value = true
-  }
-}
-
-// 处理在底部占位区域进入
-const handleBottomDragEnter = (event) => {
-  if (isDraggingFromLibrary.value) {
-    event.preventDefault()
-    event.stopPropagation()
-    // 设置插入位置为最后一个组件后面
-    dragInsertIndex.value = drawingList.value.length
-    isOverBottomZone.value = true
-  }
-}
-
-// 处理在底部占位区域离开（但仍在容器内）
-const handleBottomDragLeave = (event) => {
-  if (isDraggingFromLibrary.value) {
-    const container = event.currentTarget.closest('.draggable-container')
-    const relatedTarget = event.relatedTarget
-    isOverBottomZone.value = false
-    // 如果移动到容器内的其他元素，不重置
-    if (container && relatedTarget && container.contains(relatedTarget)) {
-      return
-    }
-    // 只有在真正离开容器时才重置
-    dragInsertIndex.value = null
-  }
-}
 
 // 创建表单项
 const createFormItem = (type) => {
@@ -3656,7 +3515,7 @@ onMounted(() => {
 }
 
 .right-board {
-  width: 300px;
+  width: 400px;
   flex-shrink: 0;
   border-left: 1px solid #ebeef5;
   background: #fff;
@@ -3906,6 +3765,53 @@ onMounted(() => {
   width: 100%;
   max-height: 200px;
   border-radius: 4px;
+}
+
+/* 属性面板优化样式 */
+.property-form {
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+  
+  :deep(.el-form-item__label) {
+    padding-bottom: 0;
+    padding-right: 35px;
+    line-height: 30px;
+    font-size: 15px;
+    color: #606266;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  
+  :deep(.el-form-item__content) {
+    line-height: 30px;
+    margin-left: 0 !important;
+  }
+  
+  :deep(.el-input) {
+    --el-input-height: 30px;
+  }
+  
+  :deep(.el-select) {
+    --el-select-input-height: 30px;
+  }
+  
+  :deep(.el-switch) {
+    --el-switch-height: 20px;
+  }
+}
+
+.property-tip-icon {
+  margin-left: 4px;
+  color: #909399;
+  font-size: 15px;
+  cursor: help;
+  vertical-align: middle;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: #409eff;
+  }
 }
 </style>
 
