@@ -245,8 +245,11 @@ onMounted(() => {
 
 .right-content-container {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
   background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 </style>
 

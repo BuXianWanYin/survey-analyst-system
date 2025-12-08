@@ -18,16 +18,37 @@
     </div>
 
     <div class="status-filter">
-      <el-radio-group v-model="statusFilter" @change="handleStatusChange">
-        <el-radio-button label="all">全部</el-radio-button>
-        <el-radio-button label="DRAFT">草稿</el-radio-button>
-        <el-radio-button label="PUBLISHED">已发布</el-radio-button>
-        <el-radio-button label="PAUSED">已暂停</el-radio-button>
-        <el-radio-button label="ENDED">已结束</el-radio-button>
-      </el-radio-group>
+      <div class="filter-left">
+        <el-radio-group v-model="statusFilter" @change="handleStatusChange">
+          <el-radio-button label="all">全部</el-radio-button>
+          <el-radio-button label="DRAFT">草稿</el-radio-button>
+          <el-radio-button label="PUBLISHED">已发布</el-radio-button>
+          <el-radio-button label="PAUSED">已暂停</el-radio-button>
+          <el-radio-button label="ENDED">已结束</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="view-toggle">
+        <el-button-group>
+          <el-button
+            :type="viewMode === 'grid' ? 'primary' : 'default'"
+            size="small"
+            @click="viewMode = 'grid'"
+          >
+            <el-icon><Grid /></el-icon>
+          </el-button>
+          <el-button
+            :type="viewMode === 'table' ? 'primary' : 'default'"
+            size="small"
+            @click="viewMode = 'table'"
+          >
+            <el-icon><List /></el-icon>
+          </el-button>
+        </el-button-group>
+      </div>
     </div>
 
-    <div v-loading="loading" class="survey-grid">
+    <!-- 卡片视图 -->
+    <div v-if="viewMode === 'grid'" v-loading="loading" class="survey-grid">
       <el-card
         v-for="survey in surveyList"
         :key="survey.id"
@@ -56,6 +77,41 @@
           <el-link type="danger" @click="handleDelete(survey.id)">删除</el-link>
         </div>
       </el-card>
+    </div>
+
+    <!-- 表格视图 -->
+    <div v-if="viewMode === 'table'" v-loading="loading" class="survey-table">
+      <el-table
+        :data="surveyList"
+        border
+        empty-text="暂无数据"
+        highlight-current-row
+        style="width: 100%"
+      >
+        <el-table-column prop="title" label="问卷标题" min-width="200" />
+        <el-table-column label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <span class="status-dot" :class="getStatusClass(row.status)"></span>
+            <span>{{ getStatusText(row.status) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" align="center">
+          <template #default="{ row }">
+            {{ formatDate(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="300" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-link type="primary" @click.stop="handleEdit(row.id)">编辑</el-link>
+            <el-divider direction="vertical" />
+            <el-link type="primary" @click.stop="handlePublish(row.id)">发布</el-link>
+            <el-divider direction="vertical" />
+            <el-link type="primary" @click.stop="handleStatistics(row.id)">统计</el-link>
+            <el-divider direction="vertical" />
+            <el-link type="danger" @click.stop="handleDelete(row.id)">删除</el-link>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <el-empty v-if="!loading && surveyList.length === 0" description="暂无数据" />
@@ -111,7 +167,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Grid, List } from '@element-plus/icons-vue'
 import { surveyApi } from '@/api'
 import dayjs from 'dayjs'
 
@@ -124,6 +180,7 @@ const statusFilter = ref('all')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const viewMode = ref('grid') // 'grid' 或 'table'
 
 const loadSurveyList = async () => {
   loading.value = true
@@ -293,7 +350,18 @@ onMounted(() => {
 }
 
 .status-filter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.filter-left {
+  flex: 1;
+}
+
+.view-toggle {
+  margin-left: 20px;
 }
 
 .survey-grid {
@@ -371,6 +439,10 @@ onMounted(() => {
   justify-content: space-around;
   padding-top: 10px;
   border-top: 1px solid #ebeef5;
+}
+
+.survey-table {
+  margin-bottom: 20px;
 }
 
 .pagination {

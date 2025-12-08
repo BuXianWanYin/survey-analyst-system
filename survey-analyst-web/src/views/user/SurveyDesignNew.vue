@@ -1442,12 +1442,15 @@ onMounted(() => {
 .form-edit-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 60px);
+  height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .header-container {
   height: 60px;
+  flex-shrink: 0;
   border-bottom: 1px solid #ebeef5;
 }
 
@@ -1473,20 +1476,27 @@ onMounted(() => {
 
 .main-container {
   display: flex;
-  height: calc(100vh - 120px);
+  flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .left-board {
   width: 260px;
+  flex-shrink: 0;
   border-right: 1px solid #ebeef5;
   background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .left-scrollbar {
-  height: 100%;
+  flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px;
+  min-height: 0;
 }
 
 .components-list {
@@ -1545,6 +1555,7 @@ onMounted(() => {
   margin: 0 auto;
   background: #fff;
   padding: 20px;
+  padding-bottom: 100px; /* 增加底部留白 */
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
@@ -1718,11 +1729,12 @@ onMounted(() => {
 
 .right-board {
   width: 300px;
+  flex-shrink: 0;
   border-left: 1px solid #ebeef5;
   background: #fff;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .property-panel {
@@ -1731,6 +1743,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   
   :deep(.el-card__body) {
     flex: 1;
@@ -1738,6 +1751,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     padding: 0;
+    min-height: 0;
   }
 }
 
@@ -1752,11 +1766,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 10px;
+  min-height: 0;
 }
 
 .property-scrollbar {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .empty-property {

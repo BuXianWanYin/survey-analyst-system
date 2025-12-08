@@ -141,6 +141,10 @@ const handleCommand = (command) => {
 
 .main-content {
   background: #f5f7fa;
-  padding: 20px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 </style>
