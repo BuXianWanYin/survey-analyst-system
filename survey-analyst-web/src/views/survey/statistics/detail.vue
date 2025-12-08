@@ -43,20 +43,6 @@
           </div>
         </div>
 
-        <!-- 排序题统计 -->
-        <div v-else-if="question.type === 'SORT'" class="question-sort-stat">
-          <div class="sort-stat-table">
-            <el-table :data="getQuestionSortStats(question.id)" border>
-              <el-table-column prop="optionContent" label="选项" width="200" />
-              <el-table-column prop="averagePosition" label="平均位置" width="120">
-                <template #default="{ row }">
-                  {{ row.averagePosition.toFixed(2) }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="totalSorts" label="排序次数" width="120" />
-            </el-table>
-          </div>
-        </div>
 
         <!-- 评分题统计 -->
         <div v-else-if="question.type === 'RATING'" class="question-rating-stat">
@@ -229,7 +215,6 @@ const getQuestionTypeText = (type) => {
     TEXT: '单行文本',
     TEXTAREA: '多行文本',
     RATING: '评分题',
-    SORT: '排序题',
     MATRIX: '矩阵题',
     FILE: '文件上传',
     DATE: '日期时间'
@@ -247,10 +232,6 @@ const getQuestionChartOption = (questionId) => {
 
 const getQuestionWordCloudOption = (questionId) => {
   return questionWordCloudOptions[questionId]
-}
-
-const getQuestionSortStats = (questionId) => {
-  return questionStats[questionId]?.sortStats || []
 }
 
 const showChartConfig = (questionId) => {
@@ -374,14 +355,6 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 500;
   color: #303133;
-}
-
-.question-sort-stat {
-  margin-top: 20px;
-}
-
-.sort-stat-table {
-  margin-top: 20px;
 }
 
 .chart-controls {

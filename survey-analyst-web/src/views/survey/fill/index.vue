@@ -266,7 +266,7 @@ const loadSurveyData = async () => {
 // 初始化表单数据模型
 const initFormModel = () => {
   formItems.value.forEach(item => {
-    if (item.type === 'CHECKBOX' || item.type === 'SORT' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+    if (item.type === 'CHECKBOX' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
       formModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue)
         ? [...item.defaultValue]
         : []

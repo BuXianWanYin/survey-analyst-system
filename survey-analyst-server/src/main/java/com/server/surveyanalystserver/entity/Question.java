@@ -32,7 +32,7 @@ public class Question implements Serializable {
     private Long surveyId;
 
     @TableField("type")
-    @ApiModelProperty(value = "题型：SINGLE_CHOICE, MULTIPLE_CHOICE, TEXT, TEXTAREA, RATING, SORT, MATRIX, FILE, DATE", required = true)
+    @ApiModelProperty(value = "题型：SINGLE_CHOICE, MULTIPLE_CHOICE, TEXT, TEXTAREA, RATING, MATRIX, FILE, DATE", required = true)
     private String type;
 
     @TableField("title")

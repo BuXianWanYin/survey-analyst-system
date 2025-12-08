@@ -196,61 +196,6 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
                 statistics.put("minRating", ratings.stream().mapToInt(Integer::intValue).min().orElse(0));
             }
             statistics.put("totalRatings", ratings.size());
-        } else if ("SORT".equals(question.getType())) {
-            // 排序题：统计排序结果
-            // 排序题的答案格式：选项ID按顺序排列，用逗号分隔
-            Map<String, Integer> positionCount = new HashMap<>();
-            int totalSorts = 0;
-            
-            for (Answer answer : answers) {
-                if (answer.getContent() != null && !answer.getContent().trim().isEmpty()) {
-                    // 解析排序结果（假设格式为：optionId1,optionId2,optionId3）
-                    String[] sortedOptions = answer.getContent().split(",");
-                    for (int i = 0; i < sortedOptions.length; i++) {
-                        String optionId = sortedOptions[i].trim();
-                        String key = optionId + "_position_" + (i + 1);
-                        positionCount.put(key, positionCount.getOrDefault(key, 0) + 1);
-                    }
-                    totalSorts++;
-                }
-            }
-            
-            // 获取所有选项
-            List<Option> options = optionMapper.selectList(
-                    new LambdaQueryWrapper<Option>().eq(Option::getQuestionId, questionId)
-            );
-            
-            // 计算每个选项的平均位置
-            List<Map<String, Object>> sortStats = new ArrayList<>();
-            for (Option option : options) {
-                double totalPosition = 0;
-                int count = 0;
-                for (int i = 1; i <= options.size(); i++) {
-                    String key = option.getId() + "_position_" + i;
-                    int positionCountValue = positionCount.getOrDefault(key, 0);
-                    totalPosition += positionCountValue * i;
-                    count += positionCountValue;
-                }
-                
-                double avgPosition = count > 0 ? totalPosition / count : 0;
-                
-                Map<String, Object> sortStat = new HashMap<>();
-                sortStat.put("optionId", option.getId());
-                sortStat.put("optionContent", option.getContent());
-                sortStat.put("averagePosition", Math.round(avgPosition * 100.0) / 100.0);
-                sortStat.put("totalSorts", count);
-                sortStats.add(sortStat);
-            }
-            
-            // 按平均位置排序
-            sortStats.sort((a, b) -> {
-                double posA = (Double) a.get("averagePosition");
-                double posB = (Double) b.get("averagePosition");
-                return Double.compare(posA, posB);
-            });
-            
-            statistics.put("sortStats", sortStats);
-            statistics.put("totalSorts", totalSorts);
         }
 
         // 保存到缓存

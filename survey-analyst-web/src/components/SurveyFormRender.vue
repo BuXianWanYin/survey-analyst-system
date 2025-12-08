@@ -312,30 +312,6 @@
           </el-checkbox-group>
         </div>
 
-        <!-- 排序题型 -->
-        <div
-          v-else-if="element.type === 'SORT'"
-          class="sort-container"
-        >
-          <VueDraggable
-            v-model="formModel[element.vModel]"
-            handle=".sort-handle"
-            :animation="200"
-            :disabled="previewMode || element.disabled"
-          >
-            <div
-              v-for="(item, idx) in formModel[element.vModel] || []"
-              :key="idx"
-              class="sort-item"
-            >
-              <el-icon class="sort-handle">
-                <Rank />
-              </el-icon>
-              <span>{{ item.label || item }}</span>
-            </div>
-          </VueDraggable>
-        </div>
-
         <!-- 默认：单行文本 -->
         <el-input
           v-else
@@ -829,21 +805,6 @@ const formRules = computed(() => {
       })
     }
     
-    // SORT 组件必填验证
-    if (item.type === 'SORT' && item.required) {
-      itemRules.push({
-        validator: (rule, value, callback) => {
-          const sortList = Array.isArray(value) ? value : []
-          if (sortList.length === 0) {
-            callback(new Error(`${item.label}不能为空`))
-          } else {
-            callback()
-          }
-        },
-        trigger: ['change']
-      })
-    }
-    
     // DATE 组件的正则表达式验证
     if (item.type === 'DATE' && item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
       item.regList.forEach(reg => {
@@ -1206,29 +1167,6 @@ const validateInput = (element) => {
     .image-select-label {
       font-size: 14px;
       text-align: center;
-    }
-  }
-}
-
-// 排序题型样式
-.sort-container {
-  .sort-item {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: #f5f7fa;
-    border-radius: 4px;
-    cursor: move;
-    
-    .sort-handle {
-      margin-right: 8px;
-      color: #909399;
-      cursor: grab;
-      
-      &:active {
-        cursor: grabbing;
-      }
     }
   }
 }

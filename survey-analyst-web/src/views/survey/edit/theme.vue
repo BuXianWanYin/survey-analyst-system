@@ -627,7 +627,7 @@ const initPreviewForm = () => {
     const vModel = item.vModel || item.formItemId
     const defaultValue = item.defaultValue
     
-    if (item.type === 'CHECKBOX' || item.type === 'SORT') {
+    if (item.type === 'CHECKBOX') {
       previewFormModel[vModel] = defaultValue && Array.isArray(defaultValue) 
         ? defaultValue 
         : []

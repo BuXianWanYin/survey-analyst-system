@@ -374,7 +374,7 @@ const initPreviewForm = () => {
   
   // 初始化表单模型
   props.formItems.forEach(item => {
-    if (item.type === 'CHECKBOX' || item.type === 'SORT') {
+    if (item.type === 'CHECKBOX') {
       previewFormModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue) 
         ? item.defaultValue 
         : []
