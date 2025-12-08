@@ -141,16 +141,23 @@
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
                         :readonly="element.readonly"
+                        :clearable="element.config?.clearable ?? true"
+                        :maxlength="element.config?.maxLength"
+                        :minlength="element.config?.minLength"
+                        :show-word-limit="element.config?.showWordLimit ?? false"
                       />
                       <!-- 多行文本 -->
                       <el-input
                         v-else-if="element.type === 'TEXTAREA'"
                         v-model="formModel[element.vModel]"
                         type="textarea"
-                        :rows="4"
+                        :rows="element.config?.rows || 4"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
                         :readonly="element.readonly"
+                        :maxlength="element.config?.maxLength"
+                        :minlength="element.config?.minLength"
+                        :show-word-limit="element.config?.showWordLimit ?? false"
                       />
                       <!-- 数字 -->
                       <el-input-number
@@ -158,34 +165,68 @@
                         v-model="formModel[element.vModel]"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
+                        :min="element.config?.min"
+                        :max="element.config?.max"
+                        :step="element.config?.step || 1"
+                        :precision="element.config?.precision"
+                        :controls-position="element.config?.controlsPosition || 'right'"
+                        style="width: 100%"
                       />
                       <!-- 单选框 -->
                       <el-radio-group
                         v-else-if="element.type === 'RADIO'"
                         v-model="formModel[element.vModel]"
                         :disabled="element.disabled"
+                        :size="element.config?.size"
                       >
-                        <el-radio
-                          v-for="(option, idx) in element.config?.options || []"
-                          :key="idx"
-                          :label="option.value"
-                        >
-                          {{ option.label }}
-                        </el-radio>
+                        <template v-if="element.config?.button">
+                          <el-radio-button
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                          >
+                            {{ option.label }}
+                          </el-radio-button>
+                        </template>
+                        <template v-else>
+                          <el-radio
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                            :border="element.config?.border ?? false"
+                          >
+                            {{ option.label }}
+                          </el-radio>
+                        </template>
                       </el-radio-group>
                       <!-- 多选框 -->
                       <el-checkbox-group
                         v-else-if="element.type === 'CHECKBOX'"
                         v-model="formModel[element.vModel]"
                         :disabled="element.disabled"
+                        :min="element.config?.min"
+                        :max="element.config?.max"
+                        :size="element.config?.size"
                       >
-                        <el-checkbox
-                          v-for="(option, idx) in element.config?.options || []"
-                          :key="idx"
-                          :label="option.value"
-                        >
-                          {{ option.label }}
-                        </el-checkbox>
+                        <template v-if="element.config?.button">
+                          <el-checkbox-button
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                          >
+                            {{ option.label }}
+                          </el-checkbox-button>
+                        </template>
+                        <template v-else>
+                          <el-checkbox
+                            v-for="(option, idx) in element.config?.options || []"
+                            :key="idx"
+                            :label="option.value"
+                            :border="element.config?.border ?? false"
+                          >
+                            {{ option.label }}
+                          </el-checkbox>
+                        </template>
                       </el-checkbox-group>
                       <!-- 下拉框 -->
                       <el-select
@@ -193,6 +234,11 @@
                         v-model="formModel[element.vModel]"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
+                        :clearable="element.config?.clearable ?? true"
+                        :multiple="element.config?.multiple ?? false"
+                        :filterable="element.config?.filterable ?? false"
+                        :size="element.config?.size"
+                        style="width: 100%"
                       >
                         <el-option
                           v-for="(option, idx) in element.config?.options || []"
@@ -205,16 +251,23 @@
                       <el-rate
                         v-else-if="element.type === 'RATE'"
                         v-model="formModel[element.vModel]"
-                        :max="5"
+                        :max="element.config?.max || 5"
                         :disabled="element.disabled"
+                        :allow-half="element.config?.allowHalf ?? false"
+                        :show-text="element.config?.showText ?? false"
+                        :texts="element.config?.texts || []"
                       />
                       <!-- 日期选择 -->
                       <el-date-picker
                         v-else-if="element.type === 'DATE'"
                         v-model="formModel[element.vModel]"
-                        type="date"
+                        :type="element.config?.type || 'date'"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
+                        :readonly="element.readonly"
+                        :format="element.config?.format || 'YYYY-MM-DD'"
+                        :value-format="element.config?.valueFormat || 'YYYY-MM-DD'"
+                        :clearable="element.config?.clearable ?? true"
                         style="width: 100%"
                       />
                       <!-- 文件上传 -->
@@ -222,6 +275,8 @@
                         v-else-if="element.type === 'UPLOAD'"
                         v-model:file-list="formModel[element.vModel]"
                         :disabled="element.disabled"
+                        :limit="element.config?.limit || 1"
+                        :accept="element.config?.accept || '*'"
                         action="#"
                         :auto-upload="false"
                       >
@@ -234,10 +289,11 @@
                         v-else-if="element.type === 'IMAGE_UPLOAD'"
                         v-model:file-list="formModel[element.vModel]"
                         :disabled="element.disabled"
+                        :limit="element.config?.limit || 9"
+                        :accept="element.config?.accept || 'image/*'"
+                        :list-type="element.config?.listType || 'picture-card'"
                         action="#"
                         :auto-upload="false"
-                        list-type="picture-card"
-                        :limit="element.config?.limit || 9"
                       >
                         <el-icon><Plus /></el-icon>
                       </el-upload>
@@ -249,6 +305,10 @@
                         :max="element.config?.max || 100"
                         :step="element.config?.step || 1"
                         :disabled="element.disabled"
+                        :show-input="element.config?.showInput ?? false"
+                        :show-stops="element.config?.showStops ?? false"
+                        :range="element.config?.range ?? false"
+                        :vertical="element.config?.vertical ?? false"
                       />
                       <!-- 级联选择 -->
                       <el-cascader
@@ -257,6 +317,10 @@
                         :options="element.config?.options || []"
                         :placeholder="element.placeholder"
                         :disabled="element.disabled"
+                        :clearable="element.config?.clearable ?? true"
+                        :show-all-levels="element.config?.showAllLevels ?? true"
+                        :filterable="element.config?.filterable ?? false"
+                        :size="element.config?.size"
                         style="width: 100%"
                       />
                       <!-- 分割线 -->
@@ -471,6 +535,34 @@
                     />
                     <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">提交时检查是否与其他提交值重复</span>
                   </el-form-item>
+                  <el-form-item label="反馈类型">
+                    <el-select
+                      v-model="activeData.config.dataType"
+                      placeholder="请选择反馈类型"
+                      clearable
+                      @change="handlePropertyChange"
+                      style="width: 100%"
+                    >
+                      <el-option label="无校验" value="" />
+                      <el-option label="字符串" value="string" />
+                      <el-option label="数字" value="number" />
+                      <el-option label="整数" value="integer" />
+                      <el-option label="小数" value="float" />
+                      <el-option label="URL地址" value="url" />
+                      <el-option label="邮箱地址" value="email" />
+                      <el-option label="手机号" value="phone" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item
+                    v-if="activeData.config.dataType"
+                    label="错误提示"
+                  >
+                    <el-input
+                      v-model="activeData.config.dataTypeMessage"
+                      placeholder="请输入验证失败时的错误提示"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="正则验证规则">
                     <div
                       v-for="(reg, idx) in (activeData.regList || [])"
@@ -564,6 +656,34 @@
                     <el-switch
                       v-model="activeData.config.showWordLimit"
                       @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="反馈类型">
+                    <el-select
+                      v-model="activeData.config.dataType"
+                      placeholder="请选择反馈类型"
+                      clearable
+                      @change="handlePropertyChange"
+                      style="width: 100%"
+                    >
+                      <el-option label="无校验" value="" />
+                      <el-option label="字符串" value="string" />
+                      <el-option label="数字" value="number" />
+                      <el-option label="整数" value="integer" />
+                      <el-option label="小数" value="float" />
+                      <el-option label="URL地址" value="url" />
+                      <el-option label="邮箱地址" value="email" />
+                      <el-option label="手机号" value="phone" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item
+                    v-if="activeData.config.dataType"
+                    label="错误提示"
+                  >
+                    <el-input
+                      v-model="activeData.config.dataTypeMessage"
+                      placeholder="请输入验证失败时的错误提示"
+                      @input="handlePropertyChange"
                     />
                   </el-form-item>
                   <el-form-item label="正则验证规则">
@@ -2390,7 +2510,9 @@ const createFormItem = (type) => {
       maxLength: undefined,
       minLength: undefined,
       showWordLimit: false,
-      notRepeat: false
+      notRepeat: false,
+      dataType: '', // 反馈类型：'', 'string', 'number', 'integer', 'float', 'url', 'email', 'phone'
+      dataTypeMessage: '' // 反馈类型验证失败提示
     }
     baseItem.regList = []
   }
@@ -2401,7 +2523,9 @@ const createFormItem = (type) => {
       rows: 4,
       maxLength: undefined,
       minLength: undefined,
-      showWordLimit: false
+      showWordLimit: false,
+      dataType: '', // 反馈类型
+      dataTypeMessage: '' // 反馈类型验证失败提示
     }
     baseItem.regList = []
   }
