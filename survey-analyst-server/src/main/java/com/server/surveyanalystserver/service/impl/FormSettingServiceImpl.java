@@ -25,8 +25,14 @@ public class FormSettingServiceImpl extends ServiceImpl<FormSettingMapper, FormS
         FormSetting existing = this.getOne(wrapper);
         
         if (existing != null) {
-            // 更新现有设置
-            existing.setSettings(settings);
+            // 合并现有设置（保留原有设置，只更新传入的字段）
+            Map<String, Object> existingSettings = existing.getSettings();
+            if (existingSettings != null) {
+                existingSettings.putAll(settings); // 合并设置
+                existing.setSettings(existingSettings);
+            } else {
+                existing.setSettings(settings);
+            }
             this.updateById(existing);
             return this.getById(existing.getId());
         } else {

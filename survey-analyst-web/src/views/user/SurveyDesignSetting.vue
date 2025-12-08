@@ -13,9 +13,6 @@
       <el-tab-pane label="分享设置">
         <ShareSetting />
       </el-tab-pane>
-      <el-tab-pane label="数据推送">
-        <DataPush />
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -25,7 +22,6 @@ import SubmitSetting from './setting/SubmitSetting.vue'
 import WriteSetting from './setting/WriteSetting.vue'
 import NotifySetting from './setting/NotifySetting.vue'
 import ShareSetting from './setting/ShareSetting.vue'
-import DataPush from './setting/DataPush.vue'
 </script>
 
 <style lang="scss" scoped>

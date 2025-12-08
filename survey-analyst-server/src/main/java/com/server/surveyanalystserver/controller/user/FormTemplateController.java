@@ -1,0 +1,113 @@
+package com.server.surveyanalystserver.controller.user;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.server.surveyanalystserver.common.Result;
+import com.server.surveyanalystserver.entity.FormTemplate;
+import com.server.surveyanalystserver.entity.FormTemplateCategory;
+import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.service.FormTemplateCategoryService;
+import com.server.surveyanalystserver.service.FormTemplateService;
+import com.server.surveyanalystserver.service.user.UserService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 表单模板控制器（参考 tduck 实现）
+ */
+@RestController
+@RequestMapping("/api/form/template")
+@Api(tags = "表单模板")
+public class FormTemplateController {
+
+    @Autowired
+    private FormTemplateService formTemplateService;
+
+    @Autowired
+    private FormTemplateCategoryService formTemplateCategoryService;
+
+    @Autowired
+    private UserService userService;
+
+    @ApiOperation(value = "获取模板分类列表", notes = "获取所有模板分类，按排序号降序")
+    @GetMapping("/type/list")
+    public Result<List<FormTemplateCategory>> getTemplateTypeList() {
+        List<FormTemplateCategory> list = formTemplateCategoryService.listAll();
+        return Result.success("查询成功", list);
+    }
+
+    @ApiOperation(value = "分页查询模板列表", notes = "支持按名称模糊查询和分类筛选")
+    @GetMapping("/page")
+    public Result<Page<FormTemplate>> getTemplatePage(
+            @RequestParam(defaultValue = "1") Integer current,
+            @RequestParam(defaultValue = "12") Integer size,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long type) {
+        Page<FormTemplate> page = new Page<>(current, size);
+        LambdaQueryWrapper<FormTemplate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormTemplate::getIsDeleted, 0);
+        
+        if (StringUtils.hasText(name)) {
+            wrapper.like(FormTemplate::getName, name);
+        }
+        
+        if (type != null) {
+            wrapper.eq(FormTemplate::getCategoryId, type);
+        }
+        
+        wrapper.orderByDesc(FormTemplate::getCreateTime);
+        formTemplateService.page(page, wrapper);
+        return Result.success("查询成功", page);
+    }
+
+    @ApiOperation(value = "获取模板详情", notes = "根据模板 formKey 获取模板详情（包含 scheme）")
+    @GetMapping("/details/{key}")
+    public Result<FormTemplate.Definition> getTemplateDetails(@PathVariable String key) {
+        FormTemplate template = formTemplateService.getByFormKey(key);
+        if (template == null) {
+            return Result.error("模板不存在");
+        }
+        return Result.success("查询成功", template.getScheme());
+    }
+
+    @ApiOperation(value = "保存为模板", notes = "将表单保存为模板")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/create")
+    public Result<String> createTemplate(@RequestBody FormTemplate template) {
+        // 从 SecurityContext 获取当前用户ID
+        User currentUser = userService.getCurrentUser();
+        template.setUserId(currentUser.getId());
+        
+        FormTemplate created = formTemplateService.createFormTemplate(template);
+        return Result.success("保存成功", created.getFormKey());
+    }
+
+    @ApiOperation(value = "删除模板", notes = "根据 formKey 删除模板")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/delete")
+    public Result<String> deleteTemplate(@RequestBody FormTemplate template) {
+        FormTemplate existing = formTemplateService.getByFormKey(template.getFormKey());
+        if (existing == null) {
+            return Result.error("模板不存在");
+        }
+        
+        // 检查权限：只能删除自己创建的模板
+        User currentUser = userService.getCurrentUser();
+        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ROLE_ADMIN")) {
+            return Result.error("无权删除此模板");
+        }
+        
+        // 逻辑删除
+        existing.setIsDeleted(1);
+        formTemplateService.getBaseMapper().updateById(existing);
+        
+        return Result.success("删除成功", template.getFormKey());
+    }
+}
+

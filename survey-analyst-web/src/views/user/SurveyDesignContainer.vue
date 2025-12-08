@@ -11,9 +11,6 @@
           <div class="header-title">
             <span>{{ surveyTitle || '未命名问卷' }}</span>
           </div>
-          <div class="header-actions">
-            <el-button type="primary" @click="handlePreview">预览</el-button>
-          </div>
         </div>
       </el-card>
     </div>

@@ -38,3 +38,6 @@ export { exportApi } from './export'
 
 // 表单设计相关 API（参考 tduck）
 export { formApi } from './form'
+
+// 模板相关 API（参考 tduck）
+export { templateApi } from './template'

@@ -26,6 +26,9 @@ public class SurveyController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private com.server.surveyanalystserver.service.FormTemplateService formTemplateService;
+
     @ApiOperation(value = "创建问卷", notes = "创建新问卷")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -86,6 +89,15 @@ public class SurveyController {
     public Result<Void> deleteSurvey(@PathVariable Long id) {
         surveyService.deleteSurvey(id);
         return Result.success("删除成功");
+    }
+
+    @ApiOperation(value = "使用模板创建问卷", notes = "根据模板 formKey 创建新问卷")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/use-template/create")
+    public Result<Long> createSurveyByTemplate(@RequestBody com.server.surveyanalystserver.entity.FormTemplate request) {
+        User currentUser = userService.getCurrentUser();
+        Survey survey = formTemplateService.createSurveyByTemplate(request.getFormKey(), currentUser.getId());
+        return Result.success("创建成功", survey.getId());
     }
 }
 

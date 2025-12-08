@@ -56,6 +56,15 @@ const routes = [
         }
       },
       {
+        path: 'user/survey/template/preview',
+        name: 'SurveyTemplatePreview',
+        component: () => import('@/views/user/SurveyTemplatePreview.vue'),
+        meta: {
+          title: '模板预览',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'user/survey/design',
         component: () => import('@/views/user/SurveyDesignContainer.vue'),
         redirect: (to) => {
