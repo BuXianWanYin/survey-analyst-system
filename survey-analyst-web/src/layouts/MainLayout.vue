@@ -40,16 +40,6 @@
               <el-icon><Document /></el-icon>
               <span>问卷模板</span>
             </el-menu-item>
-            <el-sub-menu index="/survey/analysis">
-              <template #title>
-                <el-icon><DataAnalysis /></el-icon>
-                <span>数据分析</span>
-              </template>
-              <el-menu-item index="/survey/analysis/cross">交叉分析</el-menu-item>
-              <el-menu-item index="/survey/analysis/trend">趋势分析</el-menu-item>
-              <el-menu-item index="/survey/analysis/profile">样本画像</el-menu-item>
-              <el-menu-item index="/survey/analysis/dashboard">数据仪表盘</el-menu-item>
-            </el-sub-menu>
             <el-sub-menu
               v-if="userStore.userInfo?.role === 'ADMIN'"
               index="/system"

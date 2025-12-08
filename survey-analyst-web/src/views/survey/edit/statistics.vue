@@ -52,7 +52,80 @@
         
         <el-tab-pane label="数据分析" name="analysis">
           <div v-loading="analysisLoading" class="analysis-content">
-            <el-row :gutter="20">
+            <!-- 交叉分析 -->
+            <el-card class="cross-analysis-card">
+              <template #header>
+                <span>交叉分析（相关分析）</span>
+              </template>
+              <el-form :model="crossAnalysisForm" label-width="120px">
+                <el-form-item label="题目1">
+                  <el-select
+                    v-model="crossAnalysisForm.questionId1"
+                    placeholder="请选择题目1"
+                    style="width: 300px"
+                    @change="handleCrossQuestion1Change"
+                  >
+                    <el-option
+                      v-for="item in choiceFormItems"
+                      :key="item.formItemId"
+                      :label="item.label"
+                      :value="item.formItemId"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="题目2">
+                  <el-select
+                    v-model="crossAnalysisForm.questionId2"
+                    placeholder="请选择题目2"
+                    style="width: 300px"
+                    @change="handleCrossQuestion2Change"
+                  >
+                    <el-option
+                      v-for="item in crossQuestion2Options"
+                      :key="item.formItemId"
+                      :label="item.label"
+                      :value="item.formItemId"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleCrossAnalyze" :loading="crossAnalyzing">
+                    开始分析
+                  </el-button>
+                </el-form-item>
+              </el-form>
+
+              <!-- 交叉分析结果 -->
+              <div v-if="crossAnalysisResult" class="cross-result-section">
+                <!-- 交叉表 -->
+                <div class="cross-table-section">
+                  <h3>交叉表</h3>
+                  <el-table :data="crossTableData" border>
+                    <el-table-column prop="rowLabel" label="" width="150" fixed="left" />
+                    <el-table-column
+                      v-for="col in crossTableColumns"
+                      :key="col"
+                      :prop="col"
+                      :label="col"
+                      width="120"
+                    />
+                  </el-table>
+                </div>
+
+                <!-- 热力图 -->
+                <div class="heatmap-section">
+                  <h3>热力图</h3>
+                  <v-chart
+                    v-if="heatmapChartOption"
+                    :option="heatmapChartOption"
+                    style="height: 400px"
+                    autoresize
+                  />
+                </div>
+              </div>
+            </el-card>
+
+            <el-row :gutter="20" style="margin-top: 20px">
               <!-- 填写趋势 -->
               <el-col :span="12">
                 <el-card>
@@ -134,20 +207,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { PieChart, BarChart, LineChart } from 'echarts/charts'
+import { PieChart, BarChart, LineChart, HeatmapChart } from 'echarts/charts'
 import {
   TitleComponent,
   TooltipComponent,
   LegendComponent,
-  GridComponent
+  GridComponent,
+  VisualMapComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { formApi } from '@/api'
+import { formApi, analysisApi, questionApi } from '@/api'
 import dayjs from 'dayjs'
 
 use([
@@ -155,10 +229,12 @@ use([
   PieChart,
   BarChart,
   LineChart,
+  HeatmapChart,
   TitleComponent,
   TooltipComponent,
   LegendComponent,
-  GridComponent
+  GridComponent,
+  VisualMapComponent
 ])
 
 const route = useRoute()
@@ -175,6 +251,17 @@ const trendChartOption = ref(null)
 const deviceChartOption = ref(null)
 const sourceChartOption = ref(null)
 const hourChartOption = ref(null)
+
+// 交叉分析相关
+const crossAnalysisForm = reactive({
+  questionId1: null,
+  questionId2: null
+})
+const crossAnalyzing = ref(false)
+const crossAnalysisResult = ref(null)
+const crossTableData = ref([])
+const crossTableColumns = ref([])
+const heatmapChartOption = ref(null)
 
 // 加载表单配置和表单项
 const loadFormConfig = async () => {
@@ -201,6 +288,7 @@ const loadFormConfig = async () => {
               formItemId: item.formItemId,
               label: item.label,
               type: item.type,
+              questionId: item.questionId, // 保存questionId用于交叉分析
               scheme: scheme || {}
             }
           })
@@ -357,6 +445,175 @@ const getTextStat = (formItemId, key) => {
 // 判断是否为选择题
 const isChoiceType = (type) => {
   return ['RADIO', 'CHECKBOX', 'SELECT'].includes(type)
+}
+
+// 获取选择题类型的表单项
+const choiceFormItems = computed(() => {
+  return formItems.value.filter(item => isChoiceType(item.type))
+})
+
+// 交叉分析题目2的选项（排除题目1）
+const crossQuestion2Options = computed(() => {
+  if (!crossAnalysisForm.questionId1) {
+    return choiceFormItems.value
+  }
+  return choiceFormItems.value.filter(item => item.formItemId !== crossAnalysisForm.questionId1)
+})
+
+// 处理交叉分析题目1变化
+const handleCrossQuestion1Change = () => {
+  if (crossAnalysisForm.questionId2 === crossAnalysisForm.questionId1) {
+    crossAnalysisForm.questionId2 = null
+  }
+  crossAnalysisResult.value = null
+}
+
+// 处理交叉分析题目2变化
+const handleCrossQuestion2Change = () => {
+  crossAnalysisResult.value = null
+}
+
+// 执行交叉分析
+const handleCrossAnalyze = async () => {
+  if (!crossAnalysisForm.questionId1 || !crossAnalysisForm.questionId2) {
+    ElMessage.warning('请选择两个题目')
+    return
+  }
+
+  if (!surveyId.value) {
+    ElMessage.warning('问卷ID不存在')
+    return
+  }
+
+  // 获取选中的表单项的questionId
+  const item1 = formItems.value.find(item => item.formItemId === crossAnalysisForm.questionId1)
+  const item2 = formItems.value.find(item => item.formItemId === crossAnalysisForm.questionId2)
+
+  if (!item1 || !item1.questionId) {
+    ElMessage.warning('题目1未关联到问卷题目，无法进行交叉分析')
+    return
+  }
+
+  if (!item2 || !item2.questionId) {
+    ElMessage.warning('题目2未关联到问卷题目，无法进行交叉分析')
+    return
+  }
+
+  crossAnalyzing.value = true
+  try {
+    const res = await analysisApi.crossAnalysis({
+      surveyId: surveyId.value,
+      questionId1: item1.questionId,
+      questionId2: item2.questionId
+    })
+
+    if (res.code === 200) {
+      crossAnalysisResult.value = res.data
+      buildCrossTable(res.data.crossTable)
+      buildHeatmap(res.data.crossTable)
+    }
+  } catch (error) {
+    ElMessage.error('交叉分析失败')
+    console.error('交叉分析错误:', error)
+  } finally {
+    crossAnalyzing.value = false
+  }
+}
+
+// 构建交叉表
+const buildCrossTable = (crossTable) => {
+  if (!crossTable) return
+
+  const rows = Object.keys(crossTable)
+  const cols = new Set()
+  rows.forEach(row => {
+    Object.keys(crossTable[row]).forEach(col => cols.add(col))
+  })
+
+  crossTableColumns.value = Array.from(cols)
+
+  crossTableData.value = rows.map(row => {
+    const rowData = { rowLabel: row }
+    crossTableColumns.value.forEach(col => {
+      rowData[col] = crossTable[row][col] || 0
+    })
+    return rowData
+  })
+}
+
+// 构建热力图
+const buildHeatmap = (crossTable) => {
+  if (!crossTable) return
+
+  const rows = Object.keys(crossTable)
+  const cols = new Set()
+  rows.forEach(row => {
+    Object.keys(crossTable[row]).forEach(col => cols.add(col))
+  })
+
+  const xAxisData = Array.from(cols)
+  const yAxisData = rows
+  const data = []
+
+  rows.forEach((row, rowIndex) => {
+    xAxisData.forEach((col, colIndex) => {
+      const value = crossTable[row][col] || 0
+      data.push([colIndex, rowIndex, value])
+    })
+  })
+
+  heatmapChartOption.value = {
+    title: {
+      text: '交叉分析热力图',
+      left: 'center'
+    },
+    tooltip: {
+      position: 'top',
+      formatter: function(params) {
+        return `${yAxisData[params.data[1]]} × ${xAxisData[params.data[0]]}<br/>数量: ${params.data[2]}`
+      }
+    },
+    grid: {
+      height: '50%',
+      top: '10%'
+    },
+    xAxis: {
+      type: 'category',
+      data: xAxisData,
+      splitArea: {
+        show: true
+      }
+    },
+    yAxis: {
+      type: 'category',
+      data: yAxisData,
+      splitArea: {
+        show: true
+      }
+    },
+    visualMap: {
+      min: 0,
+      max: Math.max(...data.map(d => d[2])),
+      calculable: true,
+      orient: 'horizontal',
+      left: 'center',
+      bottom: '15%'
+    },
+    series: [{
+      name: '交叉分析',
+      type: 'heatmap',
+      data: data,
+      label: {
+        show: true
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }]
+  }
 }
 
 // 判断是否为文本题
@@ -544,6 +801,9 @@ onMounted(() => {
 <style lang="scss" scoped>
 .statistics-container {
   padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .card-header {
@@ -605,5 +865,29 @@ onMounted(() => {
 .analysis-content {
   padding: 20px;
   min-height: 400px;
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.cross-analysis-card {
+  margin-bottom: 20px;
+}
+
+.cross-result-section {
+  margin-top: 20px;
+}
+
+.cross-table-section,
+.heatmap-section {
+  margin-bottom: 30px;
+}
+
+.cross-table-section h3,
+.heatmap-section h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
 }
 </style>
