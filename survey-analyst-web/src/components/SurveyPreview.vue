@@ -143,10 +143,29 @@ const initPreviewForm = () => {
   
   // 初始化表单模型
   props.formItems.forEach(item => {
-    if (item.type === 'CHECKBOX') {
-      previewFormModel[item.vModel] = []
+    if (item.type === 'CHECKBOX' || item.type === 'SORT') {
+      previewFormModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue) 
+        ? item.defaultValue 
+        : []
+    } else if (item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+      previewFormModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue)
+        ? item.defaultValue
+        : []
+    } else if (item.type === 'SLIDER') {
+      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
+        ? Number(item.defaultValue)
+        : (item.config?.min || 0)
+      previewFormModel[item.vModel] = isNaN(numValue) ? (item.config?.min || 0) : numValue
+    } else if (item.type === 'NUMBER') {
+      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
+        ? Number(item.defaultValue)
+        : undefined
+      previewFormModel[item.vModel] = isNaN(numValue) ? undefined : numValue
+    } else if (item.type === 'DIVIDER' || item.type === 'IMAGE' || item.type === 'IMAGE_CAROUSEL') {
+      // 这些类型不需要绑定表单模型
+      previewFormModel[item.vModel] = null
     } else {
-      previewFormModel[item.vModel] = item.defaultValue || ''
+      previewFormModel[item.vModel] = item.defaultValue !== null && item.defaultValue !== undefined ? item.defaultValue : ''
     }
   })
 }

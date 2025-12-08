@@ -14,6 +14,29 @@
           <div class="header-title">
             <span>{{ surveyTitle || '未命名问卷' }}</span>
           </div>
+          <div
+            v-if="activeMenu === 'editor'"
+            class="header-actions"
+          >
+            <el-button
+              type="primary"
+              @click="handlePreview"
+            >
+              预览
+            </el-button>
+            <el-button
+              type="success"
+              @click="handleSave"
+            >
+              保存
+            </el-button>
+            <el-button
+              type="warning"
+              @click="handleSaveAsTemplate"
+            >
+              保存为模板
+            </el-button>
+          </div>
         </div>
       </el-card>
     </div>
@@ -66,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -89,6 +112,18 @@ const surveyId = ref(null)
 const surveyTitle = ref('')
 const formKey = ref(null)
 const previewVisible = ref(false)
+
+// 用于存储子组件注册的方法
+const editorMethods = ref({
+  handlePreview: null,
+  handleSave: null,
+  handleSaveAsTemplate: null
+})
+
+// 提供方法注册接口给子组件
+provide('registerEditorMethods', (methods) => {
+  editorMethods.value = methods
+})
 
 // 菜单列表
 const menuItemList = [
@@ -179,6 +214,27 @@ const loadSurveyInfo = async () => {
   }
 }
 
+// 调用子组件方法：预览
+const handlePreview = async () => {
+  if (editorMethods.value.handlePreview && typeof editorMethods.value.handlePreview === 'function') {
+    await editorMethods.value.handlePreview()
+  }
+}
+
+// 调用子组件方法：保存
+const handleSave = async () => {
+  if (editorMethods.value.handleSave && typeof editorMethods.value.handleSave === 'function') {
+    await editorMethods.value.handleSave()
+  }
+}
+
+// 调用子组件方法：保存为模板
+const handleSaveAsTemplate = async () => {
+  if (editorMethods.value.handleSaveAsTemplate && typeof editorMethods.value.handleSaveAsTemplate === 'function') {
+    await editorMethods.value.handleSaveAsTemplate()
+  }
+}
+
 onMounted(() => {
   loadSurveyInfo()
 })
@@ -221,6 +277,7 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .main-container {

@@ -1,33 +1,5 @@
 <template>
   <div class="form-edit-container">
-    <!-- 顶部工具栏 -->
-    <div class="header-container">
-      <el-card class="header-card">
-        <div class="header-content">
-          <div class="header-actions">
-            <el-button
-              type="primary"
-              @click="handlePreview"
-            >
-              预览
-            </el-button>
-            <el-button
-              type="success"
-              @click="handleSave"
-            >
-              保存
-            </el-button>
-            <el-button
-              type="warning"
-              @click="handleSaveAsTemplate"
-            >
-              保存为模板
-            </el-button>
-          </div>
-        </div>
-      </el-card>
-    </div>
-
     <!-- 主体：三栏布局 -->
     <div class="main-container">
       <!-- 左侧：组件库 -->
@@ -965,7 +937,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -1054,12 +1026,26 @@ const activeData = computed(() => {
 })
 
 // 根据组件类型获取默认值
-const getDefaultValue = (type, defaultValue) => {
+const getDefaultValue = (type, defaultValue, config) => {
   // 文件上传类型的组件需要数组类型
   if (type === 'UPLOAD' || type === 'IMAGE_UPLOAD') {
     return defaultValue && Array.isArray(defaultValue) ? defaultValue : []
   }
-  return defaultValue || ''
+  // 滑块组件需要数字类型
+  if (type === 'SLIDER') {
+    const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
+      ? Number(defaultValue)
+      : (config?.min || 0)
+    return isNaN(numValue) ? (config?.min || 0) : numValue
+  }
+  // 数字输入框需要数字类型
+  if (type === 'NUMBER') {
+    const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
+      ? Number(defaultValue)
+      : undefined
+    return isNaN(numValue) ? undefined : numValue
+  }
+  return defaultValue !== null && defaultValue !== undefined ? defaultValue : ''
 }
 
 // 获取组件标签文本
@@ -1128,7 +1114,7 @@ const handleDrop = (event) => {
   drawingList.value = [...drawingList.value, newItem]
   
   // 初始化表单模型
-  formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue)
+  formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue, newItem.config)
   
   // 选中新添加的项
   activeId.value = newItem.formItemId
@@ -1267,7 +1253,7 @@ const handleCopyItem = (element) => {
   const index = drawingList.value.findIndex(item => item.formItemId === element.formItemId)
   drawingList.value.splice(index + 1, 0, newItem)
   
-  formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue)
+  formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue, newItem.config)
   activeId.value = newItem.formItemId
   
   saveFormItems()
@@ -1586,7 +1572,7 @@ const loadFormData = async () => {
         
         // 初始化表单模型
         drawingList.value.forEach(item => {
-          formModel[item.vModel] = getDefaultValue(item.type, item.defaultValue)
+          formModel[item.vModel] = getDefaultValue(item.type, item.defaultValue, item.config)
         })
       }
     }
@@ -1706,8 +1692,34 @@ const handlePreview = async () => {
   previewVisible.value = true
 }
 
+// 注册方法到父组件（通过 provide/inject）
+const registerEditorMethods = inject('registerEditorMethods', null)
+if (registerEditorMethods) {
+  registerEditorMethods({
+    handlePreview,
+    handleSave,
+    handleSaveAsTemplate
+  })
+}
+
+// 也暴露方法给父组件调用（兼容性）
+defineExpose({
+  handlePreview,
+  handleSave,
+  handleSaveAsTemplate
+})
+
 onMounted(() => {
   loadFormData()
+  
+  // 在组件挂载后重新注册方法（确保方法已定义）
+  if (registerEditorMethods) {
+    registerEditorMethods({
+      handlePreview,
+      handleSave,
+      handleSaveAsTemplate
+    })
+  }
 })
 </script>
 
@@ -1719,32 +1731,6 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.header-container {
-  height: 60px;
-  flex-shrink: 0;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.header-card {
-  height: 100%;
-  border: none;
-  border-radius: 0;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  padding: 0 20px;
-  gap: 10px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
 }
 
 .main-container {
