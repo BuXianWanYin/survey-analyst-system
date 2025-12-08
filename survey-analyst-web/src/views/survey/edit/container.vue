@@ -181,7 +181,7 @@ const handleMenuSelect = (index) => {
   const id = route.query.id
   if (id) {
     router.push({
-      path: `/user/survey/design/${index}`,
+      path: `/survey/edit/${index}`,
       query: { id }
     })
   }

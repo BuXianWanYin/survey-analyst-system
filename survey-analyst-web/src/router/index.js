@@ -38,35 +38,35 @@ const routes = [
         }
       },
       {
-        path: 'user/survey/list',
+        path: 'survey/list',
         name: 'SurveyList',
-        component: () => import('@/views/user/SurveyList.vue'),
+        component: () => import('@/views/survey/list/index.vue'),
         meta: {
           title: '我的问卷',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/template',
+        path: 'survey/template',
         name: 'SurveyTemplate',
-        component: () => import('@/views/user/SurveyTemplate.vue'),
+        component: () => import('@/views/survey/template/index.vue'),
         meta: {
           title: '问卷模板',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/template/preview',
+        path: 'survey/template/preview',
         name: 'SurveyTemplatePreview',
-        component: () => import('@/views/user/SurveyTemplatePreview.vue'),
+        component: () => import('@/views/survey/template/preview.vue'),
         meta: {
           title: '模板预览',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/design',
-        component: () => import('@/views/user/SurveyDesignContainer.vue'),
+        path: 'survey/edit',
+        component: () => import('@/views/survey/edit/container.vue'),
         redirect: (to) => {
           return { name: 'SurveyDesignEditor', query: to.query }
         },
@@ -78,7 +78,7 @@ const routes = [
           {
             path: 'editor',
             name: 'SurveyDesignEditor',
-            component: () => import('@/views/user/SurveyDesignNew.vue'),
+            component: () => import('@/views/survey/edit/editor.vue'),
             meta: {
               title: '编辑',
               requiresAuth: true
@@ -87,7 +87,7 @@ const routes = [
           {
             path: 'logic',
             name: 'SurveyDesignLogic',
-            component: () => import('@/views/user/SurveyDesignLogic.vue'),
+            component: () => import('@/views/survey/edit/logic.vue'),
             meta: {
               title: '逻辑',
               requiresAuth: true
@@ -96,7 +96,7 @@ const routes = [
           {
             path: 'theme',
             name: 'SurveyDesignTheme',
-            component: () => import('@/views/user/SurveyDesignTheme.vue'),
+            component: () => import('@/views/survey/edit/theme.vue'),
             meta: {
               title: '外观',
               requiresAuth: true
@@ -105,7 +105,7 @@ const routes = [
           {
             path: 'setting',
             name: 'SurveyDesignSetting',
-            component: () => import('@/views/user/SurveyDesignSetting.vue'),
+            component: () => import('@/views/survey/edit/setting.vue'),
             meta: {
               title: '设置',
               requiresAuth: true
@@ -114,7 +114,7 @@ const routes = [
           {
             path: 'publish',
             name: 'SurveyDesignPublish',
-            component: () => import('@/views/user/SurveyDesignPublish.vue'),
+            component: () => import('@/views/survey/edit/publish.vue'),
             meta: {
               title: '发布',
               requiresAuth: true
@@ -123,7 +123,7 @@ const routes = [
           {
             path: 'data',
             name: 'SurveyDesignData',
-            component: () => import('@/views/user/SurveyDesignData.vue'),
+            component: () => import('@/views/survey/edit/data.vue'),
             meta: {
               title: '数据',
               requiresAuth: true
@@ -132,7 +132,7 @@ const routes = [
           {
             path: 'statistics',
             name: 'SurveyDesignStatistics',
-            component: () => import('@/views/user/SurveyDesignStatistics.vue'),
+            component: () => import('@/views/survey/edit/statistics.vue'),
             meta: {
               title: '统计',
               requiresAuth: true
@@ -141,92 +141,81 @@ const routes = [
         ]
       },
       {
-        path: 'user/survey/fill/:id',
+        path: 'survey/fill/:id',
         name: 'SurveyFill',
-        component: () => import('@/views/user/SurveyFill.vue'),
+        component: () => import('@/views/survey/fill/index.vue'),
         meta: {
           title: '填写问卷',
           requiresAuth: false
         }
       },
       {
-        path: 'user/survey/publish',
+        path: 'survey/publish',
         name: 'SurveyPublish',
-        component: () => import('@/views/user/SurveyPublish.vue'),
+        component: () => import('@/views/survey/publish/index.vue'),
         meta: {
           title: '问卷发布',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/statistics',
+        path: 'survey/statistics',
         name: 'StatisticsOverview',
-        component: () => import('@/views/user/StatisticsOverview.vue'),
+        component: () => import('@/views/survey/statistics/overview.vue'),
         meta: {
           title: '数据统计',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/statistics/detail',
+        path: 'survey/statistics/detail',
         name: 'StatisticsDetail',
-        component: () => import('@/views/user/StatisticsDetail.vue'),
+        component: () => import('@/views/survey/statistics/detail.vue'),
         meta: {
           title: '统计详情',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/analysis/cross',
+        path: 'survey/analysis/cross',
         name: 'CrossAnalysis',
-        component: () => import('@/views/user/CrossAnalysis.vue'),
+        component: () => import('@/views/survey/analysis/cross.vue'),
         meta: {
           title: '交叉分析',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/analysis/trend',
+        path: 'survey/analysis/trend',
         name: 'TrendAnalysis',
-        component: () => import('@/views/user/TrendAnalysis.vue'),
+        component: () => import('@/views/survey/analysis/trend.vue'),
         meta: {
           title: '趋势分析',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/analysis/profile',
+        path: 'survey/analysis/profile',
         name: 'ProfileAnalysis',
-        component: () => import('@/views/user/ProfileAnalysis.vue'),
+        component: () => import('@/views/survey/analysis/profile.vue'),
         meta: {
           title: '样本画像',
           requiresAuth: true
         }
       },
       {
-        path: 'user/survey/analysis/dashboard',
+        path: 'survey/analysis/dashboard',
         name: 'VisualizationDashboard',
-        component: () => import('@/views/user/VisualizationDashboard.vue'),
+        component: () => import('@/views/survey/analysis/dashboard.vue'),
         meta: {
           title: '数据仪表盘',
           requiresAuth: true
         }
-      }
-    ]
-  },
-  {
-    path: '/admin',
-    component: () => import('@/layouts/AdminLayout.vue'),
-    redirect: '/admin/dashboard',
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true
-    },
-    children: [
+      },
       {
-        path: 'dashboard',
-        name: 'AdminDashboard',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        path: 'system/dashboard',
+        name: 'SystemDashboard',
+        component: () => import('@/views/system/dashboard/index.vue'),
         meta: {
           title: '数据概览',
           requiresAuth: true,
@@ -234,9 +223,9 @@ const routes = [
         }
       },
       {
-        path: 'user',
-        name: 'UserManagement',
-        component: () => import('@/views/admin/UserManagement.vue'),
+        path: 'system/user',
+        name: 'SystemUser',
+        component: () => import('@/views/system/user/index.vue'),
         meta: {
           title: '用户管理',
           requiresAuth: true,
@@ -244,9 +233,9 @@ const routes = [
         }
       },
       {
-        path: 'survey',
-        name: 'SurveyManagement',
-        component: () => import('@/views/admin/SurveyManagement.vue'),
+        path: 'system/survey',
+        name: 'SystemSurvey',
+        component: () => import('@/views/system/survey/index.vue'),
         meta: {
           title: '问卷管理',
           requiresAuth: true,
@@ -254,9 +243,9 @@ const routes = [
         }
       },
       {
-        path: 'data',
-        name: 'DataManagement',
-        component: () => import('@/views/admin/DataManagement.vue'),
+        path: 'system/data',
+        name: 'SystemData',
+        component: () => import('@/views/system/data/index.vue'),
         meta: {
           title: '数据管理',
           requiresAuth: true,
@@ -264,9 +253,9 @@ const routes = [
         }
       },
       {
-        path: 'system',
+        path: 'system/monitor',
         name: 'SystemMonitor',
-        component: () => import('@/views/admin/SystemMonitor.vue'),
+        component: () => import('@/views/system/monitor/index.vue'),
         meta: {
           title: '系统监控',
           requiresAuth: true,

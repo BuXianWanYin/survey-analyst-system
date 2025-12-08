@@ -92,7 +92,7 @@ const handleLogin = async () => {
           
           // 根据用户角色跳转到不同页面
           if (res.data.user && res.data.user.role === 'ADMIN') {
-            router.push('/admin/dashboard')
+            router.push('/system/dashboard')
           } else {
             router.push('/home')
           }

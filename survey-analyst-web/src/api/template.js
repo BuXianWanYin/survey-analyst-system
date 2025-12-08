@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
- * 模板相关 API（参考 tduck 实现）
+ * 模板相关 API
  */
 export const templateApi = {
   /**

@@ -997,7 +997,7 @@ const formKey = ref(null)
 const surveyId = ref(null)
 const formModel = reactive({})
 
-// 组件列表（参考 tduck，除了文字描述外，其他都要）
+// 组件列表
 const componentList = [
   { type: 'INPUT', label: '单行文本', icon: Document, tag: 'el-input' },
   { type: 'TEXTAREA', label: '多行文本', icon: EditPen, tag: 'el-textarea' },
@@ -1662,7 +1662,7 @@ const handleSubmitTemplate = async () => {
           ElMessage.success('保存为模板成功')
           saveTemplateDialogVisible.value = false
           // 可选：跳转到模板列表页面
-          // router.push('/user/survey/template')
+          // router.push('/survey/template')
         } else {
           ElMessage.error('保存失败')
         }

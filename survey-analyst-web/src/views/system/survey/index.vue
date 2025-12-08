@@ -130,7 +130,7 @@ const handleCurrentChange = () => {
 }
 
 const handleView = (row) => {
-  router.push(`/user/survey/design?id=${row.id}`)
+  router.push(`/survey/edit/editor?id=${row.id}`)
 }
 
 const handleUpdateStatus = async (row, status) => {

@@ -281,7 +281,7 @@ const handleExport = async () => {
 }
 
 const goToDetail = () => {
-  router.push(`/user/survey/statistics/detail?id=${route.query.id}`)
+  router.push(`/survey/statistics/detail?id=${route.query.id}`)
 }
 
 const loadAllData = async () => {

@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /**
- * 表单相关 API（参考 tduck 实现）
+ * 表单相关 API
  */
 export const formApi = {
   /**

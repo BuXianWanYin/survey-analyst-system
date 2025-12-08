@@ -32,23 +32,37 @@
               <el-icon><HomeFilled /></el-icon>
               <span>首页</span>
             </el-menu-item>
-            <el-menu-item index="/user/survey/list">
+            <el-menu-item index="/survey/list">
               <el-icon><Document /></el-icon>
               <span>我的问卷</span>
             </el-menu-item>
-            <el-menu-item index="/user/survey/template">
+            <el-menu-item index="/survey/template">
               <el-icon><Document /></el-icon>
               <span>问卷模板</span>
             </el-menu-item>
-            <el-sub-menu index="/user/survey/analysis">
+            <el-sub-menu index="/survey/analysis">
               <template #title>
                 <el-icon><DataAnalysis /></el-icon>
                 <span>数据分析</span>
               </template>
-              <el-menu-item index="/user/survey/analysis/cross">交叉分析</el-menu-item>
-              <el-menu-item index="/user/survey/analysis/trend">趋势分析</el-menu-item>
-              <el-menu-item index="/user/survey/analysis/profile">样本画像</el-menu-item>
-              <el-menu-item index="/user/survey/analysis/dashboard">数据仪表盘</el-menu-item>
+              <el-menu-item index="/survey/analysis/cross">交叉分析</el-menu-item>
+              <el-menu-item index="/survey/analysis/trend">趋势分析</el-menu-item>
+              <el-menu-item index="/survey/analysis/profile">样本画像</el-menu-item>
+              <el-menu-item index="/survey/analysis/dashboard">数据仪表盘</el-menu-item>
+            </el-sub-menu>
+            <el-sub-menu
+              v-if="userStore.userInfo?.role === 'ADMIN'"
+              index="/system"
+            >
+              <template #title>
+                <el-icon><Setting /></el-icon>
+                <span>系统管理</span>
+              </template>
+              <el-menu-item index="/system/dashboard">数据概览</el-menu-item>
+              <el-menu-item index="/system/user">用户管理</el-menu-item>
+              <el-menu-item index="/system/survey">问卷管理</el-menu-item>
+              <el-menu-item index="/system/data">数据管理</el-menu-item>
+              <el-menu-item index="/system/monitor">系统监控</el-menu-item>
             </el-sub-menu>
           </el-menu>
         </el-aside>
@@ -64,7 +78,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Document, Edit, User, ArrowDown, DataAnalysis } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Edit, User, ArrowDown, DataAnalysis, Setting } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

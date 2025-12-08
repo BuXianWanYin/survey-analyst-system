@@ -192,12 +192,12 @@ const loadSurveyLink = async () => {
     } else {
       // 如果接口不存在，使用默认链接
       const baseUrl = window.location.origin
-      surveyLink.value = `${baseUrl}/user/survey/fill/${route.query.id}`
+      surveyLink.value = `${baseUrl}/survey/fill/${route.query.id}`
     }
   } catch (error) {
     // 如果接口不存在，使用默认链接
     const baseUrl = window.location.origin
-    surveyLink.value = `${baseUrl}/user/survey/fill/${route.query.id}`
+    surveyLink.value = `${baseUrl}/survey/fill/${route.query.id}`
   }
 }
 
@@ -223,12 +223,12 @@ const loadEmbedCode = async () => {
     } else {
       // 如果接口不存在，生成默认嵌入代码
       const baseUrl = window.location.origin
-      embedCode.value = `<iframe src="${baseUrl}/user/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
+      embedCode.value = `<iframe src="${baseUrl}/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
     }
   } catch (error) {
     // 如果接口不存在，生成默认嵌入代码
     const baseUrl = window.location.origin
-    embedCode.value = `<iframe src="${baseUrl}/user/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
+    embedCode.value = `<iframe src="${baseUrl}/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
   }
 }
 

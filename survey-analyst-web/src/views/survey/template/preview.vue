@@ -54,7 +54,7 @@ const createSurveyByTemplate = async () => {
       ElMessage.success('创建成功')
       // 跳转到问卷设计页面
       router.push({
-        path: '/user/survey/design/editor',
+        path: '/survey/edit/editor',
         query: { id: res.data }
       })
     } else {

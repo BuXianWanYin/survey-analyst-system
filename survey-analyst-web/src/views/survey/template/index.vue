@@ -143,7 +143,7 @@ const handleCategorySelect = (index) => {
 // 查看模板预览
 const toTemplatePreview = (formKey) => {
   router.push({
-    path: '/user/survey/template/preview',
+    path: '/survey/template/preview',
     query: { key: formKey }
   })
 }

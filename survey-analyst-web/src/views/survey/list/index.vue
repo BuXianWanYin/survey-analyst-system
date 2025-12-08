@@ -263,7 +263,7 @@ const handleCreateSurvey = async () => {
       ElMessage.success('创建成功')
       showCreateDialog.value = false
       // 跳转到编辑页，并传递问卷ID
-      router.push(`/user/survey/design?id=${res.data.id}`)
+      router.push(`/survey/edit/editor?id=${res.data.id}`)
     }
   } catch (error) {
     ElMessage.error('创建问卷失败')
@@ -271,15 +271,15 @@ const handleCreateSurvey = async () => {
 }
 
 const handleEdit = (id) => {
-  router.push(`/user/survey/design?id=${id}`)
+  router.push(`/survey/edit/editor?id=${id}`)
 }
 
 const handlePublish = (id) => {
-  router.push(`/user/survey/publish?id=${id}`)
+  router.push(`/survey/publish?id=${id}`)
 }
 
 const handleStatistics = (id) => {
-  router.push(`/user/survey/statistics?id=${id}`)
+  router.push(`/survey/statistics?id=${id}`)
 }
 
 const handleDelete = async (id) => {
