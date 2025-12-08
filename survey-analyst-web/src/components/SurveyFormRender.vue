@@ -333,6 +333,18 @@
             :preview-src-list="element.config?.previewList || []"
           />
 
+          <!-- 手写签名 -->
+          <SignPad
+            v-else-if="element.type === 'SIGN_PAD'"
+            v-model="formModel[element.vModel]"
+            :width="600"
+            :height="element.config?.height || 300"
+            :background-color="'#ffffff'"
+            :pen-color="element.config?.penColor || '#000000'"
+            :disabled="element.disabled || previewMode"
+            :readonly="element.readonly || previewMode"
+          />
+
           <!-- 图片轮播独立渲染 -->
           <div
             v-if="element.type === 'IMAGE_CAROUSEL'"
@@ -394,6 +406,7 @@ import { ref, computed } from 'vue'
 import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { ElMessage } from 'element-plus'
+import SignPad from '@/components/SignPad.vue'
 
 const props = defineProps({
   formItems: {
@@ -796,6 +809,20 @@ const formRules = computed(() => {
         validator: (rule, value, callback) => {
           const fileList = Array.isArray(value) ? value : []
           if (fileList.length === 0) {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // SIGN_PAD 组件必填验证
+    if (item.type === 'SIGN_PAD' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          if (!value || value.trim() === '') {
             callback(new Error(`${item.label}不能为空`))
           } else {
             callback()

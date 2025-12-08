@@ -302,7 +302,7 @@
                         v-else-if="element.type === 'SLIDER'"
                         v-model="formModel[element.vModel]"
                         :min="element.config?.min || 0"
-                        :max="element.config?.max || 100"
+                        :max="element.config?.max || 10"
                         :step="element.config?.step || 1"
                         :disabled="element.disabled"
                         :show-input="element.config?.showInput ?? false"
@@ -389,6 +389,17 @@
                         :fit="element.config?.fit || 'cover'"
                         style="width: 100%"
                         :preview-src-list="element.config?.previewList || []"
+                      />
+                      <!-- 手写签名 -->
+                      <SignPad
+                        v-else-if="element.type === 'SIGN_PAD'"
+                        v-model="formModel[element.vModel]"
+                        :width="600"
+                        :height="element.config?.height || 300"
+                        :background-color="'#ffffff'"
+                        :pen-color="element.config?.penColor || '#000000'"
+                        :disabled="element.disabled"
+                        :readonly="element.readonly"
                       />
                       <!-- 默认：单行文本 -->
                       <el-input
@@ -1873,6 +1884,46 @@
                     />
                   </el-form-item>
                 </template>
+                
+                <!-- 手写签名组件配置 -->
+                <template v-if="activeData.type === 'SIGN_PAD'">
+                  <el-divider />
+                  <el-form-item label="画布高度（px）">
+                    <el-input
+                      v-model.number="activeData.config.height"
+                      type="number"
+                      :min="100"
+                      :max="800"
+                      placeholder="请输入"
+                      style="width: 100%"
+                      @input="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="笔触颜色">
+                    <el-color-picker
+                      v-model="activeData.config.penColor"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否禁用">
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="是否只读">
+                    <el-switch
+                      v-model="activeData.readonly"
+                      @change="handlePropertyChange"
+                    />
+                  </el-form-item>
+                </template>
               </el-form>
             </el-scrollbar>
           </div>
@@ -2019,10 +2070,12 @@ import {
   CircleCheck,
   View,
   Star,
-  Close
+  Close,
+  EditPen as SignPadIcon
 } from '@element-plus/icons-vue'
 import { formApi, templateApi } from '@/api'
 import SurveyPreview from '@/components/SurveyPreview.vue'
+import SignPad from '@/components/SignPad.vue'
 import { getToken } from '@/utils/auth'
 
 const route = useRoute()
@@ -2054,7 +2107,8 @@ const componentList = [
   { type: 'RADIO', label: '单选框组', icon: CircleCheck, tag: 'el-radio-group' },
   { type: 'IMAGE_SELECT', label: '图片选择', icon: Picture, tag: 'el-image' },
   { type: 'IMAGE', label: '图片展示', icon: View, tag: 'el-image' },
-  { type: 'RATE', label: '评分组件', icon: Star, tag: 'el-rate' }
+  { type: 'RATE', label: '评分组件', icon: Star, tag: 'el-rate' },
+  { type: 'SIGN_PAD', label: '手写签名', icon: SignPadIcon, tag: 'sign-pad' }
 ]
 
 // 组件库副本（用于VueDraggable）
@@ -2283,6 +2337,15 @@ const createFormItem = (type) => {
       fontSize: 14,
       color: '#606266'
     }
+  }
+  
+  // 手写签名配置
+  if (type === 'SIGN_PAD') {
+    baseItem.config = {
+      height: 300,
+      penColor: '#000000'
+    }
+    baseItem.defaultValue = ''
   }
   
   // 分割线配置
