@@ -34,31 +34,59 @@
               label-position="top"
               class="drawing-board"
             >
-              <!-- 表单标题 -->
+              <!-- 表单标题和描述 -->
               <div class="form-name-section">
-                <h2
-                  v-if="!editingFormName"
-                  class="form-name-text"
-                  @click="editingFormName = true"
-                >
-                  {{ formName || '未命名表单' }}
-                </h2>
-                <el-input
-                  v-else
-                  v-model="formName"
-                  class="form-name-input"
-                  @blur="editingFormName = false"
-                  @keyup.enter="editingFormName = false"
-                />
+                <div class="form-name-row">
+                  <h2
+                    v-if="!editingFormName"
+                    class="form-name-text"
+                    @click="editingFormName = true"
+                  >
+                    {{ formName || '未命名表单' }}
+                  </h2>
+                  <el-input
+                    v-else
+                    v-model="formName"
+                    class="form-name-input"
+                    placeholder="请输入表单标题"
+                    @blur="editingFormName = false"
+                    @keyup.enter="editingFormName = false"
+                  />
+                </div>
+                <div class="form-description-row">
+                  <span
+                    v-if="!editingFormDescription"
+                    class="form-description-text"
+                    :class="{ 'empty-description': !formDescription }"
+                    @click="editingFormDescription = true"
+                  >
+                    {{ formDescription || '点击添加表单描述（可选）' }}
+                  </span>
+                  <el-input
+                    v-else
+                    v-model="formDescription"
+                    class="form-description-input"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="请输入表单描述（可选）"
+                    @blur="editingFormDescription = false"
+                  />
+                </div>
               </div>
 
               <!-- 表单项列表 -->
               <div 
                 class="draggable-container"
                 @drop="handleDrop"
-                @dragover.prevent
-                @dragenter.prevent
+                @dragover.prevent="handleDragOver"
+                @dragenter.prevent="handleDragEnter"
               >
+                <!-- 插入提示线 -->
+                <div
+                  v-if="dragInsertIndex !== null"
+                  class="drag-insert-line"
+                  :style="{ top: `${dragInsertIndex * 80}px` }"
+                />
                 <VueDraggable
                   v-model="drawingList"
                   handle=".drag-handle"
@@ -69,14 +97,17 @@
                   @end="handleDragEnd"
                 >
                   <div
-                    v-for="element in drawingList"
+                    v-for="(element, index) in drawingList"
                     :key="element.formItemId"
                     class="drawing-item"
                     :class="{
                       'active-from-item': activeId === element.formItemId,
                       'unfocus-bordered': activeId !== element.formItemId
                     }"
+                    :data-index="index"
                     @click.stop="handleItemClick(element)"
+                    @dragover.prevent="handleItemDragOver($event, index)"
+                    @dragleave="handleItemDragLeave($event, index)"
                   >
                     <div class="component-name">
                       {{ getComponentLabel(element.type) }}
@@ -993,7 +1024,11 @@ const route = useRoute()
 // 表单基本信息
 const formName = ref('未命名表单')
 const editingFormName = ref(false)
+const formDescription = ref('')
+const editingFormDescription = ref(false)
 const formKey = ref(null)
+const dragInsertIndex = ref(null) // 拖拽插入位置索引
+const isDraggingFromLibrary = ref(false) // 是否从组件库拖拽
 const surveyId = ref(null)
 const formModel = reactive({})
 
@@ -1059,12 +1094,13 @@ const isChoiceType = (type) => {
   return ['RADIO', 'CHECKBOX', 'SELECT', 'CASCADER', 'IMAGE_SELECT', 'SORT'].includes(type)
 }
 
-// 拖拽开始
+// 拖拽开始（从组件库）
 const handleDragStart = (event, component) => {
   event.dataTransfer.effectAllowed = 'copy'
   event.dataTransfer.dropEffect = 'copy'
   event.dataTransfer.setData('componentType', component.type)
   event.dataTransfer.setData('text/plain', component.type) // 兼容性
+  isDraggingFromLibrary.value = true
   
   // 创建一个透明的拖拽图像，隐藏默认的禁用图标
   const dragImage = document.createElement('div')
@@ -1096,6 +1132,65 @@ const handleDragEnd = () => {
   saveFormItems()
 }
 
+// 处理拖拽进入容器
+const handleDragEnter = (event) => {
+  if (isDraggingFromLibrary.value) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+}
+
+// 处理拖拽在容器上移动
+const handleDragOver = (event) => {
+  if (isDraggingFromLibrary.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    // 计算插入位置
+    const container = event.currentTarget
+    const containerRect = container.getBoundingClientRect()
+    const y = event.clientY - containerRect.top
+    
+    // 根据 Y 坐标计算应该插入到哪个位置
+    const itemHeight = 80 // 每个表单项的大概高度
+    let insertIndex = Math.floor(y / itemHeight)
+    
+    // 限制插入位置范围
+    insertIndex = Math.max(0, Math.min(insertIndex, drawingList.value.length))
+    dragInsertIndex.value = insertIndex
+  }
+}
+
+// 处理在表单项上拖拽移动
+const handleItemDragOver = (event, index) => {
+  if (isDraggingFromLibrary.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    const itemRect = event.currentTarget.getBoundingClientRect()
+    const y = event.clientY - itemRect.top
+    const itemHeight = itemRect.height
+    
+    // 判断是在上半部分还是下半部分
+    if (y < itemHeight / 2) {
+      dragInsertIndex.value = index
+    } else {
+      dragInsertIndex.value = index + 1
+    }
+  }
+}
+
+// 处理离开表单项
+const handleItemDragLeave = (event, index) => {
+  if (isDraggingFromLibrary.value) {
+    // 检查是否真的离开了容器区域
+    const container = event.currentTarget.closest('.draggable-container')
+    if (container && !container.contains(event.relatedTarget)) {
+      dragInsertIndex.value = null
+    }
+  }
+}
+
 // 处理从组件库拖拽到设计区域
 const handleDrop = (event) => {
   event.preventDefault()
@@ -1104,20 +1199,33 @@ const handleDrop = (event) => {
   const componentType = event.dataTransfer.getData('componentType') || 
                         event.dataTransfer.getData('text/plain')
   
-  if (!componentType) {
+  if (!componentType || !isDraggingFromLibrary.value) {
+    dragInsertIndex.value = null
+    isDraggingFromLibrary.value = false
     return
   }
   
   const newItem = createFormItem(componentType)
   
-  // 添加到列表末尾 - 使用展开运算符触发响应式更新
-  drawingList.value = [...drawingList.value, newItem]
+  // 确定插入位置
+  let insertIndex = dragInsertIndex.value
+  if (insertIndex === null) {
+    // 如果没有明确的插入位置，添加到末尾
+    insertIndex = drawingList.value.length
+  }
+  
+  // 插入到指定位置
+  drawingList.value.splice(insertIndex, 0, newItem)
   
   // 初始化表单模型
   formModel[newItem.vModel] = getDefaultValue(newItem.type, newItem.defaultValue, newItem.config)
   
   // 选中新添加的项
   activeId.value = newItem.formItemId
+  
+  // 重置拖拽状态
+  dragInsertIndex.value = null
+  isDraggingFromLibrary.value = false
   
   // 等待 DOM 更新后自动保存
   nextTick(() => {
@@ -1442,7 +1550,7 @@ const saveFormConfig = async () => {
     const configData = {
       formKey: formKey.value,
       name: formName.value,
-      description: ''
+      description: formDescription.value || ''
     }
     
     // 如果是编辑模式，传递 surveyId
@@ -1505,6 +1613,7 @@ const loadFormData = async () => {
     if (configRes.code === 200 && configRes.data) {
       formKey.value = configRes.data.formKey
       formName.value = configRes.data.name || '未命名表单'
+      formDescription.value = configRes.data.description || ''
     } else {
       formKey.value = generateFormKey()
     }
@@ -1829,6 +1938,28 @@ onMounted(() => {
   width: 100%;
 }
 
+.drag-insert-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #409EFF;
+  z-index: 100;
+  pointer-events: none;
+  transition: top 0.1s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    background: #409EFF;
+    border-radius: 50%;
+  }
+}
+
 .draggable-container .empty-info {
   position: absolute;
   top: 50%;
@@ -1844,6 +1975,10 @@ onMounted(() => {
   border-bottom: 1px solid #ebeef5;
 }
 
+.form-name-row {
+  margin-bottom: 15px;
+}
+
 .form-name-text {
   font-size: 24px;
   font-weight: 500;
@@ -1852,11 +1987,47 @@ onMounted(() => {
   padding: 10px;
   border: 1px dashed transparent;
   border-radius: 4px;
+  display: inline-block;
   
   &:hover {
     border-color: #409EFF;
     background: rgba(24, 144, 255, 0.05);
   }
+}
+
+.form-name-input {
+  width: 100%;
+  font-size: 24px;
+}
+
+.form-description-row {
+  margin-top: 10px;
+}
+
+.form-description-text {
+  font-size: 14px;
+  color: #606266;
+  cursor: pointer;
+  padding: 8px 10px;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  display: inline-block;
+  min-height: 20px;
+  white-space: pre-wrap;
+  
+  &.empty-description {
+    color: #c0c4cc;
+    font-style: italic;
+  }
+  
+  &:hover {
+    border-color: #409EFF;
+    background: rgba(24, 144, 255, 0.05);
+  }
+}
+
+.form-description-input {
+  width: 100%;
 }
 
 .drawing-item {

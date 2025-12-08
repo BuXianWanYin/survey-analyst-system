@@ -1,16 +1,8 @@
 <template>
     <div class="component-upload-image">
-        <el-upload
-            :action="uploadImgUrl"
-            list-type="picture-card"
-            :on-success="handleUploadSuccess"
-            :before-upload="handleBeforeUpload"
-            :on-error="handleUploadError"
-            name="file"
-            :show-file-list="false"
-            :headers="headers"
-            style="display: inline-block; vertical-align: top"
-        >
+        <el-upload :action="uploadImgUrl" list-type="picture-card" :on-success="handleUploadSuccess"
+            :before-upload="handleBeforeUpload" :on-error="handleUploadError" name="file" :show-file-list="false"
+            :headers="headers" style="display: inline-block; vertical-align: top">
             <el-image v-if="!value" :src="value">
                 <div slot="error" class="image-slot">
                     <i class="el-icon-plus" />
@@ -37,7 +29,7 @@
 </template>
 
 <script>
-import {getToken} from '@/utils/auth'
+import { getToken } from '@/utils/auth'
 
 export default {
     name: 'ImageUpload',
@@ -85,21 +77,21 @@ export default {
 
 <style scoped lang="scss">
 .image {
-  position: relative;
+    position: relative;
 
-  .mask {
-    opacity: 0;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
-    height: 150px;
-    background-color: rgba(0, 0, 0, 0.5);
-    transition: all 0.3s;
-  }
+    .mask {
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        height: 150px;
+        background-color: rgba(0, 0, 0, 0.5);
+        transition: all 0.3s;
+    }
 
-  &:hover .mask {
-    opacity: 1;
-  }
+    &:hover .mask {
+        opacity: 1;
+    }
 }
 </style>

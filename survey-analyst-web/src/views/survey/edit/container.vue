@@ -224,7 +224,25 @@ const loadSurveyInfo = async () => {
         try {
           const itemsRes = await formApi.getFormItems(formKey.value)
           if (itemsRes.code === 200 && itemsRes.data) {
-            formItems.value = itemsRes.data
+            // 解析 scheme 字段，提取 vModel 和 config
+            formItems.value = itemsRes.data.map(item => {
+              const scheme = typeof item.scheme === 'string' 
+                ? JSON.parse(item.scheme) 
+                : item.scheme || {}
+              
+              return {
+                formItemId: item.formItemId,
+                type: item.type,
+                label: item.label,
+                vModel: scheme.vModel || item.formItemId,
+                placeholder: scheme.placeholder || item.placeholder || '',
+                required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+                disabled: scheme.disabled || false,
+                readonly: scheme.readonly || false,
+                defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || ''),
+                config: scheme.config || {}
+              }
+            })
           }
         } catch (error) {
           // 如果加载失败，使用空数组

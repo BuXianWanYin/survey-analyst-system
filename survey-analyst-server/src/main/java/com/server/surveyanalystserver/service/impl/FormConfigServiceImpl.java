@@ -34,10 +34,15 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
                 config.setId(existing.getId());
                 this.updateById(config);
                 
-                // 逻辑外键联动：同步更新 survey 表的 title
+                // 逻辑外键联动：同步更新 survey 表的 title 和 description
                 Survey survey = surveyMapper.selectById(config.getSurveyId());
-                if (survey != null && config.getName() != null) {
-                    survey.setTitle(config.getName());
+                if (survey != null) {
+                    if (config.getName() != null) {
+                        survey.setTitle(config.getName());
+                    }
+                    if (config.getDescription() != null) {
+                        survey.setDescription(config.getDescription());
+                    }
                     surveyMapper.updateById(survey);
                 }
                 
@@ -58,10 +63,15 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
                 if (existing.getSurveyId() != null) {
                     config.setSurveyId(existing.getSurveyId());
                     
-                    // 逻辑外键联动：同步更新 survey 表的 title
+                    // 逻辑外键联动：同步更新 survey 表的 title 和 description
                     Survey survey = surveyMapper.selectById(existing.getSurveyId());
-                    if (survey != null && config.getName() != null) {
-                        survey.setTitle(config.getName());
+                    if (survey != null) {
+                        if (config.getName() != null) {
+                            survey.setTitle(config.getName());
+                        }
+                        if (config.getDescription() != null) {
+                            survey.setDescription(config.getDescription());
+                        }
                         surveyMapper.updateById(survey);
                     }
                 }
@@ -74,11 +84,16 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
         if (config.getId() != null) {
             this.updateById(config);
             
-            // 逻辑外键联动：如果有 surveyId，同步更新 survey 表的 title
-            if (config.getSurveyId() != null && config.getName() != null) {
+            // 逻辑外键联动：如果有 surveyId，同步更新 survey 表的 title 和 description
+            if (config.getSurveyId() != null) {
                 Survey survey = surveyMapper.selectById(config.getSurveyId());
                 if (survey != null) {
-                    survey.setTitle(config.getName());
+                    if (config.getName() != null) {
+                        survey.setTitle(config.getName());
+                    }
+                    if (config.getDescription() != null) {
+                        survey.setDescription(config.getDescription());
+                    }
                     surveyMapper.updateById(survey);
                 }
             }

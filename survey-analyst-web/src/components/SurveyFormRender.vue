@@ -14,12 +14,12 @@
         v-if="element.type !== 'DIVIDER'"
         :label="element.label"
         :prop="element.vModel"
-        :required="element.required"
+        :required="!!element.required || element.required === 1"
       >
         <template #label>
           <span class="form-label">
             <span v-if="showNumber" class="question-number">{{ getQuestionIndex(element) }}. </span>
-            <span v-if="element.required" class="required-mark">*</span>
+            <span v-if="!!element.required || element.required === 1" class="required-mark">*</span>
             {{ element.label }}
           </span>
         </template>
@@ -120,7 +120,8 @@
         <!-- 文件上传 -->
         <el-upload
           v-else-if="element.type === 'UPLOAD'"
-          v-model:file-list="formModel[element.vModel]"
+          :file-list="getUploadFileList(element.vModel)"
+          @change="handleUploadChange(element.vModel, $event)"
           :disabled="element.disabled || previewMode"
           action="#"
           :auto-upload="false"
@@ -135,7 +136,8 @@
         <!-- 图片上传 -->
         <el-upload
           v-else-if="element.type === 'IMAGE_UPLOAD'"
-          v-model:file-list="formModel[element.vModel]"
+          :file-list="getUploadFileList(element.vModel)"
+          @change="handleUploadChange(element.vModel, $event)"
           :disabled="element.disabled || previewMode"
           action="#"
           :auto-upload="false"
@@ -146,14 +148,19 @@
         </el-upload>
 
         <!-- 滑块 -->
-        <el-slider
+        <div
           v-else-if="element.type === 'SLIDER'"
-          v-model="formModel[element.vModel]"
-          :min="element.config?.min || 0"
-          :max="element.config?.max || 100"
-          :step="element.config?.step || 1"
-          :disabled="element.disabled || previewMode"
-        />
+          class="slider-wrapper"
+        >
+          <el-slider
+            :model-value="getSliderValue(element.vModel, element.config)"
+            @update:model-value="setSliderValue(element.vModel, $event)"
+            :min="element.config?.min || 0"
+            :max="element.config?.max || 100"
+            :step="element.config?.step || 1"
+            :disabled="element.disabled || previewMode"
+          />
+        </div>
 
         <!-- 级联选择 -->
         <el-cascader
@@ -274,7 +281,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 
@@ -301,6 +308,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['update:formModel'])
+
 // 获取题目序号
 const getQuestionIndex = (element) => {
   let index = 0
@@ -313,6 +322,91 @@ const getQuestionIndex = (element) => {
     }
   }
   return index
+}
+
+// 内部状态存储，用于类型转换（只用于类型转换，不直接修改 formModel）
+const uploadFileLists = ref({})
+const sliderValues = ref({})
+
+// 获取上传组件的文件列表（确保是数组）
+const getUploadFileList = (vModel) => {
+  // 如果已经有缓存的值，使用缓存
+  if (uploadFileLists.value[vModel] !== undefined) {
+    return uploadFileLists.value[vModel]
+  }
+  
+  const value = props.formModel[vModel]
+  let fileList = []
+  
+  if (Array.isArray(value)) {
+    fileList = value
+  } else if (value === null || value === undefined || value === '') {
+    fileList = []
+  } else {
+    // 如果值是字符串或其他类型，尝试转换为数组
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value
+      if (Array.isArray(parsed)) {
+        fileList = parsed
+      } else {
+        fileList = []
+      }
+    } catch {
+      fileList = []
+    }
+  }
+  
+  // 只缓存，不修改 formModel（让父组件负责初始化）
+  uploadFileLists.value[vModel] = fileList
+  
+  return fileList
+}
+
+// 处理上传组件的变化
+const handleUploadChange = (vModel, file, fileList) => {
+  // Element Plus 的 upload 组件的 change 事件参数是 (file, fileList)
+  const files = Array.isArray(fileList) ? fileList : []
+  uploadFileLists.value[vModel] = files
+  // 只有在 formModel 中已存在该字段时才更新
+  if (vModel in props.formModel) {
+    props.formModel[vModel] = files
+  }
+}
+
+// 获取滑块的值（确保是数字）
+const getSliderValue = (vModel, config) => {
+  // 如果已经有缓存的值，使用缓存
+  if (sliderValues.value[vModel] !== undefined) {
+    return sliderValues.value[vModel]
+  }
+  
+  const value = props.formModel[vModel]
+  let numValue
+  
+  // 只对滑块类型的值进行转换，如果值不存在或无效，使用默认值但不修改 formModel
+  if (value === null || value === undefined || value === '') {
+    numValue = config?.min || 0
+  } else {
+    numValue = Number(value)
+    if (isNaN(numValue)) {
+      numValue = config?.min || 0
+    }
+  }
+  
+  // 只缓存，不修改 formModel（让父组件负责初始化）
+  sliderValues.value[vModel] = numValue
+  
+  return numValue
+}
+
+// 设置滑块的值
+const setSliderValue = (vModel, value) => {
+  const numValue = Number(value)
+  sliderValues.value[vModel] = numValue
+  // 只有在 formModel 中已存在该字段时才更新
+  if (vModel in props.formModel) {
+    props.formModel[vModel] = numValue
+  }
 }
 
 const formRef = ref(null)
@@ -430,6 +524,16 @@ const formRef = ref(null)
       font-size: 48px;
       margin-bottom: 12px;
     }
+  }
+}
+
+// 滑块组件样式
+.slider-wrapper {
+  padding: 0 12px;
+  width: 100%;
+  
+  :deep(.el-slider) {
+    width: 100%;
   }
 }
 

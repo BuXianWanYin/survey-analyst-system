@@ -551,7 +551,36 @@ const loadData = async () => {
     surveyTitle.value = props.surveyTitle || ''
     surveyDescription.value = props.surveyDescription || ''
     formKey.value = props.formKey || ''
-    formItems.value = props.formItems || []
+    
+    // 处理从 props 传入的 formItems，确保数据结构正确
+    if (props.formItems && props.formItems.length > 0) {
+      formItems.value = props.formItems.map(item => {
+        // 如果 item 已经有 vModel，说明已经解析过了，直接返回
+        if (item.vModel) {
+          return item
+        }
+        // 否则需要解析 scheme
+        const scheme = typeof item.scheme === 'string' 
+          ? JSON.parse(item.scheme) 
+          : item.scheme || {}
+        
+        return {
+          formItemId: item.formItemId,
+          type: item.type,
+          label: item.label,
+          vModel: scheme.vModel || item.formItemId,
+          placeholder: scheme.placeholder || item.placeholder || '',
+          required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+          disabled: scheme.disabled || false,
+          readonly: scheme.readonly || false,
+          defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || ''),
+          config: scheme.config || {}
+        }
+      })
+    } else {
+      formItems.value = []
+    }
+    
     if (formItems.value.length > 0) {
       initPreviewForm()
     }
@@ -579,7 +608,25 @@ const loadData = async () => {
         if (formKey.value) {
           const itemsRes = await formApi.getFormItems(formKey.value)
           if (itemsRes.code === 200 && itemsRes.data) {
-            formItems.value = itemsRes.data
+            // 解析 scheme 字段，提取 vModel 和 config
+            formItems.value = itemsRes.data.map(item => {
+              const scheme = typeof item.scheme === 'string' 
+                ? JSON.parse(item.scheme) 
+                : item.scheme || {}
+              
+              return {
+                formItemId: item.formItemId,
+                type: item.type,
+                label: item.label,
+                vModel: scheme.vModel || item.formItemId,
+                placeholder: scheme.placeholder || item.placeholder || '',
+                required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+                disabled: scheme.disabled || false,
+                readonly: scheme.readonly || false,
+                defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || ''),
+                config: scheme.config || {}
+              }
+            })
             initPreviewForm()
           }
         }
@@ -644,12 +691,38 @@ const initPreviewForm = () => {
   })
 
   formItems.value.forEach(item => {
-    if (item.type === 'CHECKBOX' || item.type === 'SORT' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
-      previewFormModel[item.vModel] = []
-    } else if (item.type === 'SLIDER' || item.type === 'NUMBER') {
-      previewFormModel[item.vModel] = item.config?.min || 0
-    } else if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
-      previewFormModel[item.vModel] = item.defaultValue || ''
+    const vModel = item.vModel || item.formItemId
+    const defaultValue = item.defaultValue
+    
+    if (item.type === 'CHECKBOX' || item.type === 'SORT') {
+      previewFormModel[vModel] = defaultValue && Array.isArray(defaultValue) 
+        ? defaultValue 
+        : []
+    } else if (item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+      previewFormModel[vModel] = defaultValue && Array.isArray(defaultValue)
+        ? defaultValue
+        : []
+    } else if (item.type === 'SLIDER') {
+      const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
+        ? Number(defaultValue)
+        : (item.config?.min || 0)
+      previewFormModel[vModel] = isNaN(numValue) ? (item.config?.min || 0) : numValue
+    } else if (item.type === 'NUMBER') {
+      const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
+        ? Number(defaultValue)
+        : undefined
+      previewFormModel[vModel] = isNaN(numValue) ? undefined : numValue
+    } else if (item.type === 'DIVIDER' || item.type === 'IMAGE' || item.type === 'IMAGE_CAROUSEL') {
+      // 这些类型不需要绑定表单模型
+      previewFormModel[vModel] = null
+    } else {
+      // 其他类型使用 defaultValue，如果没有则使用空字符串（但要注意 defaultValue 为 "0" 字符串时应该保持为字符串）
+      if (defaultValue === null || defaultValue === undefined || defaultValue === '') {
+        previewFormModel[vModel] = ''
+      } else {
+        // 保持原始类型，不要转换
+        previewFormModel[vModel] = defaultValue
+      }
     }
   })
 }
