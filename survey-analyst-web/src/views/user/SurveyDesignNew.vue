@@ -5,9 +5,24 @@
       <el-card class="header-card">
         <div class="header-content">
           <div class="header-actions">
-            <el-button type="primary" @click="handlePreview">预览</el-button>
-            <el-button type="success" @click="handleSave">保存</el-button>
-            <el-button type="warning" @click="handleSaveAsTemplate">保存为模板</el-button>
+            <el-button
+              type="primary"
+              @click="handlePreview"
+            >
+              预览
+            </el-button>
+            <el-button
+              type="success"
+              @click="handleSave"
+            >
+              保存
+            </el-button>
+            <el-button
+              type="warning"
+              @click="handleSaveAsTemplate"
+            >
+              保存为模板
+            </el-button>
           </div>
         </div>
       </el-card>
@@ -81,251 +96,274 @@
                   drag-class="drag-item"
                   @end="handleDragEnd"
                 >
-                    <div
+                  <div
                     v-for="element in drawingList"
                     :key="element.formItemId"
-                      class="drawing-item"
-                      :class="{
-                        'active-from-item': activeId === element.formItemId,
-                        'unfocus-bordered': activeId !== element.formItemId
-                      }"
-                      @click.stop="handleItemClick(element)"
+                    class="drawing-item"
+                    :class="{
+                      'active-from-item': activeId === element.formItemId,
+                      'unfocus-bordered': activeId !== element.formItemId
+                    }"
+                    @click.stop="handleItemClick(element)"
+                  >
+                    <div class="component-name">
+                      {{ getComponentLabel(element.type) }}
+                    </div>
+                    <div
+                      class="drawing-item-drag"
+                      @click.stop
                     >
-                      <div class="component-name">{{ getComponentLabel(element.type) }}</div>
-                      <div class="drawing-item-drag" @click.stop>
-                        <el-icon class="drag-handle"><Rank /></el-icon>
-                      </div>
-                      <div class="drawing-item-copy" @click.stop="handleCopyItem(element)">
-                        <el-icon><CopyDocument /></el-icon>
-                      </div>
-                      <div class="drawing-item-delete" @click.stop="handleDeleteItem(element)">
-                        <el-icon><Delete /></el-icon>
-                      </div>
-                      <el-form-item
-                        :label="element.label"
-                        :prop="element.vModel"
-                        :required="element.required"
+                      <el-icon class="drag-handle">
+                        <Rank />
+                      </el-icon>
+                    </div>
+                    <div
+                      class="drawing-item-copy"
+                      @click.stop="handleCopyItem(element)"
+                    >
+                      <el-icon><CopyDocument /></el-icon>
+                    </div>
+                    <div
+                      class="drawing-item-delete"
+                      @click.stop="handleDeleteItem(element)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                    </div>
+                    <el-form-item
+                      :label="element.label"
+                      :prop="element.vModel"
+                      :required="element.required"
+                    >
+                      <!-- 单行文本 -->
+                      <el-input
+                        v-if="element.type === 'INPUT'"
+                        v-model="formModel[element.vModel]"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                        :readonly="element.readonly"
+                      />
+                      <!-- 多行文本 -->
+                      <el-input
+                        v-else-if="element.type === 'TEXTAREA'"
+                        v-model="formModel[element.vModel]"
+                        type="textarea"
+                        :rows="4"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                        :readonly="element.readonly"
+                      />
+                      <!-- 数字 -->
+                      <el-input-number
+                        v-else-if="element.type === 'NUMBER'"
+                        v-model="formModel[element.vModel]"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                      />
+                      <!-- 单选框 -->
+                      <el-radio-group
+                        v-else-if="element.type === 'RADIO'"
+                        v-model="formModel[element.vModel]"
+                        :disabled="element.disabled"
                       >
-                        <!-- 单行文本 -->
-                        <el-input
-                          v-if="element.type === 'INPUT'"
-                          v-model="formModel[element.vModel]"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                          :readonly="element.readonly"
+                        <el-radio
+                          v-for="(option, idx) in element.config?.options || []"
+                          :key="idx"
+                          :label="option.value"
+                        >
+                          {{ option.label }}
+                        </el-radio>
+                      </el-radio-group>
+                      <!-- 多选框 -->
+                      <el-checkbox-group
+                        v-else-if="element.type === 'CHECKBOX'"
+                        v-model="formModel[element.vModel]"
+                        :disabled="element.disabled"
+                      >
+                        <el-checkbox
+                          v-for="(option, idx) in element.config?.options || []"
+                          :key="idx"
+                          :label="option.value"
+                        >
+                          {{ option.label }}
+                        </el-checkbox>
+                      </el-checkbox-group>
+                      <!-- 下拉框 -->
+                      <el-select
+                        v-else-if="element.type === 'SELECT'"
+                        v-model="formModel[element.vModel]"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                      >
+                        <el-option
+                          v-for="(option, idx) in element.config?.options || []"
+                          :key="idx"
+                          :label="option.label"
+                          :value="option.value"
                         />
-                        <!-- 多行文本 -->
-                        <el-input
-                          v-else-if="element.type === 'TEXTAREA'"
-                          v-model="formModel[element.vModel]"
-                          type="textarea"
-                          :rows="4"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                          :readonly="element.readonly"
-                        />
-                        <!-- 数字 -->
-                        <el-input-number
-                          v-else-if="element.type === 'NUMBER'"
-                          v-model="formModel[element.vModel]"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                        />
-                        <!-- 单选框 -->
-                        <el-radio-group
-                          v-else-if="element.type === 'RADIO'"
-                          v-model="formModel[element.vModel]"
-                          :disabled="element.disabled"
+                      </el-select>
+                      <!-- 评分 -->
+                      <el-rate
+                        v-else-if="element.type === 'RATE'"
+                        v-model="formModel[element.vModel]"
+                        :max="5"
+                        :disabled="element.disabled"
+                      />
+                      <!-- 日期选择 -->
+                      <el-date-picker
+                        v-else-if="element.type === 'DATE'"
+                        v-model="formModel[element.vModel]"
+                        type="date"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                        style="width: 100%"
+                      />
+                      <!-- 文件上传 -->
+                      <el-upload
+                        v-else-if="element.type === 'UPLOAD'"
+                        v-model:file-list="formModel[element.vModel]"
+                        :disabled="element.disabled"
+                        action="#"
+                        :auto-upload="false"
+                      >
+                        <el-button type="primary">
+                          选择文件
+                        </el-button>
+                      </el-upload>
+                      <!-- 图片上传 -->
+                      <el-upload
+                        v-else-if="element.type === 'IMAGE_UPLOAD'"
+                        v-model:file-list="formModel[element.vModel]"
+                        :disabled="element.disabled"
+                        action="#"
+                        :auto-upload="false"
+                        list-type="picture-card"
+                        :limit="element.config?.limit || 9"
+                      >
+                        <el-icon><Plus /></el-icon>
+                      </el-upload>
+                      <!-- 滑块 -->
+                      <el-slider
+                        v-else-if="element.type === 'SLIDER'"
+                        v-model="formModel[element.vModel]"
+                        :min="element.config?.min || 0"
+                        :max="element.config?.max || 100"
+                        :step="element.config?.step || 1"
+                        :disabled="element.disabled"
+                      />
+                      <!-- 级联选择 -->
+                      <el-cascader
+                        v-else-if="element.type === 'CASCADER'"
+                        v-model="formModel[element.vModel]"
+                        :options="element.config?.options || []"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                        style="width: 100%"
+                      />
+                      <!-- 分割线 -->
+                      <el-divider
+                        v-else-if="element.type === 'DIVIDER'"
+                        :content-position="element.config?.contentPosition || 'center'"
+                      >
+                        {{ element.config?.content || '' }}
+                      </el-divider>
+                      <!-- 图片轮播 -->
+                      <div
+                        v-else-if="element.type === 'IMAGE_CAROUSEL'"
+                        class="image-carousel-wrapper"
+                      >
+                        <el-carousel
+                          v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
+                          :key="`carousel-${element.formItemId}-${element.config?.options?.length || 0}-${JSON.stringify(element.config?.options?.map(opt => opt.url || ''))}`"
+                          :height="`${element.config?.height || 300}px`"
+                          :interval="element.config?.interval || 4000"
                         >
-                          <el-radio
-                            v-for="(option, idx) in element.config?.options || []"
-                            :key="idx"
-                            :label="option.value"
-                          >
-                            {{ option.label }}
-                          </el-radio>
-                        </el-radio-group>
-                        <!-- 多选框 -->
-                        <el-checkbox-group
-                          v-else-if="element.type === 'CHECKBOX'"
-                          v-model="formModel[element.vModel]"
-                          :disabled="element.disabled"
-                        >
-                          <el-checkbox
-                            v-for="(option, idx) in element.config?.options || []"
-                            :key="idx"
-                            :label="option.value"
-                          >
-                            {{ option.label }}
-                          </el-checkbox>
-                        </el-checkbox-group>
-                        <!-- 下拉框 -->
-                        <el-select
-                          v-else-if="element.type === 'SELECT'"
-                          v-model="formModel[element.vModel]"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                        >
-                          <el-option
-                            v-for="(option, idx) in element.config?.options || []"
-                            :key="idx"
-                            :label="option.label"
-                            :value="option.value"
-                          />
-                        </el-select>
-                        <!-- 评分 -->
-                        <el-rate
-                          v-else-if="element.type === 'RATE'"
-                          v-model="formModel[element.vModel]"
-                          :max="5"
-                          :disabled="element.disabled"
-                        />
-                        <!-- 日期选择 -->
-                        <el-date-picker
-                          v-else-if="element.type === 'DATE'"
-                          v-model="formModel[element.vModel]"
-                          type="date"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                          style="width: 100%"
-                        />
-                        <!-- 文件上传 -->
-                        <el-upload
-                          v-else-if="element.type === 'UPLOAD'"
-                          v-model:file-list="formModel[element.vModel]"
-                          :disabled="element.disabled"
-                          action="#"
-                          :auto-upload="false"
-                        >
-                          <el-button type="primary">选择文件</el-button>
-                        </el-upload>
-                        <!-- 图片上传 -->
-                        <el-upload
-                          v-else-if="element.type === 'IMAGE_UPLOAD'"
-                          v-model:file-list="formModel[element.vModel]"
-                          :disabled="element.disabled"
-                          action="#"
-                          :auto-upload="false"
-                          list-type="picture-card"
-                          :limit="element.config?.limit || 9"
-                        >
-                          <el-icon><Plus /></el-icon>
-                        </el-upload>
-                        <!-- 滑块 -->
-                        <el-slider
-                          v-else-if="element.type === 'SLIDER'"
-                          v-model="formModel[element.vModel]"
-                          :min="element.config?.min || 0"
-                          :max="element.config?.max || 100"
-                          :step="element.config?.step || 1"
-                          :disabled="element.disabled"
-                        />
-                        <!-- 级联选择 -->
-                        <el-cascader
-                          v-else-if="element.type === 'CASCADER'"
-                          v-model="formModel[element.vModel]"
-                          :options="element.config?.options || []"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                          style="width: 100%"
-                        />
-                        <!-- 分割线 -->
-                        <el-divider
-                          v-else-if="element.type === 'DIVIDER'"
-                          :content-position="element.config?.contentPosition || 'center'"
-                        >
-                          {{ element.config?.content || '' }}
-                        </el-divider>
-                        <!-- 图片轮播 -->
-                        <div
-                          v-else-if="element.type === 'IMAGE_CAROUSEL'"
-                          class="image-carousel-wrapper"
-                        >
-                          <el-carousel
-                            v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
-                            :height="`${element.config?.height || 300}px`"
-                            :interval="element.config?.interval || 4000"
-                            :key="`carousel-${element.formItemId}-${element.config?.options?.length || 0}-${JSON.stringify(element.config?.options?.map(opt => opt.url || ''))}`"
-                          >
-                            <el-carousel-item
-                              v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
-                              :key="option.url || idx"
-                            >
-                              <el-image
-                                :src="option.url"
-                                :fit="element.config?.fit || 'cover'"
-                                style="width: 100%; height: 100%"
-                              />
-                            </el-carousel-item>
-                          </el-carousel>
-                          <div v-else class="carousel-placeholder">
-                            <el-icon><Picture /></el-icon>
-                            <span>请添加图片</span>
-                          </div>
-                        </div>
-                        <!-- 图片选择 -->
-                        <div
-                          v-else-if="element.type === 'IMAGE_SELECT'"
-                          class="image-select-container"
-                        >
-                          <div
-                            v-for="(option, idx) in element.config?.options || []"
-                            :key="idx"
-                            class="image-select-item"
-                            :class="{ active: formModel[element.vModel] === option.value }"
-                            @click="formModel[element.vModel] = option.value"
+                          <el-carousel-item
+                            v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
+                            :key="option.url || idx"
                           >
                             <el-image
-                              v-if="option.image"
-                              :src="option.image"
-                              fit="cover"
-                              class="image-select-img"
+                              :src="option.url"
+                              :fit="element.config?.fit || 'cover'"
+                              style="width: 100%; height: 100%"
                             />
-                            <span class="image-select-label">{{ option.label }}</span>
-                          </div>
-                        </div>
-                        <!-- 图片展示 -->
-                        <el-image
-                          v-else-if="element.type === 'IMAGE'"
-                          :src="element.config?.imageUrl || ''"
-                          :fit="element.config?.fit || 'cover'"
-                          style="width: 100%"
-                          :preview-src-list="element.config?.previewList || []"
-                        />
-                        <!-- 排序题型 -->
+                          </el-carousel-item>
+                        </el-carousel>
                         <div
-                          v-else-if="element.type === 'SORT'"
-                          class="sort-container"
-                        >
-                          <VueDraggable
-                            v-model="formModel[element.vModel]"
-                            handle=".sort-handle"
-                            :animation="200"
-                          >
-                            <div
-                              v-for="(item, idx) in formModel[element.vModel] || []"
-                              :key="idx"
-                              class="sort-item"
-                            >
-                              <el-icon class="sort-handle"><Rank /></el-icon>
-                              <span>{{ item.label || item }}</span>
-                            </div>
-                          </VueDraggable>
-                        </div>
-                        <!-- 默认：单行文本 -->
-                        <el-input
                           v-else
+                          class="carousel-placeholder"
+                        >
+                          <el-icon><Picture /></el-icon>
+                          <span>请添加图片</span>
+                        </div>
+                      </div>
+                      <!-- 图片选择 -->
+                      <div
+                        v-else-if="element.type === 'IMAGE_SELECT'"
+                        class="image-select-container"
+                      >
+                        <div
+                          v-for="(option, idx) in element.config?.options || []"
+                          :key="idx"
+                          class="image-select-item"
+                          :class="{ active: formModel[element.vModel] === option.value }"
+                          @click="formModel[element.vModel] = option.value"
+                        >
+                          <el-image
+                            v-if="option.image"
+                            :src="option.image"
+                            fit="cover"
+                            class="image-select-img"
+                          />
+                          <span class="image-select-label">{{ option.label }}</span>
+                        </div>
+                      </div>
+                      <!-- 图片展示 -->
+                      <el-image
+                        v-else-if="element.type === 'IMAGE'"
+                        :src="element.config?.imageUrl || ''"
+                        :fit="element.config?.fit || 'cover'"
+                        style="width: 100%"
+                        :preview-src-list="element.config?.previewList || []"
+                      />
+                      <!-- 排序题型 -->
+                      <div
+                        v-else-if="element.type === 'SORT'"
+                        class="sort-container"
+                      >
+                        <VueDraggable
                           v-model="formModel[element.vModel]"
-                          :placeholder="element.placeholder"
-                          :disabled="element.disabled"
-                          :readonly="element.readonly"
-                        />
-                      </el-form-item>
-                    </div>
+                          handle=".sort-handle"
+                          :animation="200"
+                        >
+                          <div
+                            v-for="(item, idx) in formModel[element.vModel] || []"
+                            :key="idx"
+                            class="sort-item"
+                          >
+                            <el-icon class="sort-handle">
+                              <Rank />
+                            </el-icon>
+                            <span>{{ item.label || item }}</span>
+                          </div>
+                        </VueDraggable>
+                      </div>
+                      <!-- 默认：单行文本 -->
+                      <el-input
+                        v-else
+                        v-model="formModel[element.vModel]"
+                        :placeholder="element.placeholder"
+                        :disabled="element.disabled"
+                        :readonly="element.readonly"
+                      />
+                    </el-form-item>
+                  </div>
                 </VueDraggable>
                 
                 <!-- 空状态 -->
-                <div v-if="drawingList.length === 0" class="empty-info">
+                <div
+                  v-if="drawingList.length === 0"
+                  class="empty-info"
+                >
                   从左侧拖拽组件到此处
                 </div>
               </div>
@@ -338,17 +376,32 @@
       <div class="right-board">
         <el-card class="property-panel">
           <template #header>
-            <div class="property-header">组件属性</div>
+            <div class="property-header">
+              组件属性
+            </div>
           </template>
-          <div v-if="activeData" class="property-content">
+          <div
+            v-if="activeData"
+            class="property-content"
+          >
             <el-scrollbar class="property-scrollbar">
-              <el-form :model="activeData" label-width="100px" label-position="top">
+              <el-form
+                :model="activeData"
+                label-width="100px"
+                label-position="top"
+              >
                 <!-- 基础属性（所有组件通用） -->
                 <el-form-item label="标题">
-                  <el-input v-model="activeData.label" @input="handlePropertyChange" />
+                  <el-input
+                    v-model="activeData.label"
+                    @input="handlePropertyChange"
+                  />
                 </el-form-item>
                 <el-form-item label="字段名">
-                  <el-input v-model="activeData.vModel" disabled />
+                  <el-input
+                    v-model="activeData.vModel"
+                    disabled
+                  />
                 </el-form-item>
                 
                 <!-- 输入类组件特有属性 -->
@@ -360,13 +413,22 @@
                     />
                   </el-form-item>
                   <el-form-item label="是否必填">
-                    <el-switch v-model="activeData.required" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                   <el-form-item label="是否禁用">
-                    <el-switch v-model="activeData.disabled" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                   <el-form-item label="是否只读">
-                    <el-switch v-model="activeData.readonly" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.readonly"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
                 
@@ -392,7 +454,11 @@
                         删除
                       </el-button>
                     </div>
-                    <el-button type="primary" text @click="handleAddOption">
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddOption"
+                    >
                       添加选项
                     </el-button>
                   </el-form-item>
@@ -410,8 +476,8 @@
                       <el-input
                         v-model="option.label"
                         placeholder="选项文本"
-                        @input="handlePropertyChange"
                         style="margin-bottom: 10px"
+                        @input="handlePropertyChange"
                       />
                       <el-upload
                         :action="uploadUrl"
@@ -427,19 +493,29 @@
                           fit="cover"
                           class="option-preview-image"
                         />
-                        <el-button v-else type="primary" size="small">上传图片</el-button>
+                        <el-button
+                          v-else
+                          type="primary"
+                          size="small"
+                        >
+                          上传图片
+                        </el-button>
                       </el-upload>
                       <el-button
                         type="danger"
                         text
                         size="small"
-                        @click="handleRemoveOption(idx)"
                         style="margin-top: 10px"
+                        @click="handleRemoveOption(idx)"
                       >
                         删除
                       </el-button>
                     </div>
-                    <el-button type="primary" text @click="handleAddOption">
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddOption"
+                    >
                       添加选项
                     </el-button>
                   </el-form-item>
@@ -471,7 +547,10 @@
                     />
                   </el-form-item>
                   <el-form-item label="是否禁用">
-                    <el-switch v-model="activeData.disabled" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
                 
@@ -502,72 +581,101 @@
                       placeholder="请选择适应模式"
                       @change="handlePropertyChange"
                     >
-                      <el-option label="填充" value="fill" />
-                      <el-option label="包含" value="contain" />
-                      <el-option label="覆盖" value="cover" />
-                      <el-option label="无" value="none" />
-                      <el-option label="缩放" value="scale-down" />
+                      <el-option
+                        label="填充"
+                        value="fill"
+                      />
+                      <el-option
+                        label="包含"
+                        value="contain"
+                      />
+                      <el-option
+                        label="覆盖"
+                        value="cover"
+                      />
+                      <el-option
+                        label="无"
+                        value="none"
+                      />
+                      <el-option
+                        label="缩放"
+                        value="scale-down"
+                      />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="选项">
-                    <VueDraggable
-                      v-model="activeData.config.options"
-                      handle=".carousel-drag-handle"
-                      ghost-class="sortable-ghost"
-                      drag-class="drag-item"
-                      @end="handlePropertyChange"
-                    >
-                      <div
-                        v-for="(option, idx) in (activeData.config?.options || [])"
-                        :key="idx"
-                        class="carousel-option-item"
+                    <div class="carousel-options-container">
+                      <VueDraggable
+                        v-model="activeData.config.options"
+                        handle=".carousel-drag-handle"
+                        ghost-class="sortable-ghost"
+                        drag-class="drag-item"
+                        @end="handlePropertyChange"
                       >
-                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
-                          <el-icon class="carousel-drag-handle" style="cursor: move; color: #909399; font-size: 16px">
-                            <Rank />
-                          </el-icon>
-                          <el-input
-                            v-model="option.text"
-                            placeholder="文字"
-                            @input="handlePropertyChange"
-                            style="flex: 1"
-                          />
-                          <el-icon
-                            class="carousel-delete-icon"
-                            style="cursor: pointer; color: #f56c6c; font-size: 18px"
-                            @click="handleRemoveCarouselOption(idx)"
-                          >
-                            <Delete />
-                          </el-icon>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center">
-                          <el-input
-                            v-model="option.url"
-                            placeholder="图片URL"
-                            @input="handlePropertyChange"
-                            style="flex: 1"
-                          />
-                          <el-upload
-                            :action="uploadUrl"
-                            :headers="uploadHeaders"
-                            :show-file-list="false"
-                            :on-success="(res) => handleCarouselOptionUpload(res, idx)"
-                            accept="image/*"
+                        <div
+                          v-for="(option, idx) in (activeData.config?.options || [])"
+                          :key="idx"
+                          class="carousel-option-item"
+                        >
+                          <div
+                            style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px"
                           >
                             <el-icon
-                              style="cursor: pointer; color: #409eff; font-size: 18px"
-                              title="上传图片"
+                              class="carousel-drag-handle"
+                              style="cursor: move; color: #909399; font-size: 16px"
                             >
-                              <Upload />
+                              <Rank />
                             </el-icon>
-                          </el-upload>
+                            <el-input
+                              v-model="option.text"
+                              placeholder="文字"
+                              style="flex: 1"
+                              @input="handlePropertyChange"
+                            />
+                            <el-icon
+                              class="carousel-delete-icon"
+                              style="cursor: pointer; color: #f56c6c; font-size: 18px"
+                              @click="handleRemoveCarouselOption(idx)"
+                            >
+                              <Delete />
+                            </el-icon>
+                          </div>
+                          <div
+                            style="display: flex; gap: 8px; align-items: center"
+                          >
+                            <el-input
+                              v-model="option.url"
+                              placeholder="图片URL"
+                              style="flex: 1"
+                              @input="handlePropertyChange"
+                            />
+                            <el-upload
+                              :action="uploadUrl"
+                              :headers="uploadHeaders"
+                              :show-file-list="false"
+                              :on-success="(res) => handleCarouselOptionUpload(res, idx)"
+                              accept="image/*"
+                            >
+                              <el-icon
+                                style="cursor: pointer; color: #409eff; font-size: 18px"
+                                title="上传图片"
+                              >
+                                <Upload />
+                              </el-icon>
+                            </el-upload>
+                          </div>
                         </div>
-                      </div>
-                    </VueDraggable>
-                    <el-button type="primary" text @click="handleAddCarouselOption" style="margin-top: 10px">
-                      <el-icon><Plus /></el-icon>
-                      <span>添加选项</span>
-                    </el-button>
+                      </VueDraggable>
+                      <el-button
+                        type="primary"
+                        text
+                        class="carousel-add-btn"
+                        @click="handleAddCarouselOption"
+                      >
+                        <el-icon><Plus /></el-icon>
+                        <span>添加选项</span>
+                      </el-button>
+                    </div>
                   </el-form-item>
                 </template>
                 
@@ -589,7 +697,9 @@
                       :on-success="handleImageUpload"
                       accept="image/*"
                     >
-                      <el-button type="primary">选择图片</el-button>
+                      <el-button type="primary">
+                        选择图片
+                      </el-button>
                     </el-upload>
                   </el-form-item>
                   <el-form-item label="图片预览">
@@ -605,11 +715,26 @@
                       v-model="activeData.config.fit"
                       @change="handlePropertyChange"
                     >
-                      <el-option label="填充" value="fill" />
-                      <el-option label="适应" value="contain" />
-                      <el-option label="覆盖" value="cover" />
-                      <el-option label="无缩放" value="none" />
-                      <el-option label="缩放" value="scale-down" />
+                      <el-option
+                        label="填充"
+                        value="fill"
+                      />
+                      <el-option
+                        label="适应"
+                        value="contain"
+                      />
+                      <el-option
+                        label="覆盖"
+                        value="cover"
+                      />
+                      <el-option
+                        label="无缩放"
+                        value="none"
+                      />
+                      <el-option
+                        label="缩放"
+                        value="scale-down"
+                      />
                     </el-select>
                   </el-form-item>
                 </template>
@@ -629,9 +754,15 @@
                       v-model="activeData.config.contentPosition"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="left">左</el-radio>
-                      <el-radio label="center">中</el-radio>
-                      <el-radio label="right">右</el-radio>
+                      <el-radio label="left">
+                        左
+                      </el-radio>
+                      <el-radio label="center">
+                        中
+                      </el-radio>
+                      <el-radio label="right">
+                        右
+                      </el-radio>
                     </el-radio-group>
                   </el-form-item>
                 </template>
@@ -648,10 +779,16 @@
                     />
                   </el-form-item>
                   <el-form-item label="是否必填">
-                    <el-switch v-model="activeData.required" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                   <el-form-item label="是否禁用">
-                    <el-switch v-model="activeData.disabled" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
                 
@@ -659,10 +796,16 @@
                 <template v-if="activeData.type === 'UPLOAD'">
                   <el-divider />
                   <el-form-item label="是否必填">
-                    <el-switch v-model="activeData.required" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                   <el-form-item label="是否禁用">
-                    <el-switch v-model="activeData.disabled" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
                 
@@ -678,10 +821,16 @@
                     />
                   </el-form-item>
                   <el-form-item label="是否必填">
-                    <el-switch v-model="activeData.required" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                   <el-form-item label="是否禁用">
-                    <el-switch v-model="activeData.disabled" @change="handlePropertyChange" />
+                    <el-switch
+                      v-model="activeData.disabled"
+                      @change="handlePropertyChange"
+                    />
                   </el-form-item>
                 </template>
                 
@@ -707,7 +856,11 @@
                         删除
                       </el-button>
                     </div>
-                    <el-button type="primary" text @click="handleAddOption">
+                    <el-button
+                      type="primary"
+                      text
+                      @click="handleAddOption"
+                    >
                       添加选项
                     </el-button>
                   </el-form-item>
@@ -715,8 +868,14 @@
               </el-form>
             </el-scrollbar>
           </div>
-          <div v-else class="empty-property">
-            <el-empty description="请选择一个组件进行配置" :image-size="80" />
+          <div
+            v-else
+            class="empty-property"
+          >
+            <el-empty
+              description="请选择一个组件进行配置"
+              :image-size="80"
+            />
           </div>
         </el-card>
       </div>
@@ -738,12 +897,29 @@
       width="500px"
       append-to-body
     >
-      <el-form ref="templateFormRef" :model="templateForm" :rules="templateFormRules" label-width="80px">
-        <el-form-item label="封面图" prop="coverImg">
-          <el-input v-model="templateForm.coverImg" placeholder="请输入封面图URL（可选）" />
+      <el-form
+        ref="templateFormRef"
+        :model="templateForm"
+        :rules="templateFormRules"
+        label-width="80px"
+      >
+        <el-form-item
+          label="封面图"
+          prop="coverImg"
+        >
+          <el-input
+            v-model="templateForm.coverImg"
+            placeholder="请输入封面图URL（可选）"
+          />
         </el-form-item>
-        <el-form-item label="模板名称" prop="name">
-          <el-input v-model="templateForm.name" placeholder="请输入模板名称" />
+        <el-form-item
+          label="模板名称"
+          prop="name"
+        >
+          <el-input
+            v-model="templateForm.name"
+            placeholder="请输入模板名称"
+          />
         </el-form-item>
         <el-form-item label="模板描述">
           <el-input
@@ -753,8 +929,15 @@
             placeholder="请输入模板描述（可选）"
           />
         </el-form-item>
-        <el-form-item label="模板类型" prop="categoryId">
-          <el-select v-model="templateForm.categoryId" placeholder="请选择模板类型" style="width: 100%">
+        <el-form-item
+          label="模板类型"
+          prop="categoryId"
+        >
+          <el-select
+            v-model="templateForm.categoryId"
+            placeholder="请选择模板类型"
+            style="width: 100%"
+          >
             <el-option
               v-for="type in templateTypeList"
               :key="type.id"
@@ -766,8 +949,15 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="saveTemplateDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmitTemplate">确定</el-button>
+          <el-button @click="saveTemplateDialogVisible = false">
+            取消
+          </el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmitTemplate"
+          >
+            确定
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -776,7 +966,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   CopyDocument,
@@ -813,7 +1003,7 @@ import {
   Picture,
   Operation,
   Connection,
-  Select,
+  Select as SelectIcon,
   Minus,
   PictureRounded,
   ArrowDown,
@@ -822,12 +1012,11 @@ import {
   Star,
   Sort
 } from '@element-plus/icons-vue'
-import { formApi, templateApi, fileApi } from '@/api'
+import { formApi, templateApi } from '@/api'
 import SurveyPreview from '@/components/SurveyPreview.vue'
 import { getToken } from '@/utils/auth'
 
 const route = useRoute()
-const router = useRouter()
 
 // 表单基本信息
 const formName = ref('未命名表单')
@@ -838,23 +1027,23 @@ const formModel = reactive({})
 
 // 组件列表（参考 tduck，除了文字描述外，其他都要）
 const componentList = [
-  { type: 'INPUT', label: '单行文本', icon: 'Document', tag: 'el-input' },
-  { type: 'TEXTAREA', label: '多行文本', icon: 'EditPen', tag: 'el-textarea' },
-  { type: 'NUMBER', label: '数字', icon: 'List', tag: 'el-input-number' },
-  { type: 'DATE', label: '日期时间', icon: 'Calendar', tag: 'el-date-picker' },
-  { type: 'UPLOAD', label: '文件上传', icon: 'Upload', tag: 'el-upload' },
-  { type: 'IMAGE_UPLOAD', label: '图片上传', icon: 'Picture', tag: 'el-upload' },
-  { type: 'SLIDER', label: '滑块组件', icon: 'Operation', tag: 'el-slider' },
-  { type: 'CASCADER', label: '级联选择', icon: 'Connection', tag: 'el-cascader' },
-  { type: 'CHECKBOX', label: '多选框组', icon: 'Select', tag: 'el-checkbox-group' },
-  { type: 'DIVIDER', label: '分割线', icon: 'Minus', tag: 'el-divider' },
-  { type: 'IMAGE_CAROUSEL', label: '图片轮播', icon: 'PictureRounded', tag: 'el-carousel' },
-  { type: 'SELECT', label: '下拉选择', icon: 'ArrowDown', tag: 'el-select' },
-  { type: 'RADIO', label: '单选框组', icon: 'CircleCheck', tag: 'el-radio-group' },
-  { type: 'IMAGE_SELECT', label: '图片选择', icon: 'Picture', tag: 'el-image' },
-  { type: 'IMAGE', label: '图片展示', icon: 'View', tag: 'el-image' },
-  { type: 'RATE', label: '评分组件', icon: 'Star', tag: 'el-rate' },
-  { type: 'SORT', label: '排序题型', icon: 'Sort', tag: 'el-sort' }
+  { type: 'INPUT', label: '单行文本', icon: Document, tag: 'el-input' },
+  { type: 'TEXTAREA', label: '多行文本', icon: EditPen, tag: 'el-textarea' },
+  { type: 'NUMBER', label: '数字', icon: List, tag: 'el-input-number' },
+  { type: 'DATE', label: '日期时间', icon: Calendar, tag: 'el-date-picker' },
+  { type: 'UPLOAD', label: '文件上传', icon: Upload, tag: 'el-upload' },
+  { type: 'IMAGE_UPLOAD', label: '图片上传', icon: Picture, tag: 'el-upload' },
+  { type: 'SLIDER', label: '滑块组件', icon: Operation, tag: 'el-slider' },
+  { type: 'CASCADER', label: '级联选择', icon: Connection, tag: 'el-cascader' },
+  { type: 'CHECKBOX', label: '多选框组', icon: SelectIcon, tag: 'el-checkbox-group' },
+  { type: 'DIVIDER', label: '分割线', icon: Minus, tag: 'el-divider' },
+  { type: 'IMAGE_CAROUSEL', label: '图片轮播', icon: PictureRounded, tag: 'el-carousel' },
+  { type: 'SELECT', label: '下拉选择', icon: ArrowDown, tag: 'el-select' },
+  { type: 'RADIO', label: '单选框组', icon: CircleCheck, tag: 'el-radio-group' },
+  { type: 'IMAGE_SELECT', label: '图片选择', icon: Picture, tag: 'el-image' },
+  { type: 'IMAGE', label: '图片展示', icon: View, tag: 'el-image' },
+  { type: 'RATE', label: '评分组件', icon: Star, tag: 'el-rate' },
+  { type: 'SORT', label: '排序题型', icon: Sort, tag: 'el-sort' }
 ]
 
 // 设计区域数据
@@ -1228,7 +1417,6 @@ const handleAddCarouselOption = () => {
   if (!activeData.value.config.options) {
     activeData.value.config.options = []
   }
-  const optionCount = activeData.value.config.options.length + 1
   activeData.value.config.options.push({
     text: '',
     url: ''
@@ -1255,13 +1443,6 @@ const handleImageOptionUpload = (response, optionIndex) => {
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error(response?.message || '图片上传失败')
-  }
-}
-
-// 表单名称变更
-const handleFormNameChange = () => {
-  if (formKey.value) {
-    saveFormConfig()
   }
 }
 
@@ -1364,7 +1545,7 @@ const loadFormData = async () => {
             if (scheme.type === 'IMAGE_CAROUSEL') {
               // 兼容旧格式（images）转换为新格式（options）
               if (scheme.config.images && !scheme.config.options) {
-                scheme.config.options = scheme.config.images.map((img, idx) => ({
+                scheme.config.options = scheme.config.images.map((img) => ({
                   text: img.text || '',
                   url: getImageUrl(img.url)
                 }))
@@ -1447,7 +1628,7 @@ const loadTemplateTypes = async () => {
       templateTypeList.value = res.data || []
     }
   } catch (error) {
-    console.error('加载模板分类失败', error)
+    // 加载模板分类失败，静默处理
   }
 }
 
@@ -1872,12 +2053,35 @@ onMounted(() => {
 }
 
 .property-scrollbar :deep(.el-scrollbar__wrap) {
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-height: 100%;
+}
+
+.property-scrollbar :deep(.el-scrollbar__view) {
+  padding-bottom: 40px;
 }
 
 .property-scrollbar :deep(.el-scrollbar__bar) {
   right: 0;
+}
+
+.property-scrollbar :deep(.el-scrollbar__bar.is-vertical) {
+  width: 6px;
+}
+
+.property-scrollbar :deep(.el-scrollbar__thumb) {
+  background-color: rgba(144, 147, 153, 0.3);
+}
+
+.property-scrollbar :deep(.el-scrollbar__thumb:hover) {
+  background-color: rgba(144, 147, 153, 0.5);
+}
+
+.carousel-options-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .empty-property {
@@ -2001,12 +2205,19 @@ onMounted(() => {
   font-size: 48px;
 }
 
+.carousel-options-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .carousel-option-item {
   margin-bottom: 10px;
   padding: 10px;
   border: 1px solid #ebeef5;
   border-radius: 4px;
   background: #fafafa;
+  flex-shrink: 0;
 }
 
 .carousel-drag-handle {
@@ -2027,6 +2238,13 @@ onMounted(() => {
 
 .carousel-delete-icon:hover {
   color: #f78989;
+}
+
+.carousel-add-btn {
+  margin-top: 10px;
+  width: 100%;
+  justify-content: flex-start;
+  flex-shrink: 0;
 }
 
 .image-preview {

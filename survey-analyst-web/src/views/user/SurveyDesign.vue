@@ -3,13 +3,28 @@
     <!-- 顶部：问卷基本信息 -->
     <div class="survey-header">
       <el-card class="survey-info-card">
-        <el-form :model="surveyForm" label-width="100px" :inline="true">
+        <el-form
+          :model="surveyForm"
+          label-width="100px"
+          :inline="true"
+        >
           <el-form-item label="问卷标题">
-            <el-input v-model="surveyForm.title" placeholder="请输入问卷标题" style="width: 300px" />
+            <el-input
+              v-model="surveyForm.title"
+              placeholder="请输入问卷标题"
+              style="width: 300px"
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleSave">保存</el-button>
-            <el-button @click="handlePreview">预览</el-button>
+            <el-button
+              type="primary"
+              @click="handleSave"
+            >
+              保存
+            </el-button>
+            <el-button @click="handlePreview">
+              预览
+            </el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -21,7 +36,9 @@
       <div class="left-board">
         <el-card class="component-library-card">
           <template #header>
-            <div class="library-header">题型库</div>
+            <div class="library-header">
+              题型库
+            </div>
           </template>
           <div class="components-list">
             <div
@@ -33,8 +50,12 @@
               @dragend="handleDragEnd"
             >
               <div class="components-body">
-                <div class="type-icon">{{ type.icon }}</div>
-                <div class="type-name">{{ type.label }}</div>
+                <div class="type-icon">
+                  {{ type.icon }}
+                </div>
+                <div class="type-name">
+                  {{ type.label }}
+                </div>
               </div>
             </div>
           </div>
@@ -47,7 +68,11 @@
           <template #header>
             <div class="design-header">
               <span>设计区域</span>
-              <el-button type="primary" size="small" @click="showQuestionTypeDialog = true">
+              <el-button
+                type="primary"
+                size="small"
+                @click="showQuestionTypeDialog = true"
+              >
                 <el-icon><Plus /></el-icon>
                 添加题目
               </el-button>
@@ -62,8 +87,8 @@
             @dragleave.prevent
           >
             <VueDraggable
-              v-model="questions"
               :key="`draggable-${questions.length}`"
+              v-model="questions"
               item-key="id"
               handle=".drag-handle"
               :animation="200"
@@ -78,13 +103,22 @@
                   :class="{ 'active-from-item': selectedQuestionId === element.id }"
                   @click.stop="handleSelectQuestion(element.id)"
                 >
-                  <div class="component-name">{{ getQuestionTypeText(element.type) }}</div>
-                  <el-card class="question-card" shadow="hover">
+                  <div class="component-name">
+                    {{ getQuestionTypeText(element.type) }}
+                  </div>
+                  <el-card
+                    class="question-card"
+                    shadow="hover"
+                  >
                     <div class="question-header">
-                      <el-icon class="drag-handle"><Rank /></el-icon>
+                      <el-icon class="drag-handle">
+                        <Rank />
+                      </el-icon>
                       <span class="question-number">题目 {{ index + 1 }}</span>
-                      <el-tag size="small">{{ getQuestionTypeText(element.type) }}</el-tag>
-                      <div style="flex: 1"></div>
+                      <el-tag size="small">
+                        {{ getQuestionTypeText(element.type) }}
+                      </el-tag>
+                      <div style="flex: 1" />
                       <el-button
                         type="primary"
                         size="small"
@@ -102,7 +136,10 @@
                         删除
                       </el-button>
                     </div>
-                    <el-form :model="element" label-width="80px">
+                    <el-form
+                      :model="element"
+                      label-width="80px"
+                    >
                       <el-form-item label="题目标题">
                         <el-input
                           v-model="element.title"
@@ -127,10 +164,17 @@
                           @change="handleUpdateQuestion(element)"
                         />
                       </el-form-item>
-                      <div v-if="isChoiceQuestion(element.type)" class="options-section">
+                      <div
+                        v-if="isChoiceQuestion(element.type)"
+                        class="options-section"
+                      >
                         <div class="options-header">
                           <span>选项列表</span>
-                          <el-button type="primary" size="small" @click="handleAddOption(element.id)">
+                          <el-button
+                            type="primary"
+                            size="small"
+                            @click="handleAddOption(element.id)"
+                          >
                             添加选项
                           </el-button>
                         </div>
@@ -162,11 +206,17 @@
             </VueDraggable>
             
 
-            <div v-if="questions.length === 0" class="empty-info">
+            <div
+              v-if="questions.length === 0"
+              class="empty-info"
+            >
               <el-empty description="从左侧拖拽题型到此处，或点击上方按钮添加题目" />
             </div>
             <!-- 调试信息 -->
-            <div v-if="false" style="padding: 10px; background: #f0f0f0; margin-top: 10px; font-size: 12px;">
+            <div
+              v-if="false"
+              style="padding: 10px; background: #f0f0f0; margin-top: 10px; font-size: 12px;"
+            >
               <div>题目数量: {{ questions.length }}</div>
               <div>题目列表: {{ JSON.stringify(questions.map(q => ({ id: q.id, title: q.title, type: q.type }))) }}</div>
             </div>
@@ -178,12 +228,24 @@
       <div class="right-board">
         <el-card class="property-panel-card">
           <template #header>
-            <div class="property-header">组件属性</div>
+            <div class="property-header">
+              组件属性
+            </div>
           </template>
-          <div v-if="selectedQuestion" class="property-content">
-            <el-form :model="selectedQuestion" label-width="100px" label-position="top">
+          <div
+            v-if="selectedQuestion"
+            class="property-content"
+          >
+            <el-form
+              :model="selectedQuestion"
+              label-width="100px"
+              label-position="top"
+            >
               <el-form-item label="题目标题">
-                <el-input v-model="selectedQuestion.title" @blur="handleUpdateQuestion(selectedQuestion)" />
+                <el-input
+                  v-model="selectedQuestion.title"
+                  @blur="handleUpdateQuestion(selectedQuestion)"
+                />
               </el-form-item>
               <el-form-item label="题目描述">
                 <el-input
@@ -202,12 +264,20 @@
                 />
               </el-form-item>
               <el-form-item label="题型">
-                <el-tag>{{ getQuestionTypeText(selectedQuestion.type) }}</el-tag>
+                <el-tag>
+                  {{ getQuestionTypeText(selectedQuestion.type) }}
+                </el-tag>
               </el-form-item>
             </el-form>
           </div>
-          <div v-else class="empty-property">
-            <el-empty description="请选择一个题目进行配置" :image-size="80" />
+          <div
+            v-else
+            class="empty-property"
+          >
+            <el-empty
+              description="请选择一个题目进行配置"
+              :image-size="80"
+            />
           </div>
         </el-card>
       </div>
@@ -227,8 +297,12 @@
           shadow="hover"
           @click="handleAddQuestion(type.value)"
         >
-          <div class="type-icon">{{ type.icon }}</div>
-          <div class="type-name">{{ type.label }}</div>
+          <div class="type-icon">
+            {{ type.icon }}
+          </div>
+          <div class="type-name">
+            {{ type.label }}
+          </div>
         </el-card>
       </div>
     </el-dialog>
@@ -237,7 +311,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Rank } from '@element-plus/icons-vue'
 import { surveyApi, questionApi, optionApi } from '@/api'
@@ -245,7 +319,6 @@ import { surveyApi, questionApi, optionApi } from '@/api'
 import { VueDraggable } from 'vue-draggable-plus'
 
 const route = useRoute()
-const router = useRouter()
 
 const surveyForm = reactive({
   id: null,
@@ -291,9 +364,7 @@ const getOptionsByQuestionId = (questionId) => {
 
 // 选中题目
 const handleSelectQuestion = (questionId) => {
-  console.log('选中题目 ID:', questionId)
   selectedQuestionId.value = questionId
-  console.log('当前选中的题目:', selectedQuestion.value)
 }
 
 // 拖拽开始
@@ -350,18 +421,12 @@ const handleAddQuestion = async (type) => {
 
   try {
     const res = await questionApi.addQuestion(newQuestion)
-    console.log('添加题目响应:', res)
     if (res.code === 200 && res.data) {
       // 确保使用响应式方式添加
       const newQ = { ...res.data }
-      console.log('新题目数据:', newQ)
-      console.log('添加前 questions 长度:', questions.value.length)
       
       // 直接添加到数组
       questions.value.push(newQ)
-      
-      console.log('添加后 questions 长度:', questions.value.length)
-      console.log('questions 数组:', questions.value)
       
       // 强制触发响应式更新 - 创建新数组引用
       questions.value = [...questions.value]
@@ -372,11 +437,9 @@ const handleAddQuestion = async (type) => {
       showQuestionTypeDialog.value = false
       ElMessage.success('添加成功')
     } else {
-      console.error('添加失败，响应:', res)
       ElMessage.error('添加失败：' + (res.message || '未知错误'))
     }
   } catch (error) {
-    console.error('添加题目错误:', error)
     ElMessage.error('添加题目失败：' + (error.message || '网络错误'))
   }
 }

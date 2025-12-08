@@ -4,7 +4,10 @@
     <div class="header-container">
       <el-card class="header-card">
         <div class="header-content">
-          <el-button text @click="router.back()">
+          <el-button
+            text
+            @click="router.back()"
+          >
             <el-icon><ArrowLeft /></el-icon>
             返回
           </el-button>
@@ -29,7 +32,7 @@
             :key="menuItem.route"
             :index="menuItem.route"
           >
-            <el-icon><component :is="menuItem.icon" /></el-icon>
+            <el-icon><component :is="menuItem.iconComponent" /></el-icon>
             <span>{{ menuItem.title }}</span>
           </el-menu-item>
         </el-menu>
@@ -37,7 +40,11 @@
 
       <!-- 右侧：内容区域 -->
       <div class="right-content-container">
-        <router-view :key="route.fullPath" :survey-id="surveyId" :form-key="formKey" />
+        <router-view
+          :key="route.fullPath"
+          :survey-id="surveyId"
+          :form-key="formKey"
+        />
       </div>
     </div>
 
@@ -87,37 +94,37 @@ const previewVisible = ref(false)
 const menuItemList = [
   {
     title: '编辑',
-    icon: 'Edit',
+    iconComponent: Edit,
     route: 'editor'
   },
   {
     title: '逻辑',
-    icon: 'Menu',
+    iconComponent: Menu,
     route: 'logic'
   },
   {
     title: '外观',
-    icon: 'View',
+    iconComponent: View,
     route: 'theme'
   },
   {
     title: '设置',
-    icon: 'Setting',
+    iconComponent: Setting,
     route: 'setting'
   },
   {
     title: '发布',
-    icon: 'VideoPlay',
+    iconComponent: VideoPlay,
     route: 'publish'
   },
   {
     title: '数据',
-    icon: 'DataAnalysis',
+    iconComponent: DataAnalysis,
     route: 'data'
   },
   {
     title: '统计',
-    icon: 'DataLine',
+    iconComponent: DataLine,
     route: 'statistics'
   }
 ]
@@ -170,15 +177,6 @@ const loadSurveyInfo = async () => {
   } catch (error) {
     ElMessage.error('加载问卷信息失败')
   }
-}
-
-// 预览
-const handlePreview = () => {
-  if (!formKey.value) {
-    ElMessage.warning('请先保存表单')
-    return
-  }
-  previewVisible.value = true
 }
 
 onMounted(() => {
