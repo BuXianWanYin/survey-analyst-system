@@ -78,7 +78,7 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
             throw new RuntimeException("问卷不存在");
         }
         
-        // 检查是否有表单项（参考 tduck 实现）
+        // 检查是否有表单项
         FormConfig formConfig = formConfigService.getBySurveyId(id);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在，无法发布");
@@ -136,6 +136,26 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
         
         // 8. 删除问卷（逻辑删除）
         return this.removeById(id);
+    }
+
+    @Override
+    public boolean verifyPassword(Long id, String password) {
+        Survey survey = this.getById(id);
+        if (survey == null) {
+            return false;
+        }
+        
+        // 如果问卷不是密码访问类型，返回false
+        if (!"PASSWORD".equals(survey.getAccessType())) {
+            return false;
+        }
+        
+        // 验证密码
+        if (survey.getPassword() == null || survey.getPassword().isEmpty()) {
+            return false;
+        }
+        
+        return survey.getPassword().equals(password);
     }
 }
 

@@ -137,6 +137,19 @@ export const formApi = {
    */
   deleteFormData(id) {
     return request.delete(`/form/data/${id}`)
+  },
+
+  /**
+   * 提交表单数据
+   * @param {String} formKey 表单key
+   * @param {Object} answers 答案数据
+   * @returns {Promise} 提交结果
+   */
+  submitFormData(formKey, answers) {
+    return request.post('/form/data', {
+      formKey,
+      originalData: answers
+    })
   }
 }
 

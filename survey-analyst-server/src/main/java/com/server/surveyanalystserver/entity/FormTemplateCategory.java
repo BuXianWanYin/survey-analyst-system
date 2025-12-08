@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 表单模板分类实体类（参考 tduck）
+ * 表单模板分类实体类
  */
 @Data
 @TableName("form_template_category")

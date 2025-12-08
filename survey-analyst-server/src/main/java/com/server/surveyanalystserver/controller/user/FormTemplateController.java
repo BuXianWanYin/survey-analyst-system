@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 表单模板控制器（参考 tduck 实现）
+ * 表单模板控制器
  */
 @RestController
 @RequestMapping("/api/form/template")

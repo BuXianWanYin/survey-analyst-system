@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 表单设计控制器（参考 tduck 实现）
+ * 表单设计控制器
  */
 @RestController
 @RequestMapping("/api/form")

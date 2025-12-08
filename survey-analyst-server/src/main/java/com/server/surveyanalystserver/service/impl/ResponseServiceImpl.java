@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.Answer;
 import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.ResponseService;
+import com.server.surveyanalystserver.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +39,41 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     
     @Autowired
     private FormItemService formItemService;
+    
+    @Autowired
+    private SurveyService surveyService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response submitResponse(Response response, Map<Long, Object> answers) {
+        // 验证问卷状态和访问权限
+        Survey survey = surveyService.getById(response.getSurveyId());
+        if (survey == null) {
+            throw new RuntimeException("问卷不存在");
+        }
+        
+        // 检查问卷状态
+        if (!"PUBLISHED".equals(survey.getStatus())) {
+            throw new RuntimeException("问卷未发布或已暂停，无法提交");
+        }
+        
+        // 检查时间限制
+        LocalDateTime now = LocalDateTime.now();
+        if (survey.getStartTime() != null && now.isBefore(survey.getStartTime())) {
+            throw new RuntimeException("问卷尚未开始，无法提交");
+        }
+        if (survey.getEndTime() != null && now.isAfter(survey.getEndTime())) {
+            throw new RuntimeException("问卷已结束，无法提交");
+        }
+        
+        // 检查填写数量限制
+        if (survey.getMaxResponses() != null && survey.getMaxResponses() > 0) {
+            long currentCount = getResponseCount(response.getSurveyId());
+            if (currentCount >= survey.getMaxResponses()) {
+                throw new RuntimeException("问卷已达到最大填写数，无法继续提交");
+            }
+        }
+        
         response.setStatus("COMPLETED");
         response.setSubmitTime(LocalDateTime.now());
         if (response.getStartTime() != null) {
@@ -52,7 +85,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         // 保存答案到 answer 表
         saveAnswers(response.getId(), answers);
         
-        // 同时保存到 form_data 表（参考 tduck 实现）
+        // 同时保存到 form_data 表
         try {
             FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
             if (formConfig != null && formConfig.getFormKey() != null) {
@@ -109,6 +142,14 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         wrapper.eq(Response::getSurveyId, surveyId);
         wrapper.orderByDesc(Response::getCreateTime);
         return this.page(page, wrapper);
+    }
+
+    @Override
+    public long getResponseCount(Long surveyId) {
+        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Response::getSurveyId, surveyId);
+        wrapper.eq(Response::getStatus, "COMPLETED");
+        return this.count(wrapper);
     }
 
     /**

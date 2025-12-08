@@ -15,7 +15,7 @@
             <span>{{ surveyTitle || '未命名问卷' }}</span>
           </div>
           <div
-            v-if="activeMenu === 'editor'"
+            v-if="showHeaderActions"
             class="header-actions"
           >
             <el-button
@@ -25,12 +25,14 @@
               预览
             </el-button>
             <el-button
+              v-if="activeMenu === 'editor'"
               type="success"
               @click="handleSave"
             >
               保存
             </el-button>
             <el-button
+              v-if="activeMenu === 'editor'"
               type="warning"
               @click="handleSaveAsTemplate"
             >
@@ -67,24 +69,23 @@
           :key="route.fullPath"
           :survey-id="surveyId"
           :form-key="formKey"
+          :form-items="formItems"
+          :survey-title="surveyTitle"
+          :survey-description="surveyDescription"
         />
       </div>
     </div>
 
     <!-- 预览对话框 -->
-    <el-dialog
-      v-model="previewVisible"
-      title="预览"
-      width="90%"
-      fullscreen
-      destroy-on-close
-    >
-      <SurveyPreview
-        v-if="previewVisible"
-        :form-key="formKey"
-        :survey-id="surveyId"
-      />
-    </el-dialog>
+    <SurveyPreview
+      :form-key="formKey"
+      :form-items="formItems"
+      :form-name="surveyTitle"
+      :form-description="surveyDescription"
+      :survey-id="surveyId"
+      :model-value="previewVisible"
+      @update:model-value="previewVisible = $event"
+    />
   </div>
 </template>
 
@@ -111,6 +112,7 @@ const router = useRouter()
 const surveyId = ref(null)
 const surveyTitle = ref('')
 const formKey = ref(null)
+const formItems = ref([])
 const previewVisible = ref(false)
 
 // 用于存储子组件注册的方法
@@ -176,6 +178,12 @@ const activeMenu = computed(() => {
   return 'editor'
 })
 
+// 是否显示头部操作按钮（编辑相关页面都显示预览按钮）
+const showHeaderActions = computed(() => {
+  const menu = activeMenu.value
+  return ['editor', 'logic', 'theme', 'setting'].includes(menu)
+})
+
 // 菜单选择处理
 const handleMenuSelect = (index) => {
   const id = route.query.id
@@ -202,12 +210,26 @@ const loadSurveyInfo = async () => {
     const res = await surveyApi.getSurveyById(surveyId.value)
     if (res.code === 200 && res.data) {
       surveyTitle.value = res.data.title || '未命名问卷'
+      surveyDescription.value = res.data.description || ''
     }
     
     // 加载表单配置，获取 formKey
     const configRes = await formApi.getFormConfig(surveyId.value)
     if (configRes.code === 200 && configRes.data) {
       formKey.value = configRes.data.formKey
+      
+      // 加载表单项
+      if (formKey.value) {
+        try {
+          const itemsRes = await formApi.getFormItems(formKey.value)
+          if (itemsRes.code === 200 && itemsRes.data) {
+            formItems.value = itemsRes.data
+          }
+        } catch (error) {
+          // 如果加载失败，使用空数组
+          formItems.value = []
+        }
+      }
     }
   } catch (error) {
     ElMessage.error('加载问卷信息失败')
@@ -216,8 +238,12 @@ const loadSurveyInfo = async () => {
 
 // 调用子组件方法：预览
 const handlePreview = async () => {
-  if (editorMethods.value.handlePreview && typeof editorMethods.value.handlePreview === 'function') {
+  // 如果当前是编辑页面，调用编辑器的预览方法
+  if (activeMenu.value === 'editor' && editorMethods.value.handlePreview && typeof editorMethods.value.handlePreview === 'function') {
     await editorMethods.value.handlePreview()
+  } else {
+    // 其他页面直接打开预览对话框
+    previewVisible.value = true
   }
 }
 

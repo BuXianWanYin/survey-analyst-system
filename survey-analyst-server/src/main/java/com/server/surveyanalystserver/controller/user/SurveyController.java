@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 问卷管理控制器
  */
@@ -99,5 +101,16 @@ public class SurveyController {
         Survey survey = formTemplateService.createSurveyByTemplate(request.getFormKey(), currentUser.getId());
         return Result.success("创建成功", survey.getId());
     }
-}
 
+    @ApiOperation(value = "验证问卷访问密码", notes = "验证问卷访问密码（公开接口）")
+    @PostMapping("/{id}/verify-password")
+    public Result<Boolean> verifyPassword(@PathVariable Long id, @RequestBody Map<String, String> params) {
+        String password = params.get("password");
+        boolean isValid = surveyService.verifyPassword(id, password);
+        if (isValid) {
+            return Result.success("密码验证成功", true);
+        } else {
+            return Result.error("密码错误");
+        }
+    }
+}

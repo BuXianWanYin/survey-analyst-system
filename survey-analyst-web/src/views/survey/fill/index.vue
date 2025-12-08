@@ -1,83 +1,128 @@
 <template>
-  <div class="survey-fill-container">
-    <div class="fill-content">
-      <el-card v-loading="loading" class="survey-card">
-        <template #header>
-          <h2 class="survey-title">{{ survey.title }}</h2>
-          <p v-if="survey.description" class="survey-description">{{ survey.description }}</p>
-        </template>
+  <div
+    v-loading="loading"
+    class="survey-fill-container"
+    :style="{
+      backgroundColor: themeConfig.backgroundImg 
+        ? 'transparent' 
+        : (themeConfig.backgroundColor || '#f5f7fa'),
+      backgroundImage: themeConfig.backgroundImg 
+        ? `url(${themeConfig.backgroundImg})` 
+        : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh'
+    }"
+  >
+    <!-- Logo -->
+    <div
+      v-if="themeConfig.logoImg"
+      class="fill-logo"
+      :style="{ justifyContent: getLogoPosition() }"
+    >
+      <img :src="themeConfig.logoImg" alt="logo" />
+    </div>
 
-        <el-form ref="fillFormRef" :model="formData" label-width="0">
-          <div
-            v-for="(question, index) in questions"
-            :key="question.id"
-            class="question-item"
-          >
-            <div class="question-header">
-              <span class="question-number">题目 {{ index + 1 }}</span>
-              <el-tag v-if="question.required" type="danger" size="small">必填</el-tag>
-            </div>
-            <div class="question-title">{{ question.title }}</div>
-            <div v-if="question.description" class="question-description">
-              {{ question.description }}
-            </div>
+    <!-- 头图 -->
+    <div
+      v-if="themeConfig.headImgUrl"
+      class="fill-head-img"
+    >
+      <img :src="themeConfig.headImgUrl" alt="head" />
+    </div>
 
-            <!-- 单选题 -->
-            <div v-if="question.type === 'SINGLE_CHOICE'" class="question-answer">
-              <el-radio-group v-model="formData[question.id]">
-                <el-radio
-                  v-for="option in getOptionsByQuestionId(question.id)"
-                  :key="option.id"
-                  :label="option.id"
-                >
-                  {{ option.content }}
-                </el-radio>
-              </el-radio-group>
-            </div>
+    <!-- 密码验证对话框 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="请输入访问密码"
+      width="400px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <el-form>
+        <el-form-item label="访问密码">
+          <el-input
+            v-model="inputPassword"
+            type="password"
+            placeholder="请输入访问密码"
+            @keyup.enter="handleVerifyPassword"
+            show-password
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleCancelPassword">取消</el-button>
+        <el-button type="primary" @click="handleVerifyPassword">确定</el-button>
+      </template>
+    </el-dialog>
 
-            <!-- 多选题 -->
-            <div v-if="question.type === 'MULTIPLE_CHOICE'" class="question-answer">
-              <el-checkbox-group v-model="formData[question.id]">
-                <el-checkbox
-                  v-for="option in getOptionsByQuestionId(question.id)"
-                  :key="option.id"
-                  :label="option.id"
-                >
-                  {{ option.content }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </div>
-
-            <!-- 单行文本 -->
-            <div v-if="question.type === 'TEXT'" class="question-answer">
-              <el-input
-                v-model="formData[question.id]"
-                placeholder="请输入答案"
-              />
-            </div>
-
-            <!-- 多行文本 -->
-            <div v-if="question.type === 'TEXTAREA'" class="question-answer">
-              <el-input
-                v-model="formData[question.id]"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入答案"
-              />
-            </div>
-
-            <!-- 评分题 -->
-            <div v-if="question.type === 'RATING'" class="question-answer">
-              <el-rate v-model="formData[question.id]" :max="5" />
-            </div>
-          </div>
-
-          <div class="submit-buttons">
-            <el-button @click="handleSaveDraft">保存草稿</el-button>
-            <el-button type="primary" @click="handleSubmit">提交</el-button>
-          </div>
-        </el-form>
+    <!-- 错误提示 -->
+    <div v-if="errorMessage" class="fill-content">
+      <el-card class="error-card">
+        <el-alert
+          :title="errorMessage"
+          type="error"
+          :closable="false"
+          show-icon
+        />
       </el-card>
+    </div>
+
+    <!-- 表单内容 -->
+    <div v-if="!errorMessage && canFill" class="fill-content">
+      <div
+        class="fill-form-wrapper"
+        :style="{
+          backgroundColor: themeConfig.backgroundImg ? 'rgba(255, 255, 255, 0.95)' : 'transparent'
+        }"
+      >
+        <!-- 标题 -->
+        <h2
+          v-if="themeConfig.showTitle"
+          class="fill-title"
+        >
+          {{ surveyTitle || '未命名问卷' }}
+        </h2>
+
+        <!-- 描述 -->
+        <p
+          v-if="themeConfig.showDescribe && surveyDescription"
+          class="fill-description"
+        >
+          {{ surveyDescription }}
+        </p>
+
+        <!-- 表单渲染 -->
+        <SurveyFormRender
+          v-if="formItems.length > 0"
+          :form-items="formItems"
+          :form-model="formModel"
+          :preview-mode="false"
+          :theme-config="themeConfig"
+          :show-number="themeConfig.showNumber"
+        />
+
+        <!-- 提交按钮 -->
+        <div
+          v-if="themeConfig.showSubmitBtn"
+          class="fill-submit-buttons"
+        >
+          <el-button
+            type="primary"
+            size="large"
+            :style="{
+              backgroundColor: themeConfig.themeColor || '#409EFF',
+              borderColor: themeConfig.themeColor || '#409EFF'
+            }"
+            :loading="submitting"
+            @click="handleSubmit"
+          >
+            {{ themeConfig.submitBtnText || '提交' }}
+          </el-button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -85,69 +130,166 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { surveyApi, questionApi, optionApi, responseApi } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import dayjs from 'dayjs'
+import { surveyApi, formApi, responseApi } from '@/api'
+import SurveyFormRender from '@/components/SurveyFormRender.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
-const survey = ref({})
-const questions = ref([])
-const options = ref([])
-const formData = reactive({})
-const fillFormRef = ref()
+const submitting = ref(false)
+const surveyId = ref(null)
+const surveyTitle = ref('')
+const surveyDescription = ref('')
+const formKey = ref(null)
+const formItems = ref([])
+const formModel = reactive({})
+const survey = ref(null)
+const errorMessage = ref('')
+const canFill = ref(false)
+const passwordDialogVisible = ref(false)
+const inputPassword = ref('')
+const passwordVerified = ref(false)
+const responseCount = ref(0)
 
-const getOptionsByQuestionId = (questionId) => {
-  return options.value.filter(opt => opt.questionId === questionId)
+// 外观配置（默认值）
+const themeConfig = reactive({
+  themeColor: '#409EFF',
+  backgroundColor: '#f5f7fa',
+  backgroundImg: '',
+  headImgUrl: '',
+  logoImg: '',
+  logoPosition: 'flex-start',
+  submitBtnText: '提交',
+  showTitle: true,
+  showDescribe: true,
+  showNumber: false,
+  showSubmitBtn: true
+})
+
+// 获取Logo位置样式值
+const getLogoPosition = () => {
+  const positionMap = {
+    'flex-start': 'flex-start',
+    'center': 'center',
+    'flex-end': 'flex-end',
+    'left': 'flex-start',
+    'right': 'flex-end'
+  }
+  return positionMap[themeConfig.logoPosition] || 'flex-start'
 }
 
+// 加载问卷数据
 const loadSurveyData = async () => {
   loading.value = true
   try {
-    const surveyId = route.params.id
-    const surveyRes = await surveyApi.getSurveyById(surveyId)
-    if (surveyRes.code === 200) {
-      survey.value = surveyRes.data
+    // 支持通过 id 或 key 参数访问
+    const id = route.params.id
+    const key = route.query.key
+
+    if (id) {
+      // 通过ID访问
+      surveyId.value = Number(id)
+      
+      // 加载问卷信息
+      const surveyRes = await surveyApi.getSurveyById(surveyId.value)
+      if (surveyRes.code === 200 && surveyRes.data) {
+        surveyTitle.value = surveyRes.data.title || '未命名问卷'
+        surveyDescription.value = surveyRes.data.description || ''
+      }
+
+      // 加载表单配置
+      const configRes = await formApi.getFormConfig(surveyId.value)
+      if (configRes.code === 200 && configRes.data) {
+        formKey.value = configRes.data.formKey
+      }
+    } else if (key) {
+      // 通过key访问
+      formKey.value = key
+    } else {
+      ElMessage.error('缺少必要参数')
+      return
     }
 
-    const questionsRes = await questionApi.getQuestionsBySurveyId(surveyId)
-    if (questionsRes.code === 200) {
-      questions.value = questionsRes.data || []
-      
-      // 初始化表单数据
-      questions.value.forEach(question => {
-        if (question.type === 'MULTIPLE_CHOICE') {
-          formData[question.id] = []
-        } else {
-          formData[question.id] = null
-        }
-      })
-
-      // 加载所有题目的选项
-      for (const question of questions.value) {
-        if (question.type === 'SINGLE_CHOICE' || question.type === 'MULTIPLE_CHOICE') {
-          const optionsRes = await optionApi.getOptionsByQuestionId(question.id)
-          if (optionsRes.code === 200) {
-            options.value.push(...(optionsRes.data || []))
-          }
-        }
+    // 加载表单项
+    if (formKey.value) {
+      const itemsRes = await formApi.getFormItems(formKey.value)
+      if (itemsRes.code === 200 && itemsRes.data) {
+        formItems.value = itemsRes.data
+        initFormModel()
       }
     }
+
+    // 加载外观配置（如果有surveyId）
+    if (surveyId.value) {
+      await loadTheme()
+    }
   } catch (error) {
+    console.error('加载问卷失败:', error)
     ElMessage.error('加载问卷失败')
   } finally {
     loading.value = false
   }
 }
 
+// 初始化表单数据模型
+const initFormModel = () => {
+  formItems.value.forEach(item => {
+    if (item.type === 'CHECKBOX' || item.type === 'SORT' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+      formModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue)
+        ? [...item.defaultValue]
+        : []
+    } else if (item.type === 'SLIDER') {
+      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
+        ? Number(item.defaultValue)
+        : (item.config?.min || 0)
+      formModel[item.vModel] = isNaN(numValue) ? (item.config?.min || 0) : numValue
+    } else if (item.type === 'NUMBER') {
+      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
+        ? Number(item.defaultValue)
+        : undefined
+      formModel[item.vModel] = isNaN(numValue) ? undefined : numValue
+    } else if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+      formModel[item.vModel] = item.defaultValue !== null && item.defaultValue !== undefined 
+        ? item.defaultValue 
+        : ''
+    }
+  })
+}
+
+// 加载外观配置
+const loadTheme = async () => {
+  try {
+    const res = await formApi.getFormTheme(surveyId.value)
+    if (res.code === 200 && res.data) {
+      const data = res.data
+      if (data.themeColor) themeConfig.themeColor = data.themeColor
+      if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
+      if (data.backgroundImg) themeConfig.backgroundImg = data.backgroundImg
+      if (data.headImgUrl) themeConfig.headImgUrl = data.headImgUrl
+      if (data.logoImg) themeConfig.logoImg = data.logoImg
+      if (data.logoPosition) themeConfig.logoPosition = data.logoPosition
+      if (data.submitBtnText) themeConfig.submitBtnText = data.submitBtnText
+      if (data.showTitle !== undefined) themeConfig.showTitle = data.showTitle
+      if (data.showDescribe !== undefined) themeConfig.showDescribe = data.showDescribe
+      if (data.showNumber !== undefined) themeConfig.showNumber = data.showNumber
+      if (data.showSubmitBtn !== undefined) themeConfig.showSubmitBtn = data.showSubmitBtn
+    }
+  } catch (error) {
+    // 如果不存在，使用默认值
+  }
+}
+
+// 验证表单
 const validateForm = () => {
-  for (const question of questions.value) {
-    if (question.required) {
-      const value = formData[question.id]
-      if (value === null || value === undefined || value === '' || 
+  for (const item of formItems.value) {
+    if (item.required && item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+      const value = formModel[item.vModel]
+      if (value === null || value === undefined || value === '' ||
           (Array.isArray(value) && value.length === 0)) {
-        ElMessage.warning(`请填写题目：${question.title}`)
+        ElMessage.warning(`请填写：${item.label}`)
         return false
       }
     }
@@ -155,82 +297,115 @@ const validateForm = () => {
   return true
 }
 
+// 提交表单
 const handleSubmit = async () => {
   if (!validateForm()) {
     return
   }
 
-  loading.value = true
-  try {
-    const surveyId = route.params.id
-    const answers = {}
-    
-    // 转换表单数据为答案格式
-    for (const question of questions.value) {
-      const value = formData[question.id]
-      if (value !== null && value !== undefined && value !== '') {
-        if (Array.isArray(value)) {
-          // 多选题，保存多个选项ID
-          answers[question.id] = value
-        } else {
-          answers[question.id] = value
+  // 再次验证填写数量限制（防止在填写过程中达到上限）
+  if (survey.value && survey.value.maxResponses && survey.value.maxResponses > 0) {
+    try {
+      const res = await responseApi.getResponseList({
+        surveyId: surveyId.value,
+        pageNum: 1,
+        pageSize: 1
+      })
+      
+      if (res.code === 200) {
+        const currentCount = res.data?.total || responseCount.value
+        if (currentCount >= survey.value.maxResponses) {
+          ElMessage.error(`问卷已达到最大填写数（${survey.value.maxResponses}），无法提交`)
+          return
         }
       }
+    } catch (error) {
+      console.error('验证填写数量失败', error)
+    }
+  }
+
+  try {
+    await ElMessageBox.confirm('确定要提交吗？提交后无法修改。', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  } catch (error) {
+    return
+  }
+
+  submitting.value = true
+  try {
+    if (!surveyId.value) {
+      ElMessage.error('问卷ID不存在')
+      return
     }
 
+    // 转换表单数据为答案格式
+    const answers = {}
+    formItems.value.forEach(item => {
+      if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+        const value = formModel[item.vModel]
+        if (value !== null && value !== undefined && value !== '' &&
+            !(Array.isArray(value) && value.length === 0)) {
+          answers[item.formItemId] = value
+        }
+      }
+    })
+
+    // 使用表单数据提交接口
     const responseData = {
-      surveyId: parseInt(surveyId),
+      surveyId: surveyId.value,
+      formKey: formKey.value,
       answers,
       ipAddress: '',
       deviceType: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'MOBILE' : 'PC'
     }
 
-    const res = await responseApi.submitResponse(responseData)
-    if (res.code === 200) {
-      ElMessage.success('提交成功，感谢您的参与！')
-      router.push('/home')
+    // 使用表单数据提交接口
+    try {
+      const formDataRes = await formApi.submitFormData(formKey.value, answers)
+      if (formDataRes && formDataRes.code === 200) {
+        ElMessage.success('提交成功，感谢您的参与！')
+        setTimeout(() => {
+          router.push('/home')
+        }, 1500)
+        return
+      }
+    } catch (error) {
+      console.error('提交失败:', error)
+      // 如果表单数据接口失败，尝试使用旧的响应接口
+      try {
+        const oldRes = await responseApi.submitResponse({
+          surveyId: surveyId.value,
+          answers: convertAnswersToOldFormat(answers),
+          ipAddress: '',
+          deviceType: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'MOBILE' : 'PC'
+        })
+
+        if (oldRes.code === 200) {
+          ElMessage.success('提交成功，感谢您的参与！')
+          setTimeout(() => {
+            router.push('/home')
+          }, 1500)
+        }
+      } catch (oldError) {
+        throw error // 抛出原始错误
+      }
     }
   } catch (error) {
-    ElMessage.error('提交失败')
+    console.error('提交失败:', error)
+    ElMessage.error(error.message || '提交失败')
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
 
-const handleSaveDraft = async () => {
-  loading.value = true
-  try {
-    const surveyId = route.params.id
-    const answers = {}
-    
-    for (const question of questions.value) {
-      const value = formData[question.id]
-      if (value !== null && value !== undefined && value !== '') {
-        if (Array.isArray(value)) {
-          // 多选题，保存多个选项ID
-          answers[question.id] = value
-        } else {
-          answers[question.id] = value
-        }
-      }
-    }
-
-    const responseData = {
-      surveyId: parseInt(surveyId),
-      answers,
-      ipAddress: '',
-      deviceType: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'MOBILE' : 'PC'
-    }
-
-    const res = await responseApi.saveDraft(responseData)
-    if (res.code === 200) {
-      ElMessage.success('草稿保存成功')
-    }
-  } catch (error) {
-    ElMessage.error('保存草稿失败')
-  } finally {
-    loading.value = false
-  }
+// 转换答案格式（兼容旧接口）
+const convertAnswersToOldFormat = (answers) => {
+  // 旧接口使用 questionId，新接口使用 formItemId
+  // 这里保持原样，因为可能都需要使用 formItemId
+  return answers
 }
 
 onMounted(() => {
@@ -238,75 +413,103 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .survey-fill-container {
+  width: 100%;
   min-height: 100vh;
-  background: #f5f7fa;
+  padding: 0;
+  position: relative;
+}
+
+.fill-logo {
   padding: 20px;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  img {
+    max-width: 150px;
+    max-height: 60px;
+    object-fit: contain;
+  }
+}
+
+.fill-head-img {
+  width: 100%;
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 300px;
+    object-fit: cover;
+  }
 }
 
 .fill-content {
   max-width: 800px;
   margin: 0 auto;
+  padding: 40px 20px;
 }
 
-.survey-card {
-  margin-bottom: 20px;
+.fill-form-wrapper {
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-.survey-title {
-  margin: 0 0 10px 0;
+.fill-title {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 0 15px 0;
   color: #303133;
+  text-align: center;
 }
 
-.survey-description {
-  margin: 0;
+.fill-description {
+  font-size: 14px;
   color: #606266;
-  font-size: 14px;
+  margin: 0 0 30px 0;
+  line-height: 1.6;
+  text-align: center;
 }
 
-.question-item {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.question-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.question-number {
-  font-weight: 500;
-  color: #409EFF;
-}
-
-.question-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 8px;
-}
-
-.question-description {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 15px;
-}
-
-.question-answer {
-  margin-top: 15px;
-}
-
-.submit-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
+.fill-submit-buttons {
+  margin-top: 40px;
+  text-align: center;
   padding-top: 20px;
   border-top: 1px solid #ebeef5;
+
+  .el-button {
+    min-width: 120px;
+  }
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .fill-logo {
+    padding: 15px;
+
+    img {
+      max-width: 100px;
+      max-height: 40px;
+    }
+  }
+
+  .fill-content {
+    padding: 20px 15px;
+  }
+
+  .fill-form-wrapper {
+    padding: 20px;
+  }
+
+  .fill-title {
+    font-size: 20px;
+  }
+}
+
+.error-card {
+  margin-bottom: 20px;
 }
 </style>
-

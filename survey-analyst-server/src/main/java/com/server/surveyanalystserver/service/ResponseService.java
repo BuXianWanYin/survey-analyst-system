@@ -41,5 +41,12 @@ public interface ResponseService extends IService<Response> {
      * @return 填写记录分页列表
      */
     Page<Response> getResponseList(Page<Response> page, Long surveyId);
+
+    /**
+     * 获取问卷填写数量
+     * @param surveyId 问卷ID
+     * @return 填写数量
+     */
+    long getResponseCount(Long surveyId);
 }
 

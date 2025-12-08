@@ -66,5 +66,15 @@ export const surveyApi = {
    */
   stopPublishSurvey(id) {
     return request.post(`/survey/${id}/stop`)
+  },
+
+  /**
+   * 验证问卷访问密码
+   * @param {Number} id 问卷ID
+   * @param {String} password 访问密码
+   * @returns {Promise} 验证结果
+   */
+  verifyPassword(id, password) {
+    return request.post(`/survey/${id}/verify-password`, { password })
   }
 }

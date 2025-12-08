@@ -58,5 +58,13 @@ public interface SurveyService extends IService<Survey> {
      * @return 是否成功
      */
     boolean deleteSurvey(Long id);
+
+    /**
+     * 验证问卷访问密码
+     * @param id 问卷ID
+     * @param password 访问密码
+     * @return 是否验证通过
+     */
+    boolean verifyPassword(Long id, String password);
 }
 

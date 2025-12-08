@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 表单数据实体类（参考 tduck）
+ * 表单数据实体类
  */
 @Data
 @TableName(value = "form_data", autoResultMap = true)

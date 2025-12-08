@@ -69,5 +69,12 @@ public class ResponseController {
         Page<Response> result = responseService.getResponseList(page, surveyId);
         return Result.success("查询成功", result);
     }
+
+    @ApiOperation(value = "获取问卷填写数量", notes = "获取问卷的填写数量（公开接口）")
+    @GetMapping("/count/{surveyId}")
+    public Result<Long> getResponseCount(@PathVariable Long surveyId) {
+        long count = responseService.getResponseCount(surveyId);
+        return Result.success("获取成功", count);
+    }
 }
 

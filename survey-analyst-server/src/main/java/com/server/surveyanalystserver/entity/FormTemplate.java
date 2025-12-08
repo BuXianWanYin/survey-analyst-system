@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 表单模板实体类（参考 tduck）
+ * 表单模板实体类
  */
 @Data
 @TableName(value = "form_template", autoResultMap = true)

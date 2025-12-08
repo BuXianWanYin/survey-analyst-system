@@ -18,6 +18,7 @@
       >
         <template #label>
           <span class="form-label">
+            <span v-if="showNumber" class="question-number">{{ getQuestionIndex(element) }}. </span>
             <span v-if="element.required" class="required-mark">*</span>
             {{ element.label }}
           </span>
@@ -277,7 +278,7 @@ import { ref } from 'vue'
 import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 
-defineProps({
+const props = defineProps({
   formItems: {
     type: Array,
     default: () => []
@@ -289,8 +290,30 @@ defineProps({
   previewMode: {
     type: Boolean,
     default: false
+  },
+  themeConfig: {
+    type: Object,
+    default: () => ({})
+  },
+  showNumber: {
+    type: Boolean,
+    default: false
   }
 })
+
+// 获取题目序号
+const getQuestionIndex = (element) => {
+  let index = 0
+  for (const item of props.formItems) {
+    if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+      index++
+      if (item.formItemId === element.formItemId) {
+        return index
+      }
+    }
+  }
+  return index
+}
 
 const formRef = ref(null)
 </script>
@@ -314,6 +337,12 @@ const formRef = ref(null)
 }
 
 .form-label {
+  .question-number {
+    color: #409EFF;
+    font-weight: 500;
+    margin-right: 4px;
+  }
+
   .required-mark {
     color: #f56c6c;
     margin-right: 4px;

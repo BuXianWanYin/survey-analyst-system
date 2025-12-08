@@ -38,6 +38,15 @@ export const responseApi = {
    */
   getResponseList(params) {
     return request.get('/response/list', { params })
+  },
+
+  /**
+   * 获取问卷填写数量
+   * @param {Number} surveyId 问卷ID
+   * @returns {Promise} 填写数量
+   */
+  getResponseCount(surveyId) {
+    return request.get(`/response/count/${surveyId}`)
   }
 }
 

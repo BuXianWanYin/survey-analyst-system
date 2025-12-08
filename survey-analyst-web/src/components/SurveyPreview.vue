@@ -39,15 +39,74 @@
       <div v-if="viewMode === 'mobile'" class="mobile-preview-wrapper">
         <div class="preview-layer">
           <div class="preview-phone">
-            <div class="phone-content">
+            <div
+              class="phone-content"
+              :style="{
+                backgroundColor: currentThemeConfig.backgroundImg 
+                  ? 'transparent' 
+                  : (currentThemeConfig.backgroundColor || '#ffffff'),
+                backgroundImage: currentThemeConfig.backgroundImg 
+                  ? `url(${currentThemeConfig.backgroundImg})` 
+                  : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }"
+            >
               <div class="preview-form-container">
-                <div class="form-title">{{ formName || '未命名问卷' }}</div>
+                <!-- Logo -->
+                <div
+                  v-if="currentThemeConfig.logoImg"
+                  class="phone-logo"
+                  :style="{ justifyContent: getLogoPosition() }"
+                >
+                  <img :src="currentThemeConfig.logoImg" alt="logo" />
+                </div>
+                <!-- 头图 -->
+                <div
+                  v-if="currentThemeConfig.headImgUrl"
+                  class="phone-head-img"
+                >
+                  <img :src="currentThemeConfig.headImgUrl" alt="head" />
+                </div>
+                <!-- 标题 -->
+                <div
+                  v-if="currentThemeConfig.showTitle"
+                  class="form-title"
+                >
+                  {{ formName || '未命名问卷' }}
+                </div>
+                <!-- 描述 -->
+                <p
+                  v-if="currentThemeConfig.showDescribe && props.formDescription"
+                  class="form-description"
+                >
+                  {{ props.formDescription }}
+                </p>
                 <el-scrollbar class="form-scrollbar">
                   <SurveyFormRender
                     :form-items="formItems"
                     :form-model="previewFormModel"
                     :preview-mode="true"
+                    :theme-config="currentThemeConfig"
+                    :show-number="currentThemeConfig.showNumber"
                   />
+                  <!-- 提交按钮 -->
+                  <div
+                    v-if="currentThemeConfig.showSubmitBtn"
+                    class="form-submit-btn"
+                  >
+                    <el-button
+                      type="primary"
+                      :style="{
+                        backgroundColor: currentThemeConfig.themeColor || '#409EFF',
+                        borderColor: currentThemeConfig.themeColor || '#409EFF'
+                      }"
+                      size="large"
+                      block
+                    >
+                      {{ currentThemeConfig.submitBtnText || '提交' }}
+                    </el-button>
+                  </div>
                 </el-scrollbar>
               </div>
             </div>
@@ -70,13 +129,72 @@
       <!-- PC端预览 -->
       <div v-if="viewMode === 'desktop'" class="desktop-preview-wrapper">
         <el-scrollbar class="desktop-scrollbar">
-          <div class="desktop-form-container">
-            <div class="form-title">{{ formName || '未命名问卷' }}</div>
+          <div
+            class="desktop-form-container"
+            :style="{
+              backgroundColor: currentThemeConfig.backgroundImg 
+                ? 'transparent' 
+                : (currentThemeConfig.backgroundColor || '#ffffff'),
+              backgroundImage: currentThemeConfig.backgroundImg 
+                ? `url(${currentThemeConfig.backgroundImg})` 
+                : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }"
+          >
+            <!-- Logo -->
+            <div
+              v-if="currentThemeConfig.logoImg"
+              class="desktop-logo"
+              :style="{ justifyContent: getLogoPosition() }"
+            >
+              <img :src="currentThemeConfig.logoImg" alt="logo" />
+            </div>
+            <!-- 头图 -->
+            <div
+              v-if="currentThemeConfig.headImgUrl"
+              class="desktop-head-img"
+            >
+              <img :src="currentThemeConfig.headImgUrl" alt="head" />
+            </div>
+            <!-- 标题 -->
+            <div
+              v-if="currentThemeConfig.showTitle"
+              class="form-title"
+            >
+              {{ formName || '未命名问卷' }}
+            </div>
+            <!-- 描述 -->
+            <p
+              v-if="currentThemeConfig.showDescribe && props.formDescription"
+              class="form-description"
+            >
+              {{ props.formDescription }}
+            </p>
+            <!-- 表单项 -->
             <SurveyFormRender
               :form-items="formItems"
               :form-model="previewFormModel"
               :preview-mode="true"
+              :theme-config="currentThemeConfig"
+              :show-number="currentThemeConfig.showNumber"
             />
+            <!-- 提交按钮 -->
+            <div
+              v-if="currentThemeConfig.showSubmitBtn"
+              class="form-submit-btn"
+            >
+              <el-button
+                type="primary"
+                :style="{
+                  backgroundColor: currentThemeConfig.themeColor || '#409EFF',
+                  borderColor: currentThemeConfig.themeColor || '#409EFF'
+                }"
+                size="large"
+              >
+                {{ currentThemeConfig.submitBtnText || '提交' }}
+              </el-button>
+            </div>
           </div>
         </el-scrollbar>
       </div>
@@ -85,9 +203,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { Iphone, Monitor, Loading } from '@element-plus/icons-vue'
 import SurveyFormRender from './SurveyFormRender.vue'
+import { formApi } from '@/api'
 
 const props = defineProps({
   modelValue: {
@@ -109,6 +228,18 @@ const props = defineProps({
   showQrcode: {
     type: Boolean,
     default: true
+  },
+  surveyId: {
+    type: Number,
+    default: null
+  },
+  themeConfig: {
+    type: Object,
+    default: () => ({})
+  },
+  formDescription: {
+    type: String,
+    default: ''
   }
 })
 
@@ -118,6 +249,61 @@ const visible = ref(false)
 const viewMode = ref('mobile') // 'mobile' 或 'desktop'
 const qrCodeUrl = ref('')
 const previewFormModel = reactive({})
+const themeConfigData = reactive({
+  themeColor: '#409EFF',
+  backgroundColor: '#ffffff',
+  backgroundImg: '',
+  headImgUrl: '',
+  logoImg: '',
+  logoPosition: 'flex-start',
+  submitBtnText: '提交',
+  showTitle: true,
+  showDescribe: true,
+  showNumber: false,
+  showSubmitBtn: true
+})
+
+// 合并外部传入的主题配置
+const currentThemeConfig = computed(() => {
+  return Object.keys(props.themeConfig).length > 0 ? props.themeConfig : themeConfigData
+})
+
+// 获取Logo位置样式值
+const getLogoPosition = () => {
+  const positionMap = {
+    'flex-start': 'flex-start',
+    'center': 'center',
+    'flex-end': 'flex-end',
+    'left': 'flex-start',
+    'right': 'flex-end'
+  }
+  return positionMap[currentThemeConfig.value.logoPosition] || 'flex-start'
+}
+
+// 加载外观配置
+const loadTheme = async () => {
+  if (!props.surveyId) return
+  
+  try {
+    const res = await formApi.getFormTheme(props.surveyId)
+    if (res.code === 200 && res.data) {
+      const data = res.data
+      if (data.themeColor) themeConfigData.themeColor = data.themeColor
+      if (data.backgroundColor) themeConfigData.backgroundColor = data.backgroundColor
+      if (data.backgroundImg) themeConfigData.backgroundImg = data.backgroundImg
+      if (data.headImgUrl) themeConfigData.headImgUrl = data.headImgUrl
+      if (data.logoImg) themeConfigData.logoImg = data.logoImg
+      if (data.logoPosition) themeConfigData.logoPosition = data.logoPosition
+      if (data.submitBtnText) themeConfigData.submitBtnText = data.submitBtnText
+      if (data.showTitle !== undefined) themeConfigData.showTitle = data.showTitle
+      if (data.showDescribe !== undefined) themeConfigData.showDescribe = data.showDescribe
+      if (data.showNumber !== undefined) themeConfigData.showNumber = data.showNumber
+      if (data.showSubmitBtn !== undefined) themeConfigData.showSubmitBtn = data.showSubmitBtn
+    }
+  } catch (error) {
+    // 如果不存在，使用默认值
+  }
+}
 
 // 监听外部传入的显示状态
 watch(() => props.modelValue, (val) => {
@@ -126,6 +312,9 @@ watch(() => props.modelValue, (val) => {
     initPreviewForm()
     if (props.showQrcode && props.formKey) {
       loadQRCode()
+    }
+    if (props.surveyId) {
+      loadTheme()
     }
   }
 })
@@ -365,20 +554,57 @@ const handleClose = () => {
   display: flex;
   flex-direction: column;
   
+  .phone-logo {
+    padding: 15px;
+    display: flex;
+    flex-shrink: 0;
+
+    img {
+      max-width: 100px;
+      max-height: 40px;
+    }
+  }
+
+  .phone-head-img {
+    width: 100%;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  }
+  
   .form-title {
     font-size: 20px;
     font-weight: 600;
     color: #303133;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding-bottom: 15px;
     border-bottom: 1px solid #ebeef5;
+    flex-shrink: 0;
+  }
+  
+  .form-description {
+    font-size: 14px;
+    color: #606266;
+    margin-bottom: 15px;
+    line-height: 1.6;
     flex-shrink: 0;
   }
   
   .form-scrollbar {
     flex: 1;
     overflow: hidden;
+  }
+  
+  .form-submit-btn {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ebeef5;
+    flex-shrink: 0;
   }
 }
 
@@ -452,16 +678,54 @@ const handleClose = () => {
 .desktop-form-container {
   padding: 40px;
   min-height: 500px;
-  background: white;
+  
+  .desktop-logo {
+    padding: 20px 0;
+    display: flex;
+    margin-bottom: 20px;
+
+    img {
+      max-width: 150px;
+      max-height: 60px;
+    }
+  }
+
+  .desktop-head-img {
+    width: 100%;
+    margin-bottom: 30px;
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-height: 300px;
+      object-fit: cover;
+    }
+  }
   
   .form-title {
     font-size: 28px;
     font-weight: 600;
     color: #303133;
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     padding-bottom: 20px;
     border-bottom: 2px solid #ebeef5;
+  }
+  
+  .form-description {
+    font-size: 14px;
+    color: #606266;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    text-align: center;
+  }
+  
+  .form-submit-btn {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ebeef5;
+    text-align: center;
   }
 }
 

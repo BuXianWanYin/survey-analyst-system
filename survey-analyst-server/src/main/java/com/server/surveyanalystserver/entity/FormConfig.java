@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 表单配置实体类（参考 tduck）
+ * 表单配置实体类
  */
 @Data
 @TableName("form_config")
