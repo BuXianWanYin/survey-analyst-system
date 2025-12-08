@@ -340,6 +340,7 @@
                           :key="`carousel-${element.formItemId}-${element.config?.options?.length || 0}-${JSON.stringify(element.config?.options?.map(opt => opt.url || ''))}`"
                           :height="`${element.config?.height || 300}px`"
                           :interval="element.config?.interval || 4000"
+                          :arrow="element.config?.arrow || 'hover'"
                         >
                           <el-carousel-item
                             v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
@@ -1073,12 +1074,6 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="是否可搜索">
-                    <el-switch
-                      v-model="activeData.config.filterable"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
                   <el-form-item label="尺寸">
                     <el-radio-group
                       v-model="activeData.config.size"
@@ -1108,14 +1103,6 @@
                   </el-form-item>
                   <el-form-item label="级联选项">
                     <div class="cascader-options-editor">
-                      <el-button
-                        type="primary"
-                        text
-                        size="small"
-                        @click="handleAddCascaderOption"
-                      >
-                        添加一级选项
-                      </el-button>
                       <div
                         v-for="(option, idx) in (activeData.config?.options || [])"
                         :key="idx"
@@ -1126,30 +1113,22 @@
                             v-model="option.label"
                             placeholder="选项文本"
                             style="flex: 1"
-                            @input="handlePropertyChange"
+                            @input="() => handleCascaderLabelChange(idx)"
                           />
-                          <el-input
-                            v-model="option.value"
-                            placeholder="选项值"
-                            style="width: 150px"
-                            @input="handlePropertyChange"
-                          />
-                          <el-button
-                            type="primary"
-                            text
-                            size="small"
+                          <el-icon
+                            style="cursor: pointer; color: #409eff; font-size: 18px"
+                            title="添加子项"
                             @click="handleAddCascaderChild(idx)"
                           >
-                            添加子项
-                          </el-button>
-                          <el-button
-                            type="danger"
-                            text
-                            size="small"
+                            <Plus />
+                          </el-icon>
+                          <el-icon
+                            style="cursor: pointer; color: #f56c6c; font-size: 18px"
+                            title="删除"
                             @click="handleRemoveCascaderOption(idx)"
                           >
-                            删除
-                          </el-button>
+                            <Delete />
+                          </el-icon>
                         </div>
                         <div
                           v-if="option.children && option.children.length > 0"
@@ -1164,25 +1143,27 @@
                               v-model="child.label"
                               placeholder="子项文本"
                               style="flex: 1"
-                              @input="handlePropertyChange"
+                              @input="() => handleCascaderChildLabelChange(idx, childIdx)"
                             />
-                            <el-input
-                              v-model="child.value"
-                              placeholder="子项值"
-                              style="width: 150px"
-                              @input="handlePropertyChange"
-                            />
-                            <el-button
-                              type="danger"
-                              text
-                              size="small"
+                            <el-icon
+                              style="cursor: pointer; color: #f56c6c; font-size: 18px"
+                              title="删除"
                               @click="handleRemoveCascaderChild(idx, childIdx)"
                             >
-                              删除
-                            </el-button>
+                              <Delete />
+                            </el-icon>
                           </div>
                         </div>
                       </div>
+                      <el-button
+                        type="primary"
+                        text
+                        class="cascader-add-btn"
+                        @click="handleAddCascaderOption"
+                      >
+                        <el-icon><Plus /></el-icon>
+                        <span>添加一级选项</span>
+                      </el-button>
                     </div>
                   </el-form-item>
                   <el-form-item label="是否可清空">
@@ -1378,7 +1359,7 @@
                 <!-- 图片轮播组件配置 -->
                 <template v-if="activeData.type === 'IMAGE_CAROUSEL'">
                   <el-divider />
-                  <el-form-item label="轮播高度">
+                  <el-form-item label="轮播高度（px）">
                     <el-input
                       v-model.number="activeData.config.height"
                       type="number"
@@ -1387,7 +1368,6 @@
                       @input="handlePropertyChange"
                       style="width: 100%"
                     />
-                    <span style="margin-left: 8px; color: #909399; font-size: 12px">px</span>
                   </el-form-item>
                   <el-form-item label="切换间隔（毫秒）">
                     <el-input
@@ -1426,15 +1406,6 @@
                         value="scale-down"
                       />
                     </el-select>
-                  </el-form-item>
-                  <el-form-item label="指示器位置">
-                    <el-radio-group
-                      v-model="activeData.config.indicatorPosition"
-                      @change="handlePropertyChange"
-                    >
-                      <el-radio label="outside">外部</el-radio>
-                      <el-radio label="none">无</el-radio>
-                    </el-radio-group>
                   </el-form-item>
                   <el-form-item label="箭头显示时机">
                     <el-radio-group
@@ -1769,44 +1740,6 @@
                       v-model="activeData.config.allowHalf"
                       @change="handlePropertyChange"
                     />
-                  </el-form-item>
-                  <el-form-item label="是否显示辅助文字">
-                    <el-switch
-                      v-model="activeData.config.showText"
-                      @change="handlePropertyChange"
-                    />
-                  </el-form-item>
-                  <el-form-item
-                    v-if="activeData.config.showText"
-                    label="辅助文字"
-                  >
-                    <div
-                      v-for="(text, idx) in (activeData.config.texts || [])"
-                      :key="idx"
-                      style="margin-bottom: 8px"
-                    >
-                      <el-input
-                        v-model="activeData.config.texts[idx]"
-                        :placeholder="`文字${idx + 1}`"
-                        @input="handlePropertyChange"
-                      />
-                    </div>
-                    <el-button
-                      type="primary"
-                      text
-                      size="small"
-                      @click="handleAddRateText"
-                    >
-                      添加文字
-                    </el-button>
-                    <el-button
-                      type="danger"
-                      text
-                      size="small"
-                      @click="handleRemoveRateText"
-                    >
-                      删除文字
-                    </el-button>
                   </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
@@ -2193,7 +2126,7 @@ const createFormItem = (type) => {
       ],
       border: false,
       button: false,
-      size: 'medium'
+      size: 'default'
     }
   }
   
@@ -2208,7 +2141,7 @@ const createFormItem = (type) => {
       max: undefined,
       border: false,
       button: false,
-      size: 'medium'
+      size: 'default'
     }
   }
   
@@ -2222,7 +2155,7 @@ const createFormItem = (type) => {
       clearable: true,
       multiple: false,
       filterable: false,
-      size: 'medium'
+      size: 'default'
     }
   }
   
@@ -2242,7 +2175,7 @@ const createFormItem = (type) => {
       clearable: true,
       showAllLevels: true,
       filterable: false,
-      size: 'medium'
+      size: 'default'
     }
   }
   
@@ -2287,7 +2220,6 @@ const createFormItem = (type) => {
       interval: 4000,
       fit: 'cover',
       options: [],
-      indicatorPosition: 'outside',
       arrow: 'hover'
     }
   }
@@ -2533,9 +2465,10 @@ const handleAddCascaderOption = () => {
   if (!activeData.value.config.options) {
     activeData.value.config.options = []
   }
+  const optionCount = activeData.value.config.options.length + 1
   activeData.value.config.options.push({
-    label: '新选项',
-    value: 'newOption',
+    label: `选项${optionCount}`,
+    value: `option${optionCount}`,
     children: []
   })
   handlePropertyChange()
@@ -2552,9 +2485,10 @@ const handleAddCascaderChild = (parentIndex) => {
   if (!activeData.value.config.options[parentIndex].children) {
     activeData.value.config.options[parentIndex].children = []
   }
+  const childCount = activeData.value.config.options[parentIndex].children.length + 1
   activeData.value.config.options[parentIndex].children.push({
-    label: '子项',
-    value: 'child'
+    label: `子项${childCount}`,
+    value: `child${childCount}`
   })
   handlePropertyChange()
 }
@@ -2566,21 +2500,39 @@ const handleRemoveCascaderChild = (parentIndex, childIndex) => {
   }
 }
 
-// 评分组件辅助文字管理
-const handleAddRateText = () => {
-  if (!activeData.value.config.texts) {
-    activeData.value.config.texts = []
-  }
-  const max = activeData.value.config.max || 5
-  if (activeData.value.config.texts.length < max) {
-    activeData.value.config.texts.push(`文字${activeData.value.config.texts.length + 1}`)
+// 级联选择label变化时自动生成value
+const handleCascaderLabelChange = (index) => {
+  if (activeData.value.config.options && activeData.value.config.options[index]) {
+    const option = activeData.value.config.options[index]
+    // 自动生成value：将label转换为小写，去除空格，特殊字符转换为下划线
+    if (option.label) {
+      option.value = option.label
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\u4e00-\u9fa5]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '') || `option${index + 1}`
+    }
     handlePropertyChange()
   }
 }
 
-const handleRemoveRateText = () => {
-  if (activeData.value.config.texts && activeData.value.config.texts.length > 0) {
-    activeData.value.config.texts.pop()
+// 级联选择子项label变化时自动生成value
+const handleCascaderChildLabelChange = (parentIndex, childIndex) => {
+  if (activeData.value.config.options && 
+      activeData.value.config.options[parentIndex] &&
+      activeData.value.config.options[parentIndex].children &&
+      activeData.value.config.options[parentIndex].children[childIndex]) {
+    const child = activeData.value.config.options[parentIndex].children[childIndex]
+    // 自动生成value
+    if (child.label) {
+      child.value = child.label
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\u4e00-\u9fa5]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '') || `child${childIndex + 1}`
+    }
     handlePropertyChange()
   }
 }
@@ -3812,6 +3764,26 @@ onMounted(() => {
   &:hover {
     color: #409eff;
   }
+}
+
+.cascader-options-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cascader-option-item {
+  padding: 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  background: #fafafa;
+  margin-bottom: 10px;
+}
+
+.cascader-add-btn {
+  margin-top: 10px;
+  width: 100%;
+  justify-content: flex-start;
 }
 </style>
 

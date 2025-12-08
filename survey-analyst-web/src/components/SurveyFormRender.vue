@@ -15,11 +15,11 @@
         v-if="element.type !== 'DIVIDER'"
         :label="element.label"
         :prop="element.vModel"
+        :required="!!element.required || element.required === 1"
       >
         <template #label>
           <span class="form-label">
             <span v-if="showNumber" class="question-number">{{ getQuestionIndex(element) }}. </span>
-            <span v-if="!!element.required || element.required === 1" class="required-mark">*</span>
             {{ element.label }}
           </span>
         </template>
@@ -79,7 +79,7 @@
           :disabled="element.disabled || previewMode"
           :border="element.config?.border || false"
           :button="element.config?.button || false"
-          :size="element.config?.size || 'medium'"
+          :size="element.config?.size || 'default'"
           class="theme-radio-group"
         >
           <el-radio
@@ -101,7 +101,7 @@
           :max="element.config?.max"
           :border="element.config?.border || false"
           :button="element.config?.button || false"
-          :size="element.config?.size || 'medium'"
+          :size="element.config?.size || 'default'"
           class="theme-checkbox-group"
         >
           <el-checkbox
@@ -123,7 +123,7 @@
           :clearable="element.config?.clearable !== false"
           :multiple="element.config?.multiple || false"
           :filterable="element.config?.filterable || false"
-          :size="element.config?.size || 'medium'"
+          :size="element.config?.size || 'default'"
           :style="getInputStyle('width: 100%')"
           class="theme-select"
         >
@@ -236,7 +236,7 @@
           :clearable="element.config?.clearable !== false"
           :show-all-levels="element.config?.showAllLevels !== false"
           :filterable="element.config?.filterable || false"
-          :size="element.config?.size || 'medium'"
+          :size="element.config?.size || 'default'"
           :style="getInputStyle('width: 100%')"
           class="theme-cascader"
         />
@@ -367,7 +367,6 @@
               :key="`carousel-${element.formItemId}`"
               :height="`${element.config?.height || 300}px`"
               :interval="element.config?.interval || 4000"
-              :indicator-position="element.config?.indicatorPosition || 'outside'"
               :arrow="element.config?.arrow || 'hover'"
             >
               <el-carousel-item
