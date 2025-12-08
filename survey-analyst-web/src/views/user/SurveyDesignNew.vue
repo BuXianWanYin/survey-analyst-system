@@ -237,23 +237,32 @@
                           {{ element.config?.content || '' }}
                         </el-divider>
                         <!-- 图片轮播 -->
-                        <el-carousel
+                        <div
                           v-else-if="element.type === 'IMAGE_CAROUSEL'"
-                          :height="element.config?.height || '300px'"
-                          :interval="element.config?.interval || 4000"
-                          :key="`carousel-${element.formItemId}-${element.config?.images?.length || 0}`"
+                          class="image-carousel-wrapper"
                         >
-                          <el-carousel-item
-                            v-for="(img, idx) in element.config?.images || []"
-                            :key="img.id || img.url || idx"
+                          <el-carousel
+                            v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
+                            :height="`${element.config?.height || 300}px`"
+                            :interval="element.config?.interval || 4000"
+                            :key="`carousel-${element.formItemId}-${element.config?.options?.length || 0}-${JSON.stringify(element.config?.options?.map(opt => opt.url || ''))}`"
                           >
-                            <el-image
-                              :src="img.url"
-                              fit="cover"
-                              style="width: 100%; height: 100%"
-                            />
-                          </el-carousel-item>
-                        </el-carousel>
+                            <el-carousel-item
+                              v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
+                              :key="option.url || idx"
+                            >
+                              <el-image
+                                :src="option.url"
+                                :fit="element.config?.fit || 'cover'"
+                                style="width: 100%; height: 100%"
+                              />
+                            </el-carousel-item>
+                          </el-carousel>
+                          <div v-else class="carousel-placeholder">
+                            <el-icon><Picture /></el-icon>
+                            <span>请添加图片</span>
+                          </div>
+                        </div>
                         <!-- 图片选择 -->
                         <div
                           v-else-if="element.type === 'IMAGE_SELECT'"
@@ -470,11 +479,14 @@
                 <template v-if="activeData.type === 'IMAGE_CAROUSEL'">
                   <el-divider />
                   <el-form-item label="轮播高度">
-                    <el-input
+                    <el-input-number
                       v-model="activeData.config.height"
-                      placeholder="如：300px"
-                      @input="handlePropertyChange"
+                      :min="100"
+                      :step="50"
+                      placeholder="高度"
+                      @change="handlePropertyChange"
                     />
+                    <span style="margin-left: 10px; color: #909399">px</span>
                   </el-form-item>
                   <el-form-item label="切换间隔（毫秒）">
                     <el-input-number
@@ -484,38 +496,78 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="图片列表">
-                    <div
-                      v-for="(img, idx) in activeData.config.images"
-                      :key="img.id || img.url || idx"
-                      class="carousel-image-item"
+                  <el-form-item label="图片适应模式">
+                    <el-select
+                      v-model="activeData.config.fit"
+                      placeholder="请选择适应模式"
+                      @change="handlePropertyChange"
                     >
-                      <el-image
-                        :src="img.url"
-                        fit="cover"
-                        class="carousel-preview-image"
-                      />
-                      <div class="carousel-image-actions">
-                        <el-button
-                          type="danger"
-                          text
-                          size="small"
-                          @click="handleRemoveCarouselImage(idx)"
-                        >
-                          删除
-                        </el-button>
+                      <el-option label="填充" value="fill" />
+                      <el-option label="包含" value="contain" />
+                      <el-option label="覆盖" value="cover" />
+                      <el-option label="无" value="none" />
+                      <el-option label="缩放" value="scale-down" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="选项">
+                    <VueDraggable
+                      v-model="activeData.config.options"
+                      handle=".carousel-drag-handle"
+                      ghost-class="sortable-ghost"
+                      drag-class="drag-item"
+                      @end="handlePropertyChange"
+                    >
+                      <div
+                        v-for="(option, idx) in (activeData.config?.options || [])"
+                        :key="idx"
+                        class="carousel-option-item"
+                      >
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+                          <el-icon class="carousel-drag-handle" style="cursor: move; color: #909399; font-size: 16px">
+                            <Rank />
+                          </el-icon>
+                          <el-input
+                            v-model="option.text"
+                            placeholder="文字"
+                            @input="handlePropertyChange"
+                            style="flex: 1"
+                          />
+                          <el-icon
+                            class="carousel-delete-icon"
+                            style="cursor: pointer; color: #f56c6c; font-size: 18px"
+                            @click="handleRemoveCarouselOption(idx)"
+                          >
+                            <Delete />
+                          </el-icon>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center">
+                          <el-input
+                            v-model="option.url"
+                            placeholder="图片URL"
+                            @input="handlePropertyChange"
+                            style="flex: 1"
+                          />
+                          <el-upload
+                            :action="uploadUrl"
+                            :headers="uploadHeaders"
+                            :show-file-list="false"
+                            :on-success="(res) => handleCarouselOptionUpload(res, idx)"
+                            accept="image/*"
+                          >
+                            <el-icon
+                              style="cursor: pointer; color: #409eff; font-size: 18px"
+                              title="上传图片"
+                            >
+                              <Upload />
+                            </el-icon>
+                          </el-upload>
+                        </div>
                       </div>
-                    </div>
-                    <el-upload
-                      :action="uploadUrl"
-                      :headers="uploadHeaders"
-                      :show-file-list="false"
-                      :on-success="handleCarouselImageUpload"
-                      accept="image/*"
-                      class="carousel-upload"
-                    >
-                      <el-button type="primary" size="small">添加图片</el-button>
-                    </el-upload>
+                    </VueDraggable>
+                    <el-button type="primary" text @click="handleAddCarouselOption" style="margin-top: 10px">
+                      <el-icon><Plus /></el-icon>
+                      <span>添加选项</span>
+                    </el-button>
                   </el-form-item>
                 </template>
                 
@@ -955,9 +1007,10 @@ const createFormItem = (type) => {
   // 图片轮播配置
   if (type === 'IMAGE_CAROUSEL') {
     baseItem.config = {
-      height: '300px',
+      height: 300,
       interval: 4000,
-      images: []
+      fit: 'cover',
+      options: []
     }
   }
   
@@ -1135,35 +1188,58 @@ const handleImageUpload = (response) => {
   }
 }
 
-// 图片轮播组件上传
-const handleCarouselImageUpload = (response) => {
+// 图片轮播组件选项上传
+const handleCarouselOptionUpload = (response, optionIndex) => {
   if (response && response.code === 200 && response.data) {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
     // 转换为完整的后端URL
     const fullImageUrl = getImageUrl(imageUrl)
-    if (!activeData.value.config.images) {
-      activeData.value.config.images = []
+    
+    // 找到当前激活的组件在 drawingList 中的索引
+    const activeIndex = drawingList.value.findIndex(item => item.formItemId === activeId.value)
+    if (activeIndex === -1) {
+      ElMessage.error('未找到当前组件')
+      return
     }
-    // 为每个图片添加唯一ID，确保Vue能正确追踪
-    activeData.value.config.images.push({ 
-      id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      url: fullImageUrl 
-    })
-    // 强制触发响应式更新
-    activeData.value.config.images = [...activeData.value.config.images]
-    handlePropertyChange()
-    ElMessage.success('图片添加成功')
+    
+    // 确保 config 和 options 存在
+    if (!drawingList.value[activeIndex].config) {
+      drawingList.value[activeIndex].config = {}
+    }
+    if (!drawingList.value[activeIndex].config.options) {
+      drawingList.value[activeIndex].config.options = []
+    }
+    
+    // 更新选项的 URL
+    if (drawingList.value[activeIndex].config.options[optionIndex]) {
+      drawingList.value[activeIndex].config.options[optionIndex].url = fullImageUrl
+      // 更新整个 drawingList 以触发响应式
+      drawingList.value = [...drawingList.value]
+      handlePropertyChange()
+      ElMessage.success('图片上传成功')
+    }
   } else {
     ElMessage.error(response?.message || '图片上传失败')
   }
 }
 
-// 删除轮播图片
-const handleRemoveCarouselImage = (index) => {
-  if (activeData.value.config.images) {
-    activeData.value.config.images.splice(index, 1)
-    // 强制触发响应式更新
-    activeData.value.config.images = [...activeData.value.config.images]
+// 添加轮播选项
+const handleAddCarouselOption = () => {
+  if (!activeData.value.config.options) {
+    activeData.value.config.options = []
+  }
+  const optionCount = activeData.value.config.options.length + 1
+  activeData.value.config.options.push({
+    text: '',
+    url: ''
+  })
+  handlePropertyChange()
+}
+
+// 删除轮播选项
+const handleRemoveCarouselOption = (index) => {
+  if (activeData.value.config.options) {
+    activeData.value.config.options.splice(index, 1)
     handlePropertyChange()
   }
 }
@@ -1285,12 +1361,28 @@ const loadFormData = async () => {
               }
             }
             // 图片轮播组件
-            if (scheme.type === 'IMAGE_CAROUSEL' && scheme.config.images) {
-              scheme.config.images = scheme.config.images.map((img, idx) => ({
-                ...img,
-                id: img.id || `img_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 9)}`,
-                url: getImageUrl(img.url)
-              }))
+            if (scheme.type === 'IMAGE_CAROUSEL') {
+              // 兼容旧格式（images）转换为新格式（options）
+              if (scheme.config.images && !scheme.config.options) {
+                scheme.config.options = scheme.config.images.map((img, idx) => ({
+                  text: img.text || '',
+                  url: getImageUrl(img.url)
+                }))
+                delete scheme.config.images
+              } else if (scheme.config.options) {
+                // 新格式，更新 URL
+                scheme.config.options = scheme.config.options.map(opt => ({
+                  text: opt.text || '',
+                  url: opt.url ? getImageUrl(opt.url) : ''
+                }))
+              }
+              // 确保有默认值
+              if (!scheme.config.fit) {
+                scheme.config.fit = 'cover'
+              }
+              if (!scheme.config.height) {
+                scheme.config.height = 300
+              }
             }
             // 图片选择组件
             if (scheme.type === 'IMAGE_SELECT' && scheme.config.options) {
@@ -1767,6 +1859,7 @@ onMounted(() => {
   flex-direction: column;
   padding: 10px;
   min-height: 0;
+  height: 100%;
 }
 
 .property-scrollbar {
@@ -1774,6 +1867,17 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  height: 100%;
+  max-height: 100%;
+}
+
+.property-scrollbar :deep(.el-scrollbar__wrap) {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.property-scrollbar :deep(.el-scrollbar__bar) {
+  right: 0;
 }
 
 .empty-property {
@@ -1874,27 +1978,55 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
-.carousel-image-item {
-  position: relative;
+.image-carousel-wrapper {
+  width: 100%;
+  min-height: 300px;
+}
+
+.carousel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background: #f5f7fa;
+  border: 2px dashed #dcdfe6;
+  border-radius: 4px;
+  color: #909399;
+  font-size: 14px;
+  gap: 10px;
+}
+
+.carousel-placeholder .el-icon {
+  font-size: 48px;
+}
+
+.carousel-option-item {
   margin-bottom: 10px;
+  padding: 10px;
   border: 1px solid #ebeef5;
   border-radius: 4px;
-  padding: 10px;
+  background: #fafafa;
 }
 
-.carousel-preview-image {
-  width: 100%;
-  max-height: 150px;
-  border-radius: 4px;
+.carousel-drag-handle {
+  cursor: move;
+  color: #909399;
+  font-size: 16px;
 }
 
-.carousel-image-actions {
-  margin-top: 10px;
-  text-align: right;
+.carousel-drag-handle:hover {
+  color: #409eff;
 }
 
-.carousel-upload {
-  margin-top: 10px;
+.carousel-delete-icon {
+  cursor: pointer;
+  color: #f56c6c;
+  font-size: 18px;
+}
+
+.carousel-delete-icon:hover {
+  color: #f78989;
 }
 
 .image-preview {

@@ -31,8 +31,11 @@ public class FileServiceImpl implements FileService {
         }
 
         // 验证文件大小
-        if (file.getSize() > fileConfig.getMaxSize()) {
-            throw new RuntimeException("文件大小超过限制");
+        long maxSize = fileConfig.getMaxSize();
+        if (file.getSize() > maxSize) {
+            long fileSizeMB = file.getSize() / (1024 * 1024);
+            long maxSizeMB = maxSize / (1024 * 1024);
+            throw new RuntimeException(String.format("文件大小超过限制：当前文件 %dMB，最大允许 %dMB", fileSizeMB, maxSizeMB));
         }
 
         try {
