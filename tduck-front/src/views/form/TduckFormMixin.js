@@ -8,9 +8,9 @@ export default {
     }
   },
   created() {
-    // 写入值到localStorage 给组件使用
+    // 写入值到sessionStorage 给组件使用（标签页独立）
     if (store.state.user.token) {
-      localStorage.setItem(TduckForm.constant.ACCESS_TOKEN, store.state.user.token)
+      sessionStorage.setItem(TduckForm.constant.ACCESS_TOKEN, store.state.user.token)
     }
   }
 }

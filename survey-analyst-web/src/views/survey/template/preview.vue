@@ -4,7 +4,7 @@
       <el-page-header content="模板详情" @back="router.back()" />
     </div>
     <div class="template-preview-content">
-      <div class="use-btn">
+      <div v-if="!isAdmin" class="use-btn">
         <el-button type="primary" @click="createSurveyByTemplate" :loading="createSurveyLoading">
           使用该模板
         </el-button>
@@ -41,14 +41,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { templateApi, formApi } from '@/api'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => {
+  return userStore.userInfo?.role === 'ADMIN'
+})
 
 const loading = ref(false)
 const createSurveyLoading = ref(false)

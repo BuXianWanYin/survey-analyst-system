@@ -1,8 +1,8 @@
 // import api from '@/api'
 
 const state = {
-  token: localStorage.token,
-  userInfo: localStorage.userInfo
+  token: sessionStorage.getItem('token'),
+  userInfo: sessionStorage.getItem('userInfo') ? JSON.parse(sessionStorage.getItem('userInfo')) : null
 }
 
 const getters = {
@@ -42,16 +42,16 @@ const actions = {
 
 const mutations = {
   setData(state, data) {
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('userInfo', JSON.stringify(data.userInfo))
+    sessionStorage.setItem('token', data.token)
+    sessionStorage.setItem('userInfo', JSON.stringify(data.userInfo))
     state.token = data.token
-    state.userInfo = JSON.stringify(data.userInfo)
+    state.userInfo = data.userInfo
   },
-  delData() {
+  delData(state) {
     state.token = null
     state.userInfo = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('userInfo')
   }
 }
 
