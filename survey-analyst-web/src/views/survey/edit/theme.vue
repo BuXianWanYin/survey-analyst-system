@@ -88,10 +88,10 @@
                         :style="{
                           backgroundColor: themeForm.themeColor || '#409EFF',
                           borderColor: themeForm.themeColor || '#409EFF',
-                          padding: '16px 60px',
-                          fontSize: '15px',
-                          height: 'auto',
-                          minWidth: '240px'
+                          fontSize: `${themeForm.btnFontSize || 15}px`,
+                          width: `${themeForm.btnWidth || 240}px`,
+                          height: `${themeForm.btnHeight || 48}px`,
+                          minWidth: `${themeForm.btnWidth || 240}px`
                         }"
                         size="large"
                       >
@@ -167,10 +167,10 @@
                   :style="{
                     backgroundColor: themeForm.themeColor || '#409EFF',
                     borderColor: themeForm.themeColor || '#409EFF',
-                    padding: '16px 60px',
-                    fontSize: '15px',
-                    height: 'auto',
-                    minWidth: '240px'
+                    fontSize: `${themeForm.btnFontSize || 15}px`,
+                    width: `${themeForm.btnWidth || 240}px`,
+                    height: `${themeForm.btnHeight || 48}px`,
+                    minWidth: `${themeForm.btnWidth || 240}px`
                   }"
                   size="large"
                 >
@@ -188,6 +188,29 @@
       <el-scrollbar class="right-scrollbar">
         <div class="settings-panel">
           <p class="settings-title">外观设置</p>
+
+
+                    <!-- 显示选项 -->
+                    <div class="setting-item">
+            <div class="setting-header">
+              <span class="setting-label">显示标题</span>
+              <el-switch v-model="themeForm.showTitle" @change="handleSettingChange" />
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-header">
+              <span class="setting-label">显示描述</span>
+              <el-switch v-model="themeForm.showDescribe" @change="handleSettingChange" />
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-header">
+              <span class="setting-label">显示序号</span>
+              <el-switch v-model="themeForm.showNumber" @change="handleSettingChange" />
+            </div>
+          </div>
 
           <!-- Logo设置 -->
           <div class="setting-item">
@@ -297,7 +320,7 @@
                 <el-switch v-model="themeForm.showSubmitBtn" @change="handleSettingChange" />
               </div>
               <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
-                <span class="setting-sub-label">按钮提示文字</span>
+                <span class="setting-sub-label">按钮文字</span>
                 <el-input
                   v-model="themeForm.submitBtnText"
                   placeholder="提交"
@@ -309,30 +332,46 @@
                 <span class="setting-sub-label">主题颜色</span>
                 <el-color-picker v-model="themeForm.themeColor" @change="handleSettingChange" />
               </div>
+              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
+                <span class="setting-sub-label">按钮字体大小（px）</span>
+                <el-input-number
+                  v-model="themeForm.btnFontSize"
+                  :min="10"
+                  :max="50"
+                  :step="1"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSettingChange"
+                />
+              </div>
+              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
+                <span class="setting-sub-label">按钮宽度（px）</span>
+                <el-input-number
+                  v-model="themeForm.btnWidth"
+                  :min="100"
+                  :max="1000"
+                  :step="10"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSettingChange"
+                />
+              </div>
+              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
+                <span class="setting-sub-label">按钮高度（px）</span>
+                <el-input-number
+                  v-model="themeForm.btnHeight"
+                  :min="30"
+                  :max="200"
+                  :step="2"
+                  size="small"
+                  style="width: 100%"
+                  @change="handleSettingChange"
+                />
+              </div>
             </div>
           </div>
 
-          <!-- 显示选项 -->
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示标题</span>
-              <el-switch v-model="themeForm.showTitle" @change="handleSettingChange" />
-            </div>
-          </div>
 
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示描述</span>
-              <el-switch v-model="themeForm.showDescribe" @change="handleSettingChange" />
-            </div>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示序号</span>
-              <el-switch v-model="themeForm.showNumber" @change="handleSettingChange" />
-            </div>
-          </div>
         </div>
       </el-scrollbar>
     </div>
@@ -397,7 +436,10 @@ const themeForm = reactive({
   showDescribe: true,
   showNumber: false,
   showSubmitBtn: true,
-  btnSetting: true
+  btnSetting: true,
+  btnFontSize: 15,
+  btnWidth: 240,
+  btnHeight: 48
 })
 
 // 预览表单数据
@@ -584,9 +626,6 @@ const loadTheme = async () => {
     const res = await formApi.getFormTheme(surveyId.value)
     if (res.code === 200 && res.data) {
       const data = res.data
-      if (data.themeId) {
-        activeThemeId.value = data.themeId
-      }
       if (data.themeColor) themeForm.themeColor = data.themeColor
       if (data.backgroundColor) {
         themeForm.backgroundColor = data.backgroundColor
@@ -611,6 +650,9 @@ const loadTheme = async () => {
       if (data.showDescribe !== undefined) themeForm.showDescribe = data.showDescribe
       if (data.showNumber !== undefined) themeForm.showNumber = data.showNumber
       if (data.showSubmitBtn !== undefined) themeForm.showSubmitBtn = data.showSubmitBtn
+      if (data.btnFontSize !== undefined && data.btnFontSize !== null) themeForm.btnFontSize = data.btnFontSize
+      if (data.btnWidth !== undefined && data.btnWidth !== null) themeForm.btnWidth = data.btnWidth
+      if (data.btnHeight !== undefined && data.btnHeight !== null) themeForm.btnHeight = data.btnHeight
     }
   } catch (error) {
     // 如果不存在，使用默认值
@@ -683,7 +725,10 @@ const saveTheme = () => {
         showTitle: themeForm.showTitle,
         showDescribe: themeForm.showDescribe,
         showNumber: themeForm.showNumber,
-        showSubmitBtn: themeForm.showSubmitBtn
+        showSubmitBtn: themeForm.showSubmitBtn,
+        btnFontSize: themeForm.btnFontSize,
+        btnWidth: themeForm.btnWidth,
+        btnHeight: themeForm.btnHeight
     }
     const res = await formApi.saveFormTheme(themeData)
     if (res.code === 200) {

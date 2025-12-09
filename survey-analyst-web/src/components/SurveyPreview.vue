@@ -99,10 +99,10 @@
                       :style="{
                         backgroundColor: currentThemeConfig.themeColor || '#409EFF',
                         borderColor: currentThemeConfig.themeColor || '#409EFF',
-                        padding: '16px 60px',
-                        fontSize: '15px',
-                        height: 'auto',
-                        minWidth: '240px'
+                        fontSize: `${currentThemeConfig.btnFontSize || 15}px`,
+                        width: `${currentThemeConfig.btnWidth || 240}px`,
+                        height: `${currentThemeConfig.btnHeight || 48}px`,
+                        minWidth: `${currentThemeConfig.btnWidth || 240}px`
                       }"
                       size="large"
                     >
@@ -190,10 +190,10 @@
                 :style="{
                   backgroundColor: currentThemeConfig.themeColor || '#409EFF',
                   borderColor: currentThemeConfig.themeColor || '#409EFF',
-                  padding: '16px 60px',
-                  fontSize: '15px',
-                  height: 'auto',
-                  minWidth: '240px'
+                  fontSize: `${currentThemeConfig.btnFontSize || 15}px`,
+                  width: `${currentThemeConfig.btnWidth || 240}px`,
+                  height: `${currentThemeConfig.btnHeight || 48}px`,
+                  minWidth: `${currentThemeConfig.btnWidth || 240}px`
                 }"
                 size="large"
               >
@@ -266,7 +266,10 @@ const themeConfigData = reactive({
   showTitle: true,
   showDescribe: true,
   showNumber: false,
-  showSubmitBtn: true
+  showSubmitBtn: true,
+  btnFontSize: 15,
+  btnWidth: 240,
+  btnHeight: 48
 })
 
 // 合并外部传入的主题配置
@@ -340,6 +343,9 @@ const loadTheme = async () => {
       if (data.showDescribe !== undefined) themeConfigData.showDescribe = data.showDescribe
       if (data.showNumber !== undefined) themeConfigData.showNumber = data.showNumber
       if (data.showSubmitBtn !== undefined) themeConfigData.showSubmitBtn = data.showSubmitBtn
+      if (data.btnFontSize !== undefined && data.btnFontSize !== null) themeConfigData.btnFontSize = data.btnFontSize
+      if (data.btnWidth !== undefined && data.btnWidth !== null) themeConfigData.btnWidth = data.btnWidth
+      if (data.btnHeight !== undefined && data.btnHeight !== null) themeConfigData.btnHeight = data.btnHeight
     }
   } catch (error) {
     // 如果不存在，使用默认值

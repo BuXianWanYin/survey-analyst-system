@@ -78,6 +78,18 @@ public class FormTheme {
     @ApiModelProperty(value = "头图高度（像素）")
     private Integer headImgHeight;
     
+    @TableField("btn_font_size")
+    @ApiModelProperty(value = "按钮字体大小（像素）")
+    private Integer btnFontSize;
+    
+    @TableField("btn_width")
+    @ApiModelProperty(value = "按钮宽度（像素）")
+    private Integer btnWidth;
+    
+    @TableField("btn_height")
+    @ApiModelProperty(value = "按钮高度（像素）")
+    private Integer btnHeight;
+    
     @TableField("update_time")
     @ApiModelProperty(value = "更新时间")
     private LocalDateTime updateTime;

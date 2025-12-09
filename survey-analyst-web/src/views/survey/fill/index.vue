@@ -108,7 +108,11 @@
             size="large"
             :style="{
               backgroundColor: themeConfig.themeColor || '#409EFF',
-              borderColor: themeConfig.themeColor || '#409EFF'
+              borderColor: themeConfig.themeColor || '#409EFF',
+              fontSize: `${themeConfig.btnFontSize || 15}px`,
+              width: `${themeConfig.btnWidth || 240}px`,
+              height: `${themeConfig.btnHeight || 48}px`,
+              minWidth: `${themeConfig.btnWidth || 240}px`
             }"
             :loading="submitting"
             @click="handleSubmit"
@@ -161,7 +165,10 @@ const themeConfig = reactive({
   showTitle: true,
   showDescribe: true,
   showNumber: false,
-  showSubmitBtn: true
+  showSubmitBtn: true,
+  btnFontSize: 15,
+  btnWidth: 240,
+  btnHeight: 48
 })
 
 // 获取Logo位置样式值
@@ -306,6 +313,9 @@ const loadTheme = async () => {
       if (data.showDescribe !== undefined) themeConfig.showDescribe = data.showDescribe
       if (data.showNumber !== undefined) themeConfig.showNumber = data.showNumber
       if (data.showSubmitBtn !== undefined) themeConfig.showSubmitBtn = data.showSubmitBtn
+      if (data.btnFontSize !== undefined && data.btnFontSize !== null) themeConfig.btnFontSize = data.btnFontSize
+      if (data.btnWidth !== undefined && data.btnWidth !== null) themeConfig.btnWidth = data.btnWidth
+      if (data.btnHeight !== undefined && data.btnHeight !== null) themeConfig.btnHeight = data.btnHeight
     }
   } catch (error) {
     // 如果不存在，使用默认值

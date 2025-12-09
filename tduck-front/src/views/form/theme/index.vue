@@ -191,7 +191,7 @@
         </el-row>
         <el-row align="middle" type="flex">
           <el-col :span="12">
-            <span class="option-line-sub-title">按钮提示文字</span>
+            <span class="option-line-sub-title">按钮文字</span>
           </el-col>
           <el-col :spvan="10">
             <el-input
