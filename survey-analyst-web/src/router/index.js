@@ -75,6 +75,15 @@ const routes = [
         }
       },
       {
+        path: 'survey/preview/:id',
+        name: 'SurveyPreview',
+        component: () => import('@/views/survey/preview/index.vue'),
+        meta: {
+          title: '问卷预览',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'survey/edit',
         component: () => import('@/views/survey/edit/container.vue'),
         redirect: (to) => {
