@@ -6,13 +6,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   
   const serverPort = parseInt(env.VITE_SERVER_PORT)
+  const serverHost = env.VITE_SERVER_HOST
   const proxyTarget = env.VITE_SERVER_PROXY_TARGET
   const baseApi = env.VITE_APP_BASE_API
   
   return {
     plugins: [vue()],
     server: {
-      host: '0.0.0.0', // 允许外部访问，包括手机
+      host: serverHost,
       port: serverPort,
       proxy: {
         [baseApi]: {

@@ -208,24 +208,6 @@ const handleVerifyPassword = async () => {
       inputPassword.value = ''
     }
   } catch (error) {
-    // 检查是否是403错误且未登录
-    const is403 = error.response?.status === 403
-    const isUnauthorized = error.response?.data?.code === 403
-    const hasNoToken = !getToken()
-    
-    if ((is403 || isUnauthorized) && hasNoToken) {
-      // 未登录且遇到403，提示并跳转到登录页
-      ElMessage.warning('您还未登录，请先登录')
-      const currentPath = route.fullPath
-      router.push({
-        name: 'Login',
-        query: {
-          redirect: currentPath
-        }
-      })
-      return
-    }
-    
     ElMessage.error(error.response?.data?.message || error.message || '密码验证失败，请稍后重试')
     inputPassword.value = ''
   } finally {
@@ -300,24 +282,6 @@ const continueLoadFormData = async () => {
       await loadTheme()
     }
   } catch (error) {
-    // 检查是否是403错误且未登录
-    const is403 = error.response?.status === 403
-    const isUnauthorized = error.response?.data?.code === 403
-    const hasNoToken = !getToken()
-    
-    if ((is403 || isUnauthorized) && hasNoToken) {
-      // 未登录且遇到403，提示并跳转到登录页
-      ElMessage.warning('您还未登录，请先登录')
-      const currentPath = route.fullPath
-      router.push({
-        name: 'Login',
-        query: {
-          redirect: currentPath
-        }
-      })
-      return
-    }
-    
     ElMessage.error('加载表单数据失败')
   }
 }
@@ -359,8 +323,41 @@ const getLogoPosition = () => {
   return positionMap[themeConfig.logoPosition] || 'flex-start'
 }
 
+// 检查登录状态，如果未登录则提示并跳转
+const checkLoginAndRedirect = async () => {
+  const hasNoToken = !getToken()
+  if (hasNoToken) {
+    try {
+      await ElMessageBox.confirm('您还未登录，请先登录', '提示', {
+        confirmButtonText: '去登录',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      // 用户点击确认，跳转到登录页
+      const currentPath = route.fullPath
+      router.push({
+        name: 'Login',
+        query: {
+          redirect: currentPath
+        }
+      })
+      return true // 返回true表示已跳转
+    } catch {
+      // 用户点击取消，不跳转
+      return false
+    }
+  }
+  return false // 已登录，不需要跳转
+}
+
 // 加载问卷数据
 const loadSurveyData = async () => {
+  // 检查登录状态
+  const hasRedirected = await checkLoginAndRedirect()
+  if (hasRedirected) {
+    return
+  }
+  
   loading.value = true
   try {
     // 支持通过 id 或 key 参数访问
@@ -490,26 +487,7 @@ const loadSurveyData = async () => {
       canFill.value = true
     }
   } catch (error) {
-    // 检查是否是403错误且未登录
-    const is403 = error.response?.status === 403
-    const isUnauthorized = error.response?.data?.code === 403
-    const hasNoToken = !getToken()
-    
-    if ((is403 || isUnauthorized) && hasNoToken) {
-      // 未登录且遇到403，提示并跳转到登录页
-      ElMessage.warning('您还未登录，请先登录')
-      // 保存当前URL，登录后跳转回来
-      const currentPath = route.fullPath
-      router.push({
-        name: 'Login',
-        query: {
-          redirect: currentPath
-        }
-      })
-      return
-    }
-    
-    // 其他错误，显示错误提示
+    // 加载问卷失败，显示错误提示
     errorMessage.value = error.response?.data?.message || error.message || '加载问卷失败，请稍后重试'
   } finally {
     loading.value = false
@@ -671,6 +649,12 @@ const validateForm = () => {
 
 // 提交表单
 const handleSubmit = async () => {
+  // 检查登录状态
+  const hasRedirected = await checkLoginAndRedirect()
+  if (hasRedirected) {
+    return
+  }
+  
   if (!validateForm()) {
     return
   }
@@ -739,24 +723,6 @@ const handleSubmit = async () => {
       ElMessage.error('提交失败，请稍后重试')
     }
   } catch (error) {
-    // 检查是否是403错误且未登录
-    const is403 = error.response?.status === 403
-    const isUnauthorized = error.response?.data?.code === 403
-    const hasNoToken = !getToken()
-    
-    if ((is403 || isUnauthorized) && hasNoToken) {
-      // 未登录且遇到403，提示并跳转到登录页
-      ElMessage.warning('您还未登录，请先登录')
-      const currentPath = route.fullPath
-      router.push({
-        name: 'Login',
-        query: {
-          redirect: currentPath
-        }
-      })
-      return
-    }
-    
     ElMessage.error(error.response?.data?.message || error.message || '提交失败')
   } finally {
     submitting.value = false
