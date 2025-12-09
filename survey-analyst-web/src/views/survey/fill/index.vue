@@ -132,6 +132,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { surveyApi, formApi, responseApi } from '@/api'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
+import { getImageUrl } from '@/utils/image'
 
 const route = useRoute()
 const router = useRouter()
@@ -181,40 +182,6 @@ const getLogoPosition = () => {
     'right': 'flex-end'
   }
   return positionMap[themeConfig.logoPosition] || 'flex-start'
-}
-
-// 获取后端服务器地址（用于构建图片URL）
-const getBackendBaseUrl = () => {
-  // 从 VITE_APP_BASE_API 提取后端地址
-  const baseApi = import.meta.env.VITE_APP_BASE_API
-  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
-  
-  // 如果 baseApi 是相对路径，使用 proxyTarget
-  if (baseApi.startsWith('/')) {
-    return proxyTarget
-  }
-  // 如果 baseApi 是完整URL，提取协议和主机
-  try {
-    const url = new URL(baseApi)
-    return `${url.protocol}//${url.host}`
-  } catch {
-    return proxyTarget
-  }
-}
-
-// 将相对路径转换为完整的后端URL
-const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return ''
-  // 如果已经是完整URL，直接返回
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
-  if (imageUrl.startsWith('/upload/')) {
-    return `${getBackendBaseUrl()}${imageUrl}`
-  }
-  // 其他情况，添加 /upload/ 前缀
-  return `${getBackendBaseUrl()}/upload/${imageUrl}`
 }
 
 // 加载问卷数据

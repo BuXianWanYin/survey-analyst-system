@@ -36,7 +36,10 @@
       </div>
 
       <!-- 移动端预览 -->
-      <div v-if="viewMode === 'mobile'" class="mobile-preview-wrapper">
+      <div
+        v-if="viewMode === 'mobile'"
+        class="mobile-preview-wrapper"
+      >
         <div class="preview-layer">
           <div class="preview-phone">
             <div
@@ -55,7 +58,10 @@
                     '--logo-size': `${currentThemeConfig.logoSize || 60}px`
                   }"
                 >
-                  <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
+                  <img
+                    :src="getImageUrl(currentThemeConfig.logoImg)"
+                    alt="logo"
+                  >
                 </div>
                 <!-- 头图 -->
                 <div
@@ -65,7 +71,10 @@
                     '--head-img-height': `${currentThemeConfig.headImgHeight || 150}px`
                   }"
                 >
-                  <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
+                  <img
+                    :src="getImageUrl(currentThemeConfig.headImgUrl)"
+                    alt="head"
+                  >
                 </div>
                 <!-- 标题 -->
                 <div
@@ -116,20 +125,40 @@
         </div>
         
         <!-- 二维码预览区域 -->
-        <div v-if="showQrcode && props.formKey" class="qrcode-view">
-          <p class="qrcode-title">手机扫码预览</p>
-          <p class="tips-text">* 预览仅查看效果，无法提交数据</p>
+        <div
+          v-if="showQrcode && props.formKey"
+          class="qrcode-view"
+        >
+          <p class="qrcode-title">
+            手机扫码预览
+          </p>
+          <p class="tips-text">
+            * 预览仅查看效果，无法提交数据
+          </p>
           <div class="qrcode-container">
-            <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="二维码" class="qrcode-image" />
-            <div v-else class="qrcode-loading">
-              <el-icon class="is-loading"><Loading /></el-icon>
+            <img
+              v-if="qrCodeUrl"
+              :src="qrCodeUrl"
+              alt="二维码"
+              class="qrcode-image"
+            >
+            <div
+              v-else
+              class="qrcode-loading"
+            >
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
             </div>
           </div>
         </div>
       </div>
 
       <!-- PC端预览 -->
-      <div v-if="viewMode === 'desktop'" class="desktop-preview-wrapper">
+      <div
+        v-if="viewMode === 'desktop'"
+        class="desktop-preview-wrapper"
+      >
         <el-scrollbar class="desktop-scrollbar">
           <div
             class="desktop-form-container"
@@ -146,7 +175,10 @@
                 '--logo-size': `${currentThemeConfig.logoSize || 80}px`
               }"
             >
-              <img :src="getImageUrl(currentThemeConfig.logoImg)" alt="logo" />
+              <img
+                :src="getImageUrl(currentThemeConfig.logoImg)"
+                alt="logo"
+              >
             </div>
             <!-- 头图 -->
             <div
@@ -156,7 +188,10 @@
                 '--head-img-height': `${currentThemeConfig.headImgHeight || 200}px`
               }"
             >
-              <img :src="getImageUrl(currentThemeConfig.headImgUrl)" alt="head" />
+              <img
+                :src="getImageUrl(currentThemeConfig.headImgUrl)"
+                alt="head"
+              >
             </div>
             <!-- 标题 -->
             <div
@@ -208,10 +243,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { Iphone, Monitor, Loading } from '@element-plus/icons-vue'
 import SurveyFormRender from './SurveyFormRender.vue'
 import { formApi } from '@/api'
+import { getImageUrl } from '@/utils/image'
 
 const props = defineProps({
   modelValue: {
@@ -276,40 +312,6 @@ const themeConfigData = reactive({
 const currentThemeConfig = computed(() => {
   return Object.keys(props.themeConfig).length > 0 ? props.themeConfig : themeConfigData
 })
-
-// 获取后端服务器地址（用于构建图片URL）
-const getBackendBaseUrl = () => {
-  // 从 VITE_APP_BASE_API 提取后端地址
-  const baseApi = import.meta.env.VITE_APP_BASE_API
-  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
-  
-  // 如果 baseApi 是相对路径，使用 proxyTarget
-  if (baseApi.startsWith('/')) {
-    return proxyTarget
-  }
-  // 如果 baseApi 是完整URL，提取协议和主机
-  try {
-    const url = new URL(baseApi)
-    return `${url.protocol}//${url.host}`
-  } catch {
-    return proxyTarget
-  }
-}
-
-// 将相对路径转换为完整的后端URL
-const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return ''
-  // 如果已经是完整URL，直接返回
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
-  if (imageUrl.startsWith('/upload/')) {
-    return `${getBackendBaseUrl()}${imageUrl}`
-  }
-  // 其他情况，添加 /upload/ 前缀
-  return `${getBackendBaseUrl()}/upload/${imageUrl}`
-}
 
 // 获取Logo位置样式值
 const getLogoPosition = () => {
@@ -426,7 +428,8 @@ const loadQRCode = async () => {
       }
     })
   } catch (error) {
-    console.error('生成二维码失败:', error)
+    // 生成二维码失败，静默处理
+    // console.error('生成二维码失败:', error)
     qrCodeUrl.value = ''
   }
 }

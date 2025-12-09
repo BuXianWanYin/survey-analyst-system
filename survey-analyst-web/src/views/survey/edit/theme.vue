@@ -24,7 +24,10 @@
         </div>
 
         <!-- 移动端预览 -->
-        <div v-if="previewMode === 'mobile'" class="mobile-preview-wrapper">
+        <div
+          v-if="previewMode === 'mobile'"
+          class="mobile-preview-wrapper"
+        >
           <div class="preview-layer">
             <div class="preview-phone">
               <div
@@ -43,7 +46,10 @@
                       '--logo-size': `${themeForm.logoSize || 60}px`
                     }"
                   >
-                    <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+                    <img
+                      :src="getImageUrl(themeForm.logoImg)"
+                      alt="logo"
+                    >
                   </div>
                   <!-- 头图 -->
                   <div
@@ -53,7 +59,10 @@
                       '--head-img-height': `${themeForm.headImgHeight || 150}px`
                     }"
                   >
-                    <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+                    <img
+                      :src="getImageUrl(themeForm.headImgUrl)"
+                      alt="head"
+                    >
                   </div>
                   <!-- 标题 -->
                   <div
@@ -106,7 +115,10 @@
         </div>
 
         <!-- PC端预览 -->
-        <div v-else class="desktop-preview-wrapper">
+        <div
+          v-else
+          class="desktop-preview-wrapper"
+        >
           <el-scrollbar class="desktop-scrollbar">
             <div
               class="desktop-form-container"
@@ -123,7 +135,10 @@
                   '--logo-size': `${themeForm.logoSize || 80}px`
                 }"
               >
-                <img :src="getImageUrl(themeForm.logoImg)" alt="logo" />
+                <img
+                  :src="getImageUrl(themeForm.logoImg)"
+                  alt="logo"
+                >
               </div>
               <!-- 头图 -->
               <div
@@ -133,7 +148,10 @@
                   '--head-img-height': `${themeForm.headImgHeight || 200}px`
                 }"
               >
-                <img :src="getImageUrl(themeForm.headImgUrl)" alt="head" />
+                <img
+                  :src="getImageUrl(themeForm.headImgUrl)"
+                  alt="head"
+                >
               </div>
               <!-- 标题 -->
               <div
@@ -187,7 +205,9 @@
     <div class="right-container">
       <el-scrollbar class="right-scrollbar">
         <div class="settings-panel">
-          <p class="settings-title">外观设置</p>
+          <p class="settings-title">
+            外观设置
+          </p>
           <el-form
             :model="themeForm"
             label-width="130px"
@@ -196,27 +216,43 @@
           >
             <!-- 显示选项 -->
             <el-form-item label="显示标题">
-              <el-switch v-model="themeForm.showTitle" @change="handleSettingChange" />
+              <el-switch
+                v-model="themeForm.showTitle"
+                @change="handleSettingChange"
+              />
             </el-form-item>
 
             <el-form-item label="显示描述">
-              <el-switch v-model="themeForm.showDescribe" @change="handleSettingChange" />
+              <el-switch
+                v-model="themeForm.showDescribe"
+                @change="handleSettingChange"
+              />
             </el-form-item>
 
             <el-form-item label="显示序号">
-              <el-switch v-model="themeForm.showNumber" @change="handleSettingChange" />
+              <el-switch
+                v-model="themeForm.showNumber"
+                @change="handleSettingChange"
+              />
             </el-form-item>
 
             <el-divider />
 
             <!-- Logo设置 -->
             <el-form-item label="添加logo">
-              <el-switch v-model="themeForm.logoSetting" @change="handleSettingChange" />
+              <el-switch
+                v-model="themeForm.logoSetting"
+                @change="handleSettingChange"
+              />
             </el-form-item>
             <template v-if="themeForm.logoSetting">
               <el-form-item label="logo设置">
                 <div class="logo-preview">
-                  <img v-if="themeForm.logoImg" :src="themeForm.logoImg" alt="logo" />
+                  <img
+                    v-if="themeForm.logoImg"
+                    :src="themeForm.logoImg"
+                    alt="logo"
+                  >
                 </div>
                 <el-upload
                   :action="uploadUrl"
@@ -225,14 +261,29 @@
                   :show-file-list="false"
                   accept="image/*"
                 >
-                  <el-button size="small" type="text">上传Logo</el-button>
+                  <el-button
+                    size="small"
+                    type="text"
+                  >
+                    上传Logo
+                  </el-button>
                 </el-upload>
               </el-form-item>
               <el-form-item label="logo位置">
-                <el-radio-group v-model="themeForm.logoPosition" size="small" @change="handleSettingChange">
-                  <el-radio-button label="flex-start">左对齐</el-radio-button>
-                  <el-radio-button label="center">居中</el-radio-button>
-                  <el-radio-button label="flex-end">右对齐</el-radio-button>
+                <el-radio-group
+                  v-model="themeForm.logoPosition"
+                  size="small"
+                  @change="handleSettingChange"
+                >
+                  <el-radio-button label="flex-start">
+                    左对齐
+                  </el-radio-button>
+                  <el-radio-button label="center">
+                    居中
+                  </el-radio-button>
+                  <el-radio-button label="flex-end">
+                    右对齐
+                  </el-radio-button>
                 </el-radio-group>
               </el-form-item>
               <el-form-item label="logo大小">
@@ -251,12 +302,19 @@
 
             <!-- 头图设置 -->
             <el-form-item label="头图设置">
-              <el-switch v-model="themeForm.headImgSetting" @change="handleSettingChange" />
+              <el-switch
+                v-model="themeForm.headImgSetting"
+                @change="handleSettingChange"
+              />
             </el-form-item>
             <template v-if="themeForm.headImgSetting">
               <el-form-item label="头图设置">
                 <div class="head-img-preview">
-                  <img v-if="themeForm.headImgUrl" :src="themeForm.headImgUrl" alt="head" />
+                  <img
+                    v-if="themeForm.headImgUrl"
+                    :src="themeForm.headImgUrl"
+                    alt="head"
+                  >
                 </div>
                 <el-upload
                   :action="uploadUrl"
@@ -265,7 +323,12 @@
                   :show-file-list="false"
                   accept="image/*"
                 >
-                  <el-button size="small" type="text">上传头图</el-button>
+                  <el-button
+                    size="small"
+                    type="text"
+                  >
+                    上传头图
+                  </el-button>
                 </el-upload>
               </el-form-item>
               <el-form-item label="头图高度">
@@ -283,7 +346,9 @@
             <el-divider />
 
             <!-- 按钮设置 -->
-            <div class="section-title">按钮设置</div>
+            <div class="section-title">
+              按钮设置
+            </div>
             <el-form-item label="按钮文字">
               <el-input
                 v-model="themeForm.submitBtnText"
@@ -292,7 +357,10 @@
               />
             </el-form-item>
             <el-form-item label="主题颜色">
-              <el-color-picker v-model="themeForm.themeColor" @change="handleSettingChange" />
+              <el-color-picker
+                v-model="themeForm.themeColor"
+                @change="handleSettingChange"
+              />
             </el-form-item>
             <el-form-item label="字体大小（px）">
               <el-input-number
@@ -339,6 +407,7 @@ import { Iphone, Monitor } from '@element-plus/icons-vue'
 import { formApi, surveyApi } from '@/api'
 import { getToken } from '@/utils/auth'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
+import { getImageUrl, getRelativeImageUrl } from '@/utils/image'
 
 const route = useRoute()
 const props = defineProps({
@@ -364,12 +433,24 @@ const props = defineProps({
   }
 })
 
-const surveyId = ref(null)
-const surveyTitle = ref('')
-const surveyDescription = ref('')
-const formKey = ref(null)
-const formItems = ref([])
+const localSurveyId = ref(null)
+const localSurveyTitle = ref('')
+const localSurveyDescription = ref('')
+const localFormKey = ref(null)
+const localFormItems = ref([])
 const previewMode = ref('mobile')
+
+// 使用 computed 合并 props 和本地 ref，避免命名冲突
+const surveyId = computed(() => props.surveyId || localSurveyId.value)
+const surveyTitle = computed(() => props.surveyTitle || localSurveyTitle.value)
+const surveyDescription = computed(() => props.surveyDescription || localSurveyDescription.value)
+// formKey 保留在 localFormKey 中，供内部使用
+const formItems = computed(() => {
+  if (props.formItems && props.formItems.length > 0) {
+    return props.formItems
+  }
+  return localFormItems.value
+})
 
 // 外观设置表单
 const themeForm = reactive({
@@ -411,80 +492,18 @@ const getLogoPosition = () => {
   return themeForm.logoPosition || 'flex-start'
 }
 
-// 获取后端服务器地址（用于构建图片URL）
-const getBackendBaseUrl = () => {
-  // 从 VITE_APP_BASE_API 提取后端地址
-  const baseApi = import.meta.env.VITE_APP_BASE_API
-  const proxyTarget = import.meta.env.VITE_SERVER_PROXY_TARGET
-  
-  // 如果 baseApi 是相对路径，使用 proxyTarget
-  if (baseApi.startsWith('/')) {
-    return proxyTarget
-  }
-  // 如果 baseApi 是完整URL，提取协议和主机
-  try {
-    const url = new URL(baseApi)
-    return `${url.protocol}//${url.host}`
-  } catch {
-    return proxyTarget
-  }
-}
-
-// 将相对路径转换为完整的后端URL
-const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return ''
-  // 如果已经是完整URL，直接返回
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  // 如果是相对路径（以 /upload/ 开头），拼接后端地址
-  if (imageUrl.startsWith('/upload/')) {
-    return `${getBackendBaseUrl()}${imageUrl}`
-  }
-  // 其他情况，添加 /upload/ 前缀
-  return `${getBackendBaseUrl()}/upload/${imageUrl}`
-}
-
-// 将完整URL转换回相对路径（用于保存到后端）
-const getRelativeImageUrl = (imageUrl) => {
-  if (!imageUrl) return ''
-  // 如果已经是相对路径，直接返回
-  if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-    return imageUrl
-  }
-  // 如果是完整URL，提取相对路径部分
-  try {
-    const url = new URL(imageUrl)
-    const path = url.pathname
-    // 如果是 /upload/ 开头的路径，返回完整路径
-    if (path.startsWith('/upload/')) {
-      return path
-    }
-    // 如果路径中包含 upload，提取 upload 之后的部分
-    const uploadIndex = path.indexOf('/upload/')
-    if (uploadIndex !== -1) {
-      return path.substring(uploadIndex)
-    }
-    // 其他情况，返回路径部分
-    return path
-  } catch {
-    // 解析失败，返回原值
-    return imageUrl
-  }
-}
-
 // 加载问卷信息和表单数据
 const loadData = async () => {
   // 优先使用 props 传入的数据
   if (props.surveyId) {
-    surveyId.value = props.surveyId
-    surveyTitle.value = props.surveyTitle || ''
-    surveyDescription.value = props.surveyDescription || ''
-    formKey.value = props.formKey || ''
+    localSurveyId.value = props.surveyId
+    localSurveyTitle.value = props.surveyTitle || ''
+    localSurveyDescription.value = props.surveyDescription || ''
+    localFormKey.value = props.formKey || ''
     
     // 处理从 props 传入的 formItems，确保数据结构正确
     if (props.formItems && props.formItems.length > 0) {
-      formItems.value = props.formItems.map(item => {
+      localFormItems.value = props.formItems.map(item => {
         // 如果 item 已经有 vModel，说明已经解析过了，直接返回
         if (item.vModel) {
           return item
@@ -508,10 +527,10 @@ const loadData = async () => {
         }
       })
     } else {
-      formItems.value = []
+      localFormItems.value = []
     }
     
-    if (formItems.value.length > 0) {
+    if (localFormItems.value.length > 0) {
       initPreviewForm()
     }
   } else {
@@ -519,27 +538,27 @@ const loadData = async () => {
   const id = route.query.id
   if (!id) return
 
-  surveyId.value = Number(id)
+  localSurveyId.value = Number(id)
     
     try {
       // 加载问卷信息
-      const surveyRes = await surveyApi.getSurveyById(surveyId.value)
+      const surveyRes = await surveyApi.getSurveyById(localSurveyId.value)
       if (surveyRes.code === 200 && surveyRes.data) {
-        surveyTitle.value = surveyRes.data.title || ''
-        surveyDescription.value = surveyRes.data.description || ''
+        localSurveyTitle.value = surveyRes.data.title || ''
+        localSurveyDescription.value = surveyRes.data.description || ''
       }
 
       // 加载表单配置
-      const configRes = await formApi.getFormConfig(surveyId.value)
+      const configRes = await formApi.getFormConfig(localSurveyId.value)
       if (configRes.code === 200 && configRes.data) {
-        formKey.value = configRes.data.formKey
+        localFormKey.value = configRes.data.formKey
         
         // 加载表单项
-        if (formKey.value) {
-          const itemsRes = await formApi.getFormItems(formKey.value)
+        if (localFormKey.value) {
+          const itemsRes = await formApi.getFormItems(localFormKey.value)
           if (itemsRes.code === 200 && itemsRes.data) {
             // 解析 scheme 字段，提取 vModel 和 config
-            formItems.value = itemsRes.data.map(item => {
+            localFormItems.value = itemsRes.data.map(item => {
               const scheme = typeof item.scheme === 'string' 
                 ? JSON.parse(item.scheme) 
                 : item.scheme || {}
@@ -570,6 +589,11 @@ const loadData = async () => {
   
   // 加载外观设置
   await loadTheme()
+  
+  // 初始化预览表单（如果已有表单项）
+  if (formItems.value.length > 0) {
+    initPreviewForm()
+  }
 }
 
 // 加载外观设置
@@ -617,7 +641,8 @@ const initPreviewForm = () => {
     delete previewFormModel[key]
   })
 
-  formItems.value.forEach(item => {
+  const items = formItems.value
+  items.forEach(item => {
     const vModel = item.vModel || item.formItemId
     const defaultValue = item.defaultValue
     
@@ -687,7 +712,8 @@ const saveTheme = () => {
         // 静默保存，不显示提示
     }
   } catch (error) {
-      console.error('保存失败:', error)
+      // 保存失败，静默处理
+      // console.error('保存失败:', error)
     }
   }, 500)
 }
@@ -731,7 +757,9 @@ const handleSettingChange = () => {
 
 // 监听表单项变化，重新初始化预览
 watch(() => formItems.value.length, () => {
-  initPreviewForm()
+  if (formItems.value.length > 0) {
+    initPreviewForm()
+  }
 })
 
 // 提供themeForm给父组件使用（用于预览对话框）
