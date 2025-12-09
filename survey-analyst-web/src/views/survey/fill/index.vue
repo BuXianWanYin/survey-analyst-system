@@ -289,7 +289,7 @@ const handleCancelPassword = () => {
 // 外观配置（默认值）
 const themeConfig = reactive({
   themeColor: '#409EFF',
-  backgroundColor: '#f5f7fa',
+  backgroundColor: '#ffffff',
   headImgUrl: '',
   headImgHeight: 200,
   logoImg: '',
