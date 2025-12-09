@@ -7,7 +7,6 @@
       minHeight: '100vh'
     }"
   >
-
     <!-- 密码验证对话框 -->
     <el-dialog
       v-model="passwordDialogVisible"
@@ -23,19 +22,29 @@
             v-model="inputPassword"
             type="password"
             placeholder="请输入访问密码"
-            @keyup.enter="handleVerifyPassword"
             show-password
+            @keyup.enter="handleVerifyPassword"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="handleCancelPassword">取消</el-button>
-        <el-button type="primary" @click="handleVerifyPassword">确定</el-button>
-        </template>
+        <el-button @click="handleCancelPassword">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleVerifyPassword"
+        >
+          确定
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 错误提示 -->
-    <div v-if="errorMessage" class="fill-content">
+    <div
+      v-if="errorMessage"
+      class="fill-content"
+    >
       <el-card class="error-card">
         <el-alert
           :title="errorMessage"
@@ -44,10 +53,13 @@
           show-icon
         />
       </el-card>
-            </div>
+    </div>
 
     <!-- 表单内容 -->
-    <div v-if="!errorMessage && canFill" class="fill-content">
+    <div
+      v-if="!errorMessage && canFill"
+      class="fill-content"
+    >
       <div class="fill-form-wrapper">
         <!-- Logo -->
         <div
@@ -58,7 +70,10 @@
             '--logo-size': `${themeConfig.logoSize || 60}px`
           }"
         >
-          <img :src="getImageUrl(themeConfig.logoImg)" alt="logo" />
+          <img
+            :src="getImageUrl(themeConfig.logoImg)"
+            alt="logo"
+          >
         </div>
 
         <!-- 头图 -->
@@ -69,14 +84,17 @@
             '--head-img-height': `${themeConfig.headImgHeight || 200}px`
           }"
         >
-          <img :src="getImageUrl(themeConfig.headImgUrl)" alt="head" />
+          <img
+            :src="getImageUrl(themeConfig.headImgUrl)"
+            alt="head"
+          >
         </div>
 
         <!-- 标题 -->
         <h2
           v-if="themeConfig.showTitle"
           class="fill-title"
-                >
+        >
           {{ surveyTitle || '未命名问卷' }}
         </h2>
 
@@ -96,7 +114,7 @@
           :preview-mode="false"
           :theme-config="themeConfig"
           :show-number="themeConfig.showNumber"
-              />
+        />
 
         <!-- 提交按钮 -->
         <div
@@ -119,8 +137,8 @@
           >
             {{ themeConfig.submitBtnText || '提交' }}
           </el-button>
-            </div>
-          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -129,7 +147,6 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import dayjs from 'dayjs'
 import { surveyApi, formApi, responseApi } from '@/api'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
 import { getImageUrl } from '@/utils/image'
@@ -150,8 +167,18 @@ const errorMessage = ref('')
 const canFill = ref(false)
 const passwordDialogVisible = ref(false)
 const inputPassword = ref('')
-const passwordVerified = ref(false)
 const responseCount = ref(0)
+
+// 密码验证相关函数（预留，待实现）
+const handleVerifyPassword = () => {
+  // TODO: 实现密码验证逻辑
+  ElMessage.warning('密码验证功能待实现')
+}
+
+const handleCancelPassword = () => {
+  passwordDialogVisible.value = false
+  router.push('/home')
+}
 
 // 外观配置（默认值）
 const themeConfig = reactive({
@@ -211,7 +238,7 @@ const loadSurveyData = async () => {
     } else if (key) {
       // 通过key访问
       formKey.value = key
-        } else {
+    } else {
       ElMessage.error('缺少必要参数')
       return
     }
@@ -222,15 +249,15 @@ const loadSurveyData = async () => {
       if (itemsRes.code === 200 && itemsRes.data) {
         formItems.value = itemsRes.data
         initFormModel()
-          }
-        }
+      }
+    }
 
     // 加载外观配置（如果有surveyId）
     if (surveyId.value) {
       await loadTheme()
     }
   } catch (error) {
-    console.error('加载问卷失败:', error)
+    // 加载问卷失败，显示错误提示
     ElMessage.error('加载问卷失败')
   } finally {
     loading.value = false
@@ -325,9 +352,9 @@ const handleSubmit = async () => {
           ElMessage.error(`问卷已达到最大填写数（${survey.value.maxResponses}），无法提交`)
           return
         }
-    }
-  } catch (error) {
-      console.error('验证填写数量失败', error)
+      }
+    } catch (error) {
+      // 验证填写数量失败，继续提交流程
     }
   }
 
@@ -361,58 +388,20 @@ const handleSubmit = async () => {
     })
 
     // 使用表单数据提交接口
-    const responseData = {
-      surveyId: surveyId.value,
-      formKey: formKey.value,
-      answers,
-      ipAddress: '',
-      deviceType: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'MOBILE' : 'PC'
-    }
-
-    // 使用表单数据提交接口
-    try {
-      const formDataRes = await formApi.submitFormData(formKey.value, answers)
-      if (formDataRes && formDataRes.code === 200) {
-        ElMessage.success('提交成功，感谢您的参与！')
-        setTimeout(() => {
-          router.push('/home')
-        }, 1500)
-        return
-      }
-    } catch (error) {
-      console.error('提交失败:', error)
-      // 如果表单数据接口失败，尝试使用旧的响应接口
-      try {
-        const oldRes = await responseApi.submitResponse({
-          surveyId: surveyId.value,
-          answers: convertAnswersToOldFormat(answers),
-          ipAddress: '',
-          deviceType: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'MOBILE' : 'PC'
-        })
-
-        if (oldRes.code === 200) {
-          ElMessage.success('提交成功，感谢您的参与！')
-          setTimeout(() => {
-            router.push('/home')
-          }, 1500)
-        }
-      } catch (oldError) {
-        throw error // 抛出原始错误
-      }
+    const formDataRes = await formApi.submitFormData(formKey.value, answers)
+    if (formDataRes && formDataRes.code === 200) {
+      ElMessage.success('提交成功，感谢您的参与！')
+      setTimeout(() => {
+        router.push('/home')
+      }, 1500)
+    } else {
+      ElMessage.error('提交失败，请稍后重试')
     }
   } catch (error) {
-    console.error('提交失败:', error)
     ElMessage.error(error.message || '提交失败')
   } finally {
     submitting.value = false
   }
-}
-
-// 转换答案格式（兼容旧接口）
-const convertAnswersToOldFormat = (answers) => {
-  // 旧接口使用 questionId，新接口使用 formItemId
-  // 这里保持原样，因为可能都需要使用 formItemId
-  return answers
 }
 
 onMounted(() => {
