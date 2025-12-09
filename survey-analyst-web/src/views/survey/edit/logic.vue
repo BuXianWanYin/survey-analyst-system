@@ -177,7 +177,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, Minus } from '@element-plus/icons-vue'
-import { formApi } from '@/api'
+import { formApi, templateApi } from '@/api'
 import { debounce } from 'lodash-es'
 
 const route = useRoute()
@@ -222,6 +222,42 @@ const conditionOptions = [
 // 加载表单配置和表单项
 const loadFormData = async () => {
   const id = route.query.id
+  const formKeyParam = route.query.formKey
+  const isTemplate = route.query.isTemplate === 'true'
+  
+  // 如果是编辑模板（通过formKey）
+  if (isTemplate && formKeyParam) {
+    formKey.value = formKeyParam
+    surveyId.value = null
+    
+    try {
+      // 直接通过formKey加载表单项
+      const itemsRes = await formApi.getFormItems(formKeyParam)
+      if (itemsRes.code === 200 && itemsRes.data) {
+        allFormItemList.value = itemsRes.data
+          .filter(item => item.type !== 'PAGINATION')
+          .map(item => {
+            const scheme = typeof item.scheme === 'string' 
+              ? JSON.parse(item.scheme) 
+              : item.scheme
+            return {
+              formItemId: item.formItemId,
+              type: item.type,
+              label: item.label,
+              scheme: scheme || {}
+            }
+          })
+      }
+      
+      // 加载逻辑
+      await loadLogic()
+    } catch (error) {
+      ElMessage.error('加载数据失败')
+    }
+    return
+  }
+  
+  // 如果是编辑问卷（通过surveyId）
   if (!id) return
 
   surveyId.value = Number(id)
@@ -263,9 +299,23 @@ const loadFormData = async () => {
 // 加载逻辑
 const loadLogic = async () => {
   try {
-    const res = await formApi.getFormLogic(surveyId.value)
-    if (res.code === 200 && res.data && res.data.scheme) {
-      logicList.value = res.data.scheme
+    // 如果是编辑模板，从模板的scheme中获取逻辑
+    if (!surveyId.value && formKey.value) {
+      const templateRes = await templateApi.getTemplateDetails(formKey.value)
+      if (templateRes.code === 200 && templateRes.data && templateRes.data.formLogic && templateRes.data.formLogic.scheme) {
+        logicList.value = templateRes.data.formLogic.scheme
+        return
+      }
+    }
+    
+    // 如果是编辑问卷，通过surveyId获取逻辑
+    if (surveyId.value) {
+      const res = await formApi.getFormLogic(surveyId.value)
+      if (res.code === 200 && res.data && res.data.scheme) {
+        logicList.value = res.data.scheme
+      }
+    } else {
+      logicList.value = []
     }
   } catch (error) {
     // 如果不存在，使用空数组

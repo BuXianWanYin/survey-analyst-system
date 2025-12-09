@@ -3006,13 +3006,135 @@ const generateFormKey = () => {
 // 加载表单数据
 const loadFormData = async () => {
   const id = route.query.id
+  const formKeyParam = route.query.formKey
+  const isTemplate = route.query.isTemplate === 'true'
+  
+  // 如果是编辑模板（通过formKey）
+  if (isTemplate && formKeyParam) {
+    formKey.value = formKeyParam
+    surveyId.value = null
+    
+    // 优先使用URL参数中的模板信息
+    const templateName = route.query.templateName
+    const templateDescription = route.query.templateDescription
+    
+    if (templateName) {
+      formName.value = templateName
+    } else {
+      formName.value = '未命名模板'
+    }
+    
+    if (templateDescription !== undefined) {
+      formDescription.value = templateDescription
+    } else {
+      formDescription.value = ''
+    }
+    
+    try {
+      // getTemplateDetails 返回的是 scheme，不包含 name 和 description
+      // 所以主要依赖URL参数传递的信息
+      
+      // 直接通过formKey加载表单项
+      const itemsRes = await formApi.getFormItems(formKeyParam)
+      if (itemsRes.code === 200 && itemsRes.data) {
+        drawingList.value = itemsRes.data.map(item => {
+          const scheme = typeof item.scheme === 'string' 
+            ? JSON.parse(item.scheme) 
+            : item.scheme
+          
+          // 修复图片URL（将相对路径转换为完整的后端URL）
+          if (scheme.config) {
+            // 图片展示组件
+            if (scheme.type === 'IMAGE' && scheme.config.imageUrl) {
+              scheme.config.imageUrl = getImageUrl(scheme.config.imageUrl)
+              if (scheme.config.previewList) {
+                scheme.config.previewList = scheme.config.previewList.map(url => getImageUrl(url))
+              }
+            }
+            // 图片轮播组件
+            if (scheme.type === 'IMAGE_CAROUSEL') {
+              // 兼容旧格式（images）转换为新格式（options）
+              if (scheme.config.images && !scheme.config.options) {
+                scheme.config.options = scheme.config.images.map((img) => ({
+                  text: img.text || '',
+                  url: getImageUrl(img.url)
+                }))
+                delete scheme.config.images
+              } else if (scheme.config.options) {
+                // 新格式，更新 URL
+                scheme.config.options = scheme.config.options.map(opt => ({
+                  text: opt.text || '',
+                  url: opt.url ? getImageUrl(opt.url) : ''
+                }))
+              }
+              // 确保有默认值
+              if (!scheme.config.fit) {
+                scheme.config.fit = 'cover'
+              }
+              if (!scheme.config.height) {
+                scheme.config.height = 300
+              }
+            }
+            // 图片选择组件
+            if (scheme.type === 'IMAGE_SELECT' && scheme.config.options) {
+              scheme.config.options = scheme.config.options.map(opt => ({
+                ...opt,
+                image: opt.image ? getImageUrl(opt.image) : opt.image
+              }))
+            }
+          }
+          
+          // 解析 regList
+          let regList = []
+          if (item.regList) {
+            try {
+              regList = typeof item.regList === 'string' 
+                ? JSON.parse(item.regList) 
+                : item.regList
+            } catch (e) {
+              regList = []
+            }
+          }
+          
+          return {
+            ...scheme,
+            formItemId: item.formItemId,
+            type: item.type,
+            label: item.label,
+            required: item.required === 1,
+            placeholder: item.placeholder || '',
+            span: item.span || 24,
+            regList: regList,
+            hideType: item.isHideType === 1 || item.isHideType === true,
+            // 确保使用数据库中的 sort 值（从 item.sort 获取，而不是从 scheme 中）
+            sort: item.sort != null ? item.sort : 0
+          }
+        }).sort((a, b) => {
+          // 确保按 sort 排序（后端虽然已经排序，但为了保险起见，前端再排序一次）
+          const sortA = a.sort != null ? a.sort : 0
+          const sortB = b.sort != null ? b.sort : 0
+          return sortA - sortB
+        })
+        
+        // 初始化表单模型
+        drawingList.value.forEach(item => {
+          formModel[item.vModel] = getDefaultValue(item.type, item.defaultValue, item.config)
+        })
+      }
+    } catch (error) {
+      ElMessage.error('加载模板数据失败')
+    }
+    return
+  }
+  
+  // 如果是新建表单（没有id）
   if (!id) {
-    // 新建表单
     formKey.value = generateFormKey()
     surveyId.value = null
     return
   }
   
+  // 编辑问卷（通过surveyId）
   surveyId.value = Number(id)
   
   try {
@@ -3534,7 +3656,6 @@ onMounted(() => {
   position: relative;
   margin-bottom: 15px;
   cursor: pointer;
-  // ⭐ 关键：让Sortable.js的动画生效
   transition: transform 0.3s, opacity 0.3s;
   
   &.unfocus-bordered {

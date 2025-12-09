@@ -3,7 +3,7 @@
     <div class="create-header-container">
       <!-- 搜索栏 -->
       <div class="filter-container">
-        <el-form :inline="true">
+        <el-form :inline="true" class="filter-form">
           <el-form-item label="">
             <el-input
               v-model="queryParams.name"
@@ -18,15 +18,18 @@
             </el-button>
           </el-form-item>
           <el-form-item>
+            <el-button type="success" @click="handleAddTemplate" :icon="Plus">
+              添加模板
+            </el-button>
+          </el-form-item>
+          <el-form-item class="view-toggle-item">
             <!-- 视图切换按钮 -->
-            <el-radio-group v-model="viewMode" size="default" style="margin-left: 10px">
+            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
               <el-radio-button :label="'card'">
                 <el-icon><Grid /></el-icon>
-                <span style="margin-left: 4px">卡片</span>
               </el-radio-button>
               <el-radio-button :label="'table'">
                 <el-icon><List /></el-icon>
-                <span style="margin-left: 4px">表格</span>
               </el-radio-button>
             </el-radio-group>
           </el-form-item>
@@ -34,13 +37,13 @@
       </div>
       <!-- 分类菜单 -->
       <el-menu
-        :default-active="queryParams.type"
+        :default-active="String(queryParams.type || 'null')"
         mode="horizontal"
         style="background-color: transparent"
         @select="handleCategorySelect"
       >
-        <el-menu-item :index="null">全部</el-menu-item>
-        <el-menu-item v-for="(item, index) in templateTypeList" :key="index" :index="item.id.toString()">
+        <el-menu-item index="null">全部</el-menu-item>
+        <el-menu-item v-for="(item, index) in templateTypeList" :key="index" :index="String(item.id)">
           {{ item.name }}
         </el-menu-item>
       </el-menu>
@@ -64,13 +67,16 @@
             {{ template.name }}
           </p>
           <div class="template-actions">
-            <el-button icon="View" type="text" @click="handleView(template)">
+            <el-button :icon="View" type="primary" size="small" @click="handleView(template)">
               查看
             </el-button>
-            <el-button icon="Edit" type="text" @click="handleEdit(template)">
-              编辑
+            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(template)">
+              编辑信息
             </el-button>
-            <el-button icon="Delete" type="text" @click="handleDelete(template)">
+            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(template)">
+              编辑组件
+            </el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(template)">
               删除
             </el-button>
           </div>
@@ -97,10 +103,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button type="warning" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+            <el-button type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -123,6 +130,41 @@
         @current-change="handlePageChange"
       />
     </div>
+
+    <!-- 添加模板对话框 -->
+    <el-dialog 
+      v-model="addTemplateDialogVisible" 
+      title="添加模板" 
+      width="600px"
+    >
+      <el-form :model="addTemplateForm" label-width="100px">
+        <el-form-item label="模板名称" required>
+          <el-input v-model="addTemplateForm.name" placeholder="请输入模板名称" />
+        </el-form-item>
+        <el-form-item label="模板描述">
+          <el-input 
+            v-model="addTemplateForm.description" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入模板描述" 
+          />
+        </el-form-item>
+        <el-form-item label="模板分类" required>
+          <el-select v-model="addTemplateForm.categoryId" placeholder="请选择分类" style="width: 100%">
+            <el-option 
+              v-for="category in templateTypeList" 
+              :key="category.id" 
+              :label="category.name" 
+              :value="category.id" 
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addTemplateDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleConfirmAddTemplate">确定</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 编辑对话框 -->
     <el-dialog 
@@ -171,8 +213,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Edit, Delete, Grid, List } from '@element-plus/icons-vue'
-import { adminApi, templateApi } from '@/api'
+import { Search, View, Edit, Delete, Grid, List, Setting, Plus } from '@element-plus/icons-vue'
+import { adminApi, templateApi, surveyApi } from '@/api'
 
 const router = useRouter()
 
@@ -180,7 +222,7 @@ const loading = ref(false)
 const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图
 const queryParams = ref({
   current: 1,
-  size: 12,
+  size: 10,
   name: '',
   type: null
 })
@@ -189,6 +231,7 @@ const templateTypeList = ref([])
 const templateList = ref([])
 
 const editDialogVisible = ref(false)
+const addTemplateDialogVisible = ref(false)
 const editForm = ref({
   id: null,
   formKey: null,
@@ -197,6 +240,11 @@ const editForm = ref({
   categoryId: null,
   coverImg: '',
   status: 1
+})
+const addTemplateForm = ref({
+  name: '',
+  description: '',
+  categoryId: null
 })
 
 // 默认封面图（如果没有图片，使用占位图）
@@ -210,7 +258,7 @@ const loadCategories = async () => {
       templateTypeList.value = res.data || []
     }
   } catch (error) {
-    console.error('加载模板分类失败', error)
+    // 加载模板分类失败
   }
 }
 
@@ -246,7 +294,11 @@ const handleSearch = () => {
 
 // 分类选择
 const handleCategorySelect = (index) => {
-  queryParams.value.type = index === 'null' ? null : Number(index)
+  if (index === 'null' || index === null) {
+    queryParams.value.type = null
+  } else {
+    queryParams.value.type = Number(index)
+  }
   queryParams.value.current = 1
   loadTemplateList()
 }
@@ -259,8 +311,8 @@ const handleView = (template) => {
   })
 }
 
-// 编辑
-const handleEdit = (template) => {
+// 编辑信息（基本信息：名称、描述、分类、封面图等）
+const handleEditInfo = (template) => {
   editForm.value = {
     id: template.id,
     formKey: template.formKey,
@@ -271,6 +323,21 @@ const handleEdit = (template) => {
     status: template.status
   }
   editDialogVisible.value = true
+}
+
+// 编辑组件（直接编辑模板）
+const handleEditComponents = (template) => {
+  // 直接通过formKey跳转到编辑页面，编辑模板本身
+  router.push({
+    path: '/survey/edit/editor',
+    query: { 
+      formKey: template.formKey,
+      isTemplate: 'true',
+      templateId: template.id,
+      templateName: template.name,
+      templateDescription: template.description || ''
+    }
+  })
 }
 
 // 保存
@@ -354,6 +421,56 @@ const handlePageChange = (page) => {
   loadTemplateList()
 }
 
+// 添加模板（打开对话框）
+const handleAddTemplate = () => {
+  addTemplateForm.value = {
+    name: '',
+    description: '',
+    categoryId: null
+  }
+  addTemplateDialogVisible.value = true
+}
+
+// 确认添加模板
+const handleConfirmAddTemplate = async () => {
+  if (!addTemplateForm.value.name.trim()) {
+    ElMessage.warning('请输入模板名称')
+    return
+  }
+  if (!addTemplateForm.value.categoryId) {
+    ElMessage.warning('请选择模板分类')
+    return
+  }
+
+  try {
+    // 创建问卷
+    const res = await surveyApi.createSurvey({
+      title: addTemplateForm.value.name,
+      description: addTemplateForm.value.description || ''
+    })
+
+    if (res.code === 200 && res.data) {
+      ElMessage.success('创建成功，正在跳转...')
+      addTemplateDialogVisible.value = false
+      // 跳转到编辑页，并传递问卷ID和模板信息
+      router.push({
+        path: '/survey/edit/editor',
+        query: { 
+          id: res.data.id,
+          isTemplate: 'true',
+          templateName: addTemplateForm.value.name,
+          templateDescription: addTemplateForm.value.description,
+          categoryId: addTemplateForm.value.categoryId
+        }
+      })
+    } else {
+      ElMessage.error('创建问卷失败')
+    }
+  } catch (error) {
+    ElMessage.error('创建问卷失败')
+  }
+}
+
 onMounted(() => {
   loadCategories()
   loadTemplateList()
@@ -362,9 +479,12 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .template-list-container {
-  margin: 0 auto;
-  padding: 50px 150px;
-  width: 100%;
+  margin: 20px;
+  padding: 24px;
+  width: calc(100% - 40px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 
   .el-pagination {
     margin-top: 20px;
@@ -388,33 +508,72 @@ onMounted(() => {
   }
 }
 
+.filter-form {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.view-toggle-item {
+  margin-left: auto;
+}
+
+.view-toggle-group {
+  display: flex;
+  justify-content: center;
+}
+
 .project-grid-container {
   margin-top: 20px;
 }
 
 .project-grid-view {
-  display: flex;
-  max-width: 1400px;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 1600px) {
+  .project-grid-view {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .project-grid-view {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .project-grid-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .project-grid-view {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 
 .preview-img {
   width: 95%;
-  height: 180px;
+  height: 200px;
   margin-top: 8px;
   border-radius: 10px;
   object-fit: cover;
 }
 
 .project-template-view {
-  width: 220px;
-  height: 280px;
+  width: 100%;
+  height: 320px;
   line-height: 20px;
   border-radius: 10px;
   text-align: center;
-  margin: 20px;
+  margin: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 8px rgba(0, 0, 0, 0.08);
   background: white;
   position: relative;
@@ -457,6 +616,9 @@ onMounted(() => {
 .pagination-container {
   margin-top: 30px;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .el-menu.el-menu--horizontal {

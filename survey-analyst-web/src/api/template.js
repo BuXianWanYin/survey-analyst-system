@@ -51,10 +51,10 @@ export const templateApi = {
   /**
    * 使用模板创建问卷
    * @param {String} formKey 模板formKey
-   * @returns {Promise} 新创建的问卷formKey
+   * @returns {Promise} 新创建的问卷ID
    */
   useTemplateCreateSurvey(formKey) {
-    return request.post('/user/form/use-template/create', { formKey })
+    return request.post('/survey/use-template/create', { formKey })
   },
 
   /**

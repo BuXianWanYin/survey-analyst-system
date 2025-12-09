@@ -32,7 +32,7 @@
               保存
             </el-button>
             <el-button
-              v-if="activeMenu === 'editor'"
+              v-if="activeMenu === 'editor' && !isAdminTemplateEdit"
               type="warning"
               @click="handleSaveAsTemplate"
             >
@@ -94,6 +94,7 @@
 import { ref, computed, onMounted, provide, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import {
   ArrowLeft,
   Edit,
@@ -104,11 +105,17 @@ import {
   DataAnalysis,
   DataLine
 } from '@element-plus/icons-vue'
-import { surveyApi, formApi } from '@/api'
+import { surveyApi, formApi, templateApi } from '@/api'
 import SurveyPreview from '@/components/SurveyPreview.vue'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+// 判断是否为管理员编辑模板
+const isAdminTemplateEdit = computed(() => {
+  return route.query.isTemplate === 'true' && userStore.userInfo?.role === 'ADMIN'
+})
 
 const surveyId = ref(null)
 const surveyTitle = ref('')
@@ -153,43 +160,54 @@ provide('registerEditorMethods', (methods) => {
 })
 
 // 菜单列表
-const menuItemList = [
-  {
-    title: '编辑',
-    iconComponent: Edit,
-    route: 'editor'
-  },
-  {
-    title: '逻辑',
-    iconComponent: Menu,
-    route: 'logic'
-  },
-  {
-    title: '外观',
-    iconComponent: View,
-    route: 'theme'
-  },
-  {
-    title: '设置',
-    iconComponent: Setting,
-    route: 'setting'
-  },
-  {
-    title: '发布',
-    iconComponent: VideoPlay,
-    route: 'publish'
-  },
-  {
-    title: '数据',
-    iconComponent: DataAnalysis,
-    route: 'data'
-  },
-  {
-    title: '统计',
-    iconComponent: DataLine,
-    route: 'statistics'
+const menuItemList = computed(() => {
+  const allMenus = [
+    {
+      title: '编辑',
+      iconComponent: Edit,
+      route: 'editor'
+    },
+    {
+      title: '逻辑',
+      iconComponent: Menu,
+      route: 'logic'
+    },
+    {
+      title: '外观',
+      iconComponent: View,
+      route: 'theme'
+    },
+    {
+      title: '设置',
+      iconComponent: Setting,
+      route: 'setting'
+    },
+    {
+      title: '发布',
+      iconComponent: VideoPlay,
+      route: 'publish'
+    },
+    {
+      title: '数据',
+      iconComponent: DataAnalysis,
+      route: 'data'
+    },
+    {
+      title: '统计',
+      iconComponent: DataLine,
+      route: 'statistics'
+    }
+  ]
+
+  // 如果是管理员编辑模板，隐藏设置、发布、数据、统计
+  if (isAdminTemplateEdit.value) {
+    return allMenus.filter(menu => 
+      !['setting', 'publish', 'data', 'statistics'].includes(menu.route)
+    )
   }
-]
+
+  return allMenus
+})
 
 // 当前激活的菜单
 const activeMenu = computed(() => {
@@ -212,7 +230,23 @@ const showHeaderActions = computed(() => {
 // 菜单选择处理
 const handleMenuSelect = (index) => {
   const id = route.query.id
-  if (id) {
+  const formKey = route.query.formKey
+  const isTemplate = route.query.isTemplate === 'true'
+  const templateName = route.query.templateName
+  const templateDescription = route.query.templateDescription
+  
+  if (isTemplate && formKey) {
+    // 编辑模板，保留所有模板相关的查询参数
+    const query = { formKey, isTemplate: 'true' }
+    if (templateName) query.templateName = templateName
+    if (templateDescription !== undefined) query.templateDescription = templateDescription
+    
+    router.push({
+      path: `/survey/edit/${index}`,
+      query
+    })
+  } else if (id) {
+    // 编辑问卷
     router.push({
       path: `/survey/edit/${index}`,
       query: { id }
@@ -223,6 +257,71 @@ const handleMenuSelect = (index) => {
 // 加载问卷信息
 const loadSurveyInfo = async () => {
   const id = route.query.id
+  const formKeyParam = route.query.formKey
+  const isTemplate = route.query.isTemplate === 'true'
+  
+  // 如果是编辑模板（通过formKey）
+  if (isTemplate && formKeyParam) {
+    formKey.value = formKeyParam
+    surveyId.value = null
+    
+    // 优先使用URL参数中的模板信息
+    const templateName = route.query.templateName
+    const templateDescription = route.query.templateDescription
+    
+    if (templateName) {
+      surveyTitle.value = templateName
+    } else {
+      surveyTitle.value = '未命名模板'
+    }
+    
+    if (templateDescription !== undefined) {
+      surveyDescription.value = templateDescription
+    } else {
+      surveyDescription.value = ''
+    }
+    
+    try {
+      // getTemplateDetails 返回的是 scheme，不包含 name 和 description
+      // 所以主要依赖URL参数传递的信息
+      
+      // 加载表单项
+      if (formKey.value) {
+        try {
+          const itemsRes = await formApi.getFormItems(formKey.value)
+          if (itemsRes.code === 200 && itemsRes.data) {
+            // 解析 scheme 字段，提取 vModel 和 config
+            formItems.value = itemsRes.data.map(item => {
+              const scheme = typeof item.scheme === 'string' 
+                ? JSON.parse(item.scheme) 
+                : item.scheme || {}
+              
+              return {
+                formItemId: item.formItemId,
+                type: item.type,
+                label: item.label,
+                vModel: scheme.vModel || item.formItemId,
+                placeholder: scheme.placeholder || item.placeholder || '',
+                required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+                disabled: scheme.disabled || false,
+                readonly: scheme.readonly || false,
+                defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || ''),
+                config: scheme.config || {}
+              }
+            })
+          }
+        } catch (error) {
+          // 如果加载失败，使用空数组
+          formItems.value = []
+        }
+      }
+    } catch (error) {
+      ElMessage.error('加载模板信息失败')
+    }
+    return
+  }
+  
+  // 如果是编辑问卷（通过surveyId）
   if (!id) {
     ElMessage.error('问卷ID不存在')
     router.back()
@@ -230,7 +329,7 @@ const loadSurveyInfo = async () => {
   }
 
   surveyId.value = Number(id)
-
+  
   try {
     const res = await surveyApi.getSurveyById(surveyId.value)
     if (res.code === 200 && res.data) {
