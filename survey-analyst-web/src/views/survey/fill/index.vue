@@ -160,6 +160,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { surveyApi, formApi, responseApi } from '@/api'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
 import { getImageUrl } from '@/utils/image'
+import { getToken } from '@/utils/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -207,6 +208,24 @@ const handleVerifyPassword = async () => {
       inputPassword.value = ''
     }
   } catch (error) {
+    // 检查是否是403错误且未登录
+    const is403 = error.response?.status === 403
+    const isUnauthorized = error.response?.data?.code === 403
+    const hasNoToken = !getToken()
+    
+    if ((is403 || isUnauthorized) && hasNoToken) {
+      // 未登录且遇到403，提示并跳转到登录页
+      ElMessage.warning('您还未登录，请先登录')
+      const currentPath = route.fullPath
+      router.push({
+        name: 'Login',
+        query: {
+          redirect: currentPath
+        }
+      })
+      return
+    }
+    
     ElMessage.error(error.response?.data?.message || error.message || '密码验证失败，请稍后重试')
     inputPassword.value = ''
   } finally {
@@ -264,9 +283,14 @@ const continueLoadFormData = async () => {
             defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
             config: scheme.config || {},
             regList: regList,
-            sort: item.sort || 0
+            sort: item.sort != null ? item.sort : 0
           }
-        }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        }).sort((a, b) => {
+          // 确保按 sort 排序（后端虽然已经排序，但为了保险起见，前端再排序一次）
+          const sortA = a.sort != null ? a.sort : 0
+          const sortB = b.sort != null ? b.sort : 0
+          return sortA - sortB
+        })
         initFormModel()
       }
     }
@@ -276,6 +300,24 @@ const continueLoadFormData = async () => {
       await loadTheme()
     }
   } catch (error) {
+    // 检查是否是403错误且未登录
+    const is403 = error.response?.status === 403
+    const isUnauthorized = error.response?.data?.code === 403
+    const hasNoToken = !getToken()
+    
+    if ((is403 || isUnauthorized) && hasNoToken) {
+      // 未登录且遇到403，提示并跳转到登录页
+      ElMessage.warning('您还未登录，请先登录')
+      const currentPath = route.fullPath
+      router.push({
+        name: 'Login',
+        query: {
+          redirect: currentPath
+        }
+      })
+      return
+    }
+    
     ElMessage.error('加载表单数据失败')
   }
 }
@@ -418,9 +460,14 @@ const loadSurveyData = async () => {
             defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
             config: scheme.config || {},
             regList: regList,
-            sort: item.sort || 0
+            sort: item.sort != null ? item.sort : 0
           }
-        }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        }).sort((a, b) => {
+          // 确保按 sort 排序（后端虽然已经排序，但为了保险起见，前端再排序一次）
+          const sortA = a.sort != null ? a.sort : 0
+          const sortB = b.sort != null ? b.sort : 0
+          return sortA - sortB
+        })
         initFormModel()
       } else {
         errorMessage.value = '加载表单项失败'
@@ -443,7 +490,26 @@ const loadSurveyData = async () => {
       canFill.value = true
     }
   } catch (error) {
-    // 加载问卷失败，显示错误提示
+    // 检查是否是403错误且未登录
+    const is403 = error.response?.status === 403
+    const isUnauthorized = error.response?.data?.code === 403
+    const hasNoToken = !getToken()
+    
+    if ((is403 || isUnauthorized) && hasNoToken) {
+      // 未登录且遇到403，提示并跳转到登录页
+      ElMessage.warning('您还未登录，请先登录')
+      // 保存当前URL，登录后跳转回来
+      const currentPath = route.fullPath
+      router.push({
+        name: 'Login',
+        query: {
+          redirect: currentPath
+        }
+      })
+      return
+    }
+    
+    // 其他错误，显示错误提示
     errorMessage.value = error.response?.data?.message || error.message || '加载问卷失败，请稍后重试'
   } finally {
     loading.value = false
@@ -673,7 +739,25 @@ const handleSubmit = async () => {
       ElMessage.error('提交失败，请稍后重试')
     }
   } catch (error) {
-    ElMessage.error(error.message || '提交失败')
+    // 检查是否是403错误且未登录
+    const is403 = error.response?.status === 403
+    const isUnauthorized = error.response?.data?.code === 403
+    const hasNoToken = !getToken()
+    
+    if ((is403 || isUnauthorized) && hasNoToken) {
+      // 未登录且遇到403，提示并跳转到登录页
+      ElMessage.warning('您还未登录，请先登录')
+      const currentPath = route.fullPath
+      router.push({
+        name: 'Login',
+        query: {
+          redirect: currentPath
+        }
+      })
+      return
+    }
+    
+    ElMessage.error(error.response?.data?.message || error.message || '提交失败')
   } finally {
     submitting.value = false
   }

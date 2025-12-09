@@ -50,13 +50,14 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const loginFormRef = ref()
@@ -90,11 +91,18 @@ const handleLogin = async () => {
           userStore.setUserInfo(res.data.user)
           ElMessage.success('登录成功')
           
-          // 根据用户角色跳转到不同页面
-          if (res.data.user && res.data.user.role === 'ADMIN') {
-            router.push('/system/dashboard')
+          // 检查是否有重定向参数
+          const redirect = route.query.redirect
+          if (redirect && typeof redirect === 'string') {
+            // 跳转回原来的页面
+            router.push(redirect)
           } else {
-            router.push('/home')
+            // 根据用户角色跳转到不同页面
+            if (res.data.user && res.data.user.role === 'ADMIN') {
+              router.push('/system/dashboard')
+            } else {
+              router.push('/home')
+            }
           }
         }
       } catch (error) {
@@ -107,7 +115,16 @@ const handleLogin = async () => {
 }
 
 const goToRegister = () => {
-  router.push('/register')
+  // 如果有重定向参数，传递给注册页
+  const redirect = route.query.redirect
+  if (redirect) {
+    router.push({
+      name: 'Register',
+      query: { redirect }
+    })
+  } else {
+    router.push('/register')
+  }
 }
 </script>
 

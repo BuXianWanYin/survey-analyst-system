@@ -493,20 +493,33 @@ const props = defineProps({
   }
 })
 
-// 过滤掉隐藏的组件
+// 过滤掉隐藏的组件，并按 sort 排序
 const visibleFormItems = computed(() => {
-  return props.formItems.filter(item => !item.hideType)
+  return props.formItems
+    .filter(item => !item.hideType)
+    .sort((a, b) => {
+      // 确保按 sort 排序
+      const sortA = a.sort != null ? a.sort : 0
+      const sortB = b.sort != null ? b.sort : 0
+      return sortA - sortB
+    })
 })
 
 // 获取题目序号
+// 所有可见组件都参与编号，但 DIVIDER（分割线）不参与编号
+// 其他展示类组件（IMAGE、IMAGE_CAROUSEL、DESC_TEXT）参与编号
 const getQuestionIndex = (element) => {
   let index = 0
-  for (const item of props.formItems) {
-    if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
-      index++
-      if (item.formItemId === element.formItemId) {
-        return index
-      }
+  // 使用 visibleFormItems 确保遍历顺序和显示顺序一致
+  for (const item of visibleFormItems.value) {
+    // 分割线不参与编号，跳过
+    if (item.type === 'DIVIDER') {
+      continue
+    }
+    // 其他组件都参与编号（包括展示类组件如 IMAGE、IMAGE_CAROUSEL、DESC_TEXT）
+    index++
+    if (item.formItemId === element.formItemId) {
+      return index
     }
   }
   return index

@@ -75,12 +75,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Message, Avatar } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 
 const router = useRouter()
+const route = useRoute()
 
 const registerFormRef = ref()
 const loading = ref(false)
@@ -139,7 +140,16 @@ const handleRegister = async () => {
         })
         if (res.code === 200) {
           ElMessage.success('注册成功，请登录')
-          router.push('/login')
+          // 如果有重定向参数，传递给登录页
+          const redirect = route.query.redirect
+          if (redirect) {
+            router.push({
+              name: 'Login',
+              query: { redirect }
+            })
+          } else {
+            router.push('/login')
+          }
         }
       } catch (error) {
         ElMessage.error(error.message || '注册失败')
@@ -151,7 +161,16 @@ const handleRegister = async () => {
 }
 
 const goToLogin = () => {
-  router.push('/login')
+  // 如果有重定向参数，传递给登录页
+  const redirect = route.query.redirect
+  if (redirect) {
+    router.push({
+      name: 'Login',
+      query: { redirect }
+    })
+  } else {
+    router.push('/login')
+  }
 }
 </script>
 

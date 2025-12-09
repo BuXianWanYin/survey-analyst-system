@@ -3098,8 +3098,15 @@ const loadFormData = async () => {
             placeholder: item.placeholder || '',
             span: item.span || 24,
             regList: regList,
-            hideType: item.isHideType === 1 || item.isHideType === true
+            hideType: item.isHideType === 1 || item.isHideType === true,
+            // 确保使用数据库中的 sort 值（从 item.sort 获取，而不是从 scheme 中）
+            sort: item.sort != null ? item.sort : 0
           }
+        }).sort((a, b) => {
+          // 确保按 sort 排序（后端虽然已经排序，但为了保险起见，前端再排序一次）
+          const sortA = a.sort != null ? a.sort : 0
+          const sortB = b.sort != null ? b.sort : 0
+          return sortA - sortB
         })
         
         // 初始化表单模型
