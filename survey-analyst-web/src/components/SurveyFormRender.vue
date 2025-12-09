@@ -164,11 +164,14 @@
           <el-upload
             :file-list="getUploadFileList(element.vModel)"
             :disabled="element.disabled || previewMode"
-            action="#"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
             :auto-upload="element.config?.autoUpload !== false"
             :limit="element.config?.limit || 1"
             :accept="element.config?.accept || '*/*'"
             :multiple="element.config?.multiple || false"
+            :on-success="handleFileUploadSuccess"
+            :on-error="handleFileUploadError"
             :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 1}个文件`)"
             @change="handleUploadChange(element.vModel, $event)"
           >
@@ -412,6 +415,7 @@ import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { ElMessage } from 'element-plus'
 import SignPad from '@/components/SignPad.vue'
+import { getToken } from '@/utils/auth'
 
 const props = defineProps({
   formItems: {
@@ -540,6 +544,38 @@ const setSliderValue = (vModel, value) => {
   if (vModel in props.formModel) {
     props.formModel[vModel] = numValue
   }
+}
+
+// 上传URL和Headers
+const uploadUrl = computed(() => {
+  const baseUrl = import.meta.env.VITE_APP_BASE_API
+  return `${baseUrl}/file/upload`
+})
+
+const uploadHeaders = computed(() => {
+  return {
+    Authorization: `Bearer ${getToken()}`
+  }
+})
+
+// 文件上传成功处理
+const handleFileUploadSuccess = (response, file) => {
+  if (response && response.code === 200 && response.data) {
+    const fileUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    // 更新文件对象的url
+    if (file) {
+      file.url = fileUrl
+      file.response = response
+    }
+    ElMessage.success('文件上传成功')
+  } else {
+    ElMessage.error(response?.message || '文件上传失败')
+  }
+}
+
+// 文件上传失败处理
+const handleFileUploadError = () => {
+  ElMessage.error('文件上传失败，请重试')
 }
 
 // 获取文件上传提示文本

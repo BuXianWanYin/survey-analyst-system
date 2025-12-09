@@ -275,8 +275,11 @@
                           :limit="element.config?.limit || 1"
                           :accept="element.config?.accept || '*/*'"
                           :multiple="element.config?.multiple || false"
-                          action="#"
+                          :action="uploadUrl"
+                          :headers="uploadHeaders"
                           :auto-upload="element.config?.autoUpload !== false"
+                          :on-success="handleFileUploadSuccess"
+                          :on-error="handleFileUploadError"
                         >
                           <el-button type="primary">
                             选择文件
@@ -2764,6 +2767,28 @@ const getImageUrl = (imageUrl) => {
   }
   // 其他情况，添加 /upload/ 前缀
   return `${getBackendBaseUrl()}/upload/${imageUrl}`
+}
+
+// 文件上传成功处理
+const handleFileUploadSuccess = (response, file) => {
+  if (response && response.code === 200 && response.data) {
+    const fileUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    // 转换为完整的后端URL
+    const fullFileUrl = getImageUrl(fileUrl)
+    // 更新文件对象的url
+    if (file) {
+      file.url = fullFileUrl
+      file.response = response
+    }
+    ElMessage.success('文件上传成功')
+  } else {
+    ElMessage.error(response?.message || '文件上传失败')
+  }
+}
+
+// 文件上传失败处理
+const handleFileUploadError = () => {
+  ElMessage.error('文件上传失败，请重试')
 }
 
 // 图片展示组件上传
