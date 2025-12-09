@@ -13,12 +13,13 @@
     </div>
     <!-- 编辑模式：显示画布和操作按钮 -->
     <template v-else>
-      <div class="sign-pad-wrapper">
+      <div
+        class="sign-pad-wrapper"
+        :style="{ height: height + 'px' }"
+      >
         <canvas
           ref="canvasRef"
           class="sign-pad-canvas"
-          :width="width"
-          :height="height"
         />
       </div>
       <div class="sign-pad-actions">
@@ -112,16 +113,64 @@ const updateCanUndo = () => {
   }
 }
 
+// 调整 canvas 尺寸以匹配显示尺寸
+const resizeCanvas = () => {
+  if (!canvasRef.value) return
+
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+
+  // 获取显示尺寸（从父容器获取，如果没有则使用 props）
+  const displayWidth = rect.width > 0 ? Math.floor(rect.width) : props.width
+  const displayHeight = rect.height > 0 ? Math.floor(rect.height) : props.height
+
+  // 如果 canvas 已经有正确的显示尺寸，直接使用
+  if (rect.width === 0 || rect.height === 0) {
+    // 如果还没有渲染，先设置 CSS 尺寸
+    canvas.style.width = displayWidth + 'px'
+    canvas.style.height = displayHeight + 'px'
+    // 等待下一帧再获取实际尺寸
+    return { displayWidth, displayHeight }
+  }
+
+  // 设置 canvas 内部尺寸（考虑设备像素比以获得更清晰的绘制）
+  canvas.width = displayWidth * dpr
+  canvas.height = displayHeight * dpr
+
+  // 获取上下文并缩放
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+
+  // 设置 CSS 尺寸为显示尺寸（确保显示尺寸正确）
+  canvas.style.width = displayWidth + 'px'
+  canvas.style.height = displayHeight + 'px'
+
+  return { displayWidth, displayHeight }
+}
+
 // 初始化签名板
 const initSignaturePad = () => {
   if (!canvasRef.value) return
 
   const canvas = canvasRef.value
+  
+  // 调整 canvas 尺寸（可能需要等待一帧以确保尺寸正确）
+  const { displayWidth, displayHeight } = resizeCanvas()
+  
+  // 如果尺寸还没有准备好，等待下一帧
+  if (displayWidth === 0 || displayHeight === 0) {
+    requestAnimationFrame(() => {
+      initSignaturePad()
+    })
+    return
+  }
+  
   const ctx = canvas.getContext('2d')
 
-  // 设置画布背景
+  // 设置画布背景（使用显示尺寸，因为上下文已经缩放）
   ctx.fillStyle = props.backgroundColor
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillRect(0, 0, displayWidth, displayHeight)
 
   // 初始化 SignaturePad
   signaturePad.value = new SignaturePad(canvas, {
@@ -247,9 +296,7 @@ watch(() => props.height, () => {
     if (signaturePad.value && canvasRef.value) {
       // 保存当前数据
       const data = signaturePad.value.toData()
-      // 重新设置画布高度
-      canvasRef.value.height = props.height
-      // 重新初始化
+      // 重新初始化（会自动调整尺寸）
       initSignaturePad()
       // 恢复数据
       if (data && data.length > 0) {
@@ -260,9 +307,31 @@ watch(() => props.height, () => {
   })
 })
 
+// 监听窗口大小变化，重新调整 canvas 尺寸
+const handleResize = () => {
+  if (signaturePad.value && canvasRef.value) {
+    // 保存当前数据
+    const data = signaturePad.value.toData()
+    // 重新调整尺寸
+    resizeCanvas()
+    // 重新设置背景
+    const canvas = canvasRef.value
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = props.backgroundColor
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // 恢复数据
+    if (data && data.length > 0) {
+      signaturePad.value.fromData(data)
+      updateCanUndo()
+    }
+  }
+}
+
 onMounted(() => {
   nextTick(() => {
     initSignaturePad()
+    // 监听窗口大小变化
+    window.addEventListener('resize', handleResize)
   })
 })
 
@@ -270,6 +339,8 @@ onBeforeUnmount(() => {
   if (signaturePad.value) {
     signaturePad.value.off()
   }
+  // 移除窗口大小变化监听
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -294,6 +365,8 @@ onBeforeUnmount(() => {
   max-width: 100%;
   height: auto;
   touch-action: none;
+  /* 确保 canvas 尺寸由 JavaScript 控制 */
+  box-sizing: border-box;
 }
 
 .sign-pad-actions {
