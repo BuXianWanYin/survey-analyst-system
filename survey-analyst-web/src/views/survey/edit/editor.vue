@@ -1941,8 +1941,11 @@
     <SurveyPreview
       v-model="previewVisible"
       :form-name="formName"
+      :form-description="formDescription"
       :form-items="drawingList"
       :form-key="formKey"
+      :survey-id="surveyId"
+      :theme-config="previewThemeConfig"
       :show-qrcode="true"
     />
 
@@ -2086,6 +2089,29 @@ const formKey = ref(null)
 // 移除了draggingComponent，现在完全使用VueDraggable
 const surveyId = ref(null)
 const formModel = reactive({})
+
+// 从外观页获取主题配置
+const rawThemeForm = inject('themeForm', null)
+
+// 转换 themeForm 格式为 SurveyPreview 需要的格式
+const previewThemeConfig = computed(() => {
+  if (!rawThemeForm) return {}
+  
+  return {
+    themeColor: rawThemeForm.themeColor,
+    backgroundColor: rawThemeForm.backgroundColor,
+    headImgUrl: rawThemeForm.headImgSetting ? rawThemeForm.headImgUrl : '',
+    headImgHeight: rawThemeForm.headImgSetting ? rawThemeForm.headImgHeight : undefined,
+    logoImg: rawThemeForm.logoSetting ? rawThemeForm.logoImg : '',
+    logoPosition: rawThemeForm.logoPosition,
+    logoSize: rawThemeForm.logoSetting ? rawThemeForm.logoSize : undefined,
+    submitBtnText: rawThemeForm.submitBtnText,
+    showTitle: rawThemeForm.showTitle,
+    showDescribe: rawThemeForm.showDescribe,
+    showNumber: rawThemeForm.showNumber,
+    showSubmitBtn: rawThemeForm.showSubmitBtn
+  }
+})
 
 // 组件列表
 const componentList = [
