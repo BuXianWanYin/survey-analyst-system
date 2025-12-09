@@ -33,6 +33,7 @@
         </el-button>
         <el-button
           type="primary"
+          :loading="verifyingPassword"
           @click="handleVerifyPassword"
         >
           确定
@@ -168,15 +169,74 @@ const canFill = ref(false)
 const passwordDialogVisible = ref(false)
 const inputPassword = ref('')
 const responseCount = ref(0)
+const verifyingPassword = ref(false)
 
-// 密码验证相关函数（预留，待实现）
-const handleVerifyPassword = () => {
-  // TODO: 实现密码验证逻辑
-  ElMessage.warning('密码验证功能待实现')
+// 密码验证相关函数
+const handleVerifyPassword = async () => {
+  if (!inputPassword.value || !inputPassword.value.trim()) {
+    ElMessage.warning('请输入访问密码')
+    return
+  }
+
+  if (!surveyId.value) {
+    ElMessage.error('问卷ID不存在，无法验证密码')
+    return
+  }
+
+  verifyingPassword.value = true
+  try {
+    const res = await surveyApi.verifyPassword(surveyId.value, inputPassword.value.trim())
+    if (res.code === 200 && res.data) {
+      ElMessage.success('密码验证成功')
+      passwordDialogVisible.value = false
+      canFill.value = true
+      inputPassword.value = ''
+      // 密码验证通过后，继续加载表单数据
+      await continueLoadFormData()
+    } else {
+      ElMessage.error(res.message || '密码错误，请重新输入')
+      inputPassword.value = ''
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message || '密码验证失败，请稍后重试')
+    inputPassword.value = ''
+  } finally {
+    verifyingPassword.value = false
+  }
+}
+
+// 继续加载表单数据（密码验证通过后调用）
+const continueLoadFormData = async () => {
+  try {
+    // 加载表单配置
+    if (!formKey.value && surveyId.value) {
+      const configRes = await formApi.getFormConfig(surveyId.value)
+      if (configRes.code === 200 && configRes.data) {
+        formKey.value = configRes.data.formKey
+      }
+    }
+
+    // 加载表单项
+    if (formKey.value && formItems.value.length === 0) {
+      const itemsRes = await formApi.getFormItems(formKey.value)
+      if (itemsRes.code === 200 && itemsRes.data) {
+        formItems.value = itemsRes.data
+        initFormModel()
+      }
+    }
+
+    // 加载外观配置
+    if (surveyId.value) {
+      await loadTheme()
+    }
+  } catch (error) {
+    ElMessage.error('加载表单数据失败')
+  }
 }
 
 const handleCancelPassword = () => {
   passwordDialogVisible.value = false
+  inputPassword.value = ''
   router.push('/home')
 }
 
@@ -226,8 +286,22 @@ const loadSurveyData = async () => {
       // 加载问卷信息
       const surveyRes = await surveyApi.getSurveyById(surveyId.value)
       if (surveyRes.code === 200 && surveyRes.data) {
+        survey.value = surveyRes.data
         surveyTitle.value = surveyRes.data.title || '未命名问卷'
         surveyDescription.value = surveyRes.data.description || ''
+        
+        // 检查是否需要密码验证
+        if (surveyRes.data.accessType === 'PASSWORD') {
+          // 先加载formKey，用于后续密码验证通过后加载数据
+          const configRes = await formApi.getFormConfig(surveyId.value)
+          if (configRes.code === 200 && configRes.data) {
+            formKey.value = configRes.data.formKey
+          }
+          passwordDialogVisible.value = true
+          canFill.value = false
+          loading.value = false
+          return // 等待密码验证通过后再继续加载表单项
+        }
       }
 
       // 加载表单配置
@@ -255,6 +329,11 @@ const loadSurveyData = async () => {
     // 加载外观配置（如果有surveyId）
     if (surveyId.value) {
       await loadTheme()
+    }
+
+    // 如果不需要密码验证，允许填写
+    if (!survey.value || survey.value.accessType !== 'PASSWORD') {
+      canFill.value = true
     }
   } catch (error) {
     // 加载问卷失败，显示错误提示
