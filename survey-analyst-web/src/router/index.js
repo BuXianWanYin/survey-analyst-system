@@ -20,6 +20,16 @@ const routes = [
       requiresAuth: false
     }
   },
+  // 问卷填写页面（公开访问，支持 /user/survey/fill/:id 路径）
+  {
+    path: '/user/survey/fill/:id',
+    name: 'UserSurveyFill',
+    component: () => import('@/views/survey/fill/index.vue'),
+    meta: {
+      title: '填写问卷',
+      requiresAuth: false
+    }
+  },
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),

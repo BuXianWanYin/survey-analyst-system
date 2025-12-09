@@ -664,6 +664,12 @@ const initPreviewForm = () => {
         ? Number(defaultValue)
         : undefined
       previewFormModel[vModel] = isNaN(numValue) ? undefined : numValue
+    } else if (item.type === 'RATE') {
+      // RATE 类型必须是数字类型，默认值为 0 或 undefined
+      const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
+        ? Number(defaultValue)
+        : 0
+      previewFormModel[vModel] = isNaN(numValue) ? 0 : numValue
     } else if (item.type === 'DIVIDER' || item.type === 'IMAGE' || item.type === 'IMAGE_CAROUSEL') {
       // 这些类型不需要绑定表单模型
       previewFormModel[vModel] = null

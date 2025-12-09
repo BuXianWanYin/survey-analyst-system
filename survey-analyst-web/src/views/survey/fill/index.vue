@@ -62,83 +62,92 @@
       class="fill-content"
     >
       <div class="fill-form-wrapper">
-        <!-- Logo -->
-        <div
-          v-if="themeConfig.logoImg"
-          class="fill-logo"
-          :style="{
-            justifyContent: getLogoPosition(),
-            '--logo-size': `${themeConfig.logoSize || 60}px`
-          }"
-        >
-          <img
-            :src="getImageUrl(themeConfig.logoImg)"
-            alt="logo"
-          >
-        </div>
-
-        <!-- 头图 -->
-        <div
-          v-if="themeConfig.headImgUrl"
-          class="fill-head-img"
-          :style="{
-            '--head-img-height': `${themeConfig.headImgHeight || 200}px`
-          }"
-        >
-          <img
-            :src="getImageUrl(themeConfig.headImgUrl)"
-            alt="head"
-          >
-        </div>
-
-        <!-- 标题 -->
-        <h2
-          v-if="themeConfig.showTitle"
-          class="fill-title"
-        >
-          {{ surveyTitle || '未命名问卷' }}
-        </h2>
-
-        <!-- 描述 -->
-        <p
-          v-if="themeConfig.showDescribe && surveyDescription"
-          class="fill-description"
-        >
-          {{ surveyDescription }}
-        </p>
-
-        <!-- 表单渲染 -->
-        <SurveyFormRender
-          v-if="formItems.length > 0"
-          :form-items="formItems"
-          :form-model="formModel"
-          :preview-mode="false"
-          :theme-config="themeConfig"
-          :show-number="themeConfig.showNumber"
-        />
-
-        <!-- 提交按钮 -->
-        <div
-          v-if="themeConfig.showSubmitBtn"
-          class="fill-submit-buttons"
-        >
-          <el-button
-            type="primary"
-            size="large"
+        <el-scrollbar class="fill-scrollbar">
+          <div
+            class="fill-form-container"
             :style="{
-              backgroundColor: themeConfig.themeColor || '#409EFF',
-              borderColor: themeConfig.themeColor || '#409EFF',
-              fontSize: `${themeConfig.btnFontSize || 15}px`,
-              width: `${themeConfig.btnWidth || 240}px`,
-              height: `${themeConfig.btnHeight || 48}px`,
-              minWidth: `${themeConfig.btnWidth || 240}px`
+              backgroundColor: themeConfig.backgroundColor || '#ffffff'
             }"
-            :loading="submitting"
-            @click="handleSubmit"
           >
-            {{ themeConfig.submitBtnText || '提交' }}
-          </el-button>
-        </div>
+            <!-- Logo -->
+            <div
+              v-if="themeConfig.logoImg"
+              class="fill-logo"
+              :style="{
+                justifyContent: getLogoPosition(),
+                '--logo-size': `${themeConfig.logoSize || 60}px`
+              }"
+            >
+              <img
+                :src="getImageUrl(themeConfig.logoImg)"
+                alt="logo"
+              >
+            </div>
+
+            <!-- 头图 -->
+            <div
+              v-if="themeConfig.headImgUrl"
+              class="fill-head-img"
+              :style="{
+                '--head-img-height': `${themeConfig.headImgHeight || 200}px`
+              }"
+            >
+              <img
+                :src="getImageUrl(themeConfig.headImgUrl)"
+                alt="head"
+              >
+            </div>
+
+            <!-- 标题 -->
+            <h2
+              v-if="themeConfig.showTitle"
+              class="fill-title"
+            >
+              {{ surveyTitle || '未命名问卷' }}
+            </h2>
+
+            <!-- 描述 -->
+            <p
+              v-if="themeConfig.showDescribe && surveyDescription"
+              class="fill-description"
+            >
+              {{ surveyDescription }}
+            </p>
+
+            <!-- 表单渲染 -->
+            <SurveyFormRender
+              v-if="formItems.length > 0"
+              :form-items="formItems"
+              :form-model="formModel"
+              :preview-mode="false"
+              :theme-config="themeConfig"
+              :show-number="themeConfig.showNumber"
+            />
+
+            <!-- 提交按钮 -->
+            <div
+              v-if="themeConfig.showSubmitBtn"
+              class="fill-submit-buttons"
+            >
+              <el-button
+                type="primary"
+                size="large"
+                :style="{
+                  backgroundColor: themeConfig.themeColor || '#409EFF',
+                  borderColor: themeConfig.themeColor || '#409EFF',
+                  fontSize: `${themeConfig.btnFontSize || 15}px`,
+                  width: `${themeConfig.btnWidth || 240}px`,
+                  height: `${themeConfig.btnHeight || 48}px`,
+                  minWidth: `${themeConfig.btnWidth || 240}px`
+                }"
+                :loading="submitting"
+                @click="handleSubmit"
+              >
+                {{ themeConfig.submitBtnText || '提交' }}
+              </el-button>
+            </div>
+          </div>
+        </el-scrollbar>
       </div>
     </div>
   </div>
@@ -220,7 +229,44 @@ const continueLoadFormData = async () => {
     if (formKey.value && formItems.value.length === 0) {
       const itemsRes = await formApi.getFormItems(formKey.value)
       if (itemsRes.code === 200 && itemsRes.data) {
-        formItems.value = itemsRes.data
+        // 解析 scheme 字段，提取 vModel 和 config
+        formItems.value = itemsRes.data.map(item => {
+          // 解析 scheme（可能是 JSON 字符串或对象）
+          let scheme = {}
+          try {
+            scheme = typeof item.scheme === 'string' 
+              ? (item.scheme ? JSON.parse(item.scheme) : {})
+              : (item.scheme || {})
+          } catch (e) {
+            scheme = {}
+          }
+          
+          // 解析 regList（可能是 JSON 字符串或数组）
+          let regList = []
+          try {
+            regList = typeof item.regList === 'string'
+              ? (item.regList ? JSON.parse(item.regList) : [])
+              : (Array.isArray(item.regList) ? item.regList : [])
+          } catch (e) {
+            regList = []
+          }
+          
+          return {
+            formItemId: item.formItemId,
+            type: item.type,
+            label: item.label,
+            vModel: scheme.vModel || item.formItemId,
+            placeholder: scheme.placeholder || item.placeholder || '',
+            required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+            disabled: scheme.disabled || false,
+            readonly: scheme.readonly || false,
+            hideType: item.isHideType || false,
+            defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
+            config: scheme.config || {},
+            regList: regList,
+            sort: item.sort || 0
+          }
+        }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
         initFormModel()
       }
     }
@@ -290,6 +336,13 @@ const loadSurveyData = async () => {
         surveyTitle.value = surveyRes.data.title || '未命名问卷'
         surveyDescription.value = surveyRes.data.description || ''
         
+        // 检查问卷状态，只有已发布的问卷才能填写
+        if (surveyRes.data.status !== 'PUBLISHED') {
+          errorMessage.value = '问卷尚未发布，无法填写'
+          loading.value = false
+          return
+        }
+        
         // 检查是否需要密码验证
         if (surveyRes.data.accessType === 'PASSWORD') {
           // 先加载formKey，用于后续密码验证通过后加载数据
@@ -302,18 +355,27 @@ const loadSurveyData = async () => {
           loading.value = false
           return // 等待密码验证通过后再继续加载表单项
         }
+      } else {
+        errorMessage.value = surveyRes.message || '问卷不存在或加载失败'
+        loading.value = false
+        return
       }
 
       // 加载表单配置
       const configRes = await formApi.getFormConfig(surveyId.value)
       if (configRes.code === 200 && configRes.data) {
         formKey.value = configRes.data.formKey
+      } else {
+        errorMessage.value = '加载表单配置失败'
+        loading.value = false
+        return
       }
     } else if (key) {
       // 通过key访问
       formKey.value = key
     } else {
-      ElMessage.error('缺少必要参数')
+      errorMessage.value = '缺少必要参数（问卷ID或表单Key）'
+      loading.value = false
       return
     }
 
@@ -321,9 +383,54 @@ const loadSurveyData = async () => {
     if (formKey.value) {
       const itemsRes = await formApi.getFormItems(formKey.value)
       if (itemsRes.code === 200 && itemsRes.data) {
-        formItems.value = itemsRes.data
+        // 解析 scheme 字段，提取 vModel 和 config
+        formItems.value = itemsRes.data.map(item => {
+          // 解析 scheme（可能是 JSON 字符串或对象）
+          let scheme = {}
+          try {
+            scheme = typeof item.scheme === 'string' 
+              ? (item.scheme ? JSON.parse(item.scheme) : {})
+              : (item.scheme || {})
+          } catch (e) {
+            scheme = {}
+          }
+          
+          // 解析 regList（可能是 JSON 字符串或数组）
+          let regList = []
+          try {
+            regList = typeof item.regList === 'string'
+              ? (item.regList ? JSON.parse(item.regList) : [])
+              : (Array.isArray(item.regList) ? item.regList : [])
+          } catch (e) {
+            regList = []
+          }
+          
+          return {
+            formItemId: item.formItemId,
+            type: item.type,
+            label: item.label,
+            vModel: scheme.vModel || item.formItemId,
+            placeholder: scheme.placeholder || item.placeholder || '',
+            required: scheme.required !== undefined ? scheme.required : (item.required === 1),
+            disabled: scheme.disabled || false,
+            readonly: scheme.readonly || false,
+            hideType: item.isHideType || false,
+            defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
+            config: scheme.config || {},
+            regList: regList,
+            sort: item.sort || 0
+          }
+        }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
         initFormModel()
+      } else {
+        errorMessage.value = '加载表单项失败'
+        loading.value = false
+        return
       }
+    } else {
+      errorMessage.value = '表单Key不存在，无法加载表单'
+      loading.value = false
+      return
     }
 
     // 加载外观配置（如果有surveyId）
@@ -337,7 +444,7 @@ const loadSurveyData = async () => {
     }
   } catch (error) {
     // 加载问卷失败，显示错误提示
-    ElMessage.error('加载问卷失败')
+    errorMessage.value = error.response?.data?.message || error.message || '加载问卷失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -346,24 +453,107 @@ const loadSurveyData = async () => {
 // 初始化表单数据模型
 const initFormModel = () => {
   formItems.value.forEach(item => {
+    // 确保 vModel 存在
+    if (!item.vModel) {
+      return
+    }
+    
+    const defaultValue = item.defaultValue
+    
+    // 数组类型组件（多选）
     if (item.type === 'CHECKBOX' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
-      formModel[item.vModel] = item.defaultValue && Array.isArray(item.defaultValue)
-        ? [...item.defaultValue]
-        : []
-    } else if (item.type === 'SLIDER') {
-      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
-        ? Number(item.defaultValue)
-        : (item.config?.min || 0)
-      formModel[item.vModel] = isNaN(numValue) ? (item.config?.min || 0) : numValue
-    } else if (item.type === 'NUMBER') {
-      const numValue = item.defaultValue !== null && item.defaultValue !== undefined && item.defaultValue !== ''
-        ? Number(item.defaultValue)
-        : undefined
-      formModel[item.vModel] = isNaN(numValue) ? undefined : numValue
-    } else if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
-      formModel[item.vModel] = item.defaultValue !== null && item.defaultValue !== undefined 
-        ? item.defaultValue 
-        : ''
+      // 确保是数组类型，空字符串或其他类型都转换为空数组
+      if (Array.isArray(defaultValue)) {
+        formModel[item.vModel] = [...defaultValue]
+      } else if (defaultValue === null || defaultValue === undefined || defaultValue === '' || defaultValue === '0') {
+        formModel[item.vModel] = []
+      } else {
+        // 尝试解析为数组
+        try {
+          const parsed = typeof defaultValue === 'string' ? JSON.parse(defaultValue) : defaultValue
+          formModel[item.vModel] = Array.isArray(parsed) ? parsed : []
+        } catch {
+          formModel[item.vModel] = []
+        }
+      }
+    }
+    // 图片选择组件（根据配置决定是单选还是多选）
+    else if (item.type === 'IMAGE_SELECT') {
+      if (item.config?.multiple) {
+        // 多选模式：数组类型
+        if (Array.isArray(defaultValue)) {
+          formModel[item.vModel] = [...defaultValue]
+        } else if (defaultValue === null || defaultValue === undefined || defaultValue === '' || defaultValue === '0') {
+          formModel[item.vModel] = []
+        } else {
+          try {
+            const parsed = typeof defaultValue === 'string' ? JSON.parse(defaultValue) : defaultValue
+            formModel[item.vModel] = Array.isArray(parsed) ? parsed : []
+          } catch {
+            formModel[item.vModel] = []
+          }
+        }
+      } else {
+        // 单选模式：字符串类型（确保是字符串）
+        if (defaultValue === null || defaultValue === undefined || defaultValue === '') {
+          formModel[item.vModel] = ''
+        } else {
+          formModel[item.vModel] = String(defaultValue)
+        }
+      }
+    }
+    // 数字类型组件 - NUMBER
+    else if (item.type === 'NUMBER') {
+      // NUMBER 类型：Number 或 null/undefined
+      if (defaultValue === null || defaultValue === undefined || defaultValue === '' || defaultValue === 'null') {
+        formModel[item.vModel] = undefined
+      } else {
+        const numValue = Number(defaultValue)
+        formModel[item.vModel] = isNaN(numValue) ? undefined : numValue
+      }
+    }
+    // 数字类型组件 - SLIDER
+    else if (item.type === 'SLIDER') {
+      // SLIDER 类型：必须是 Number，默认值为 min 或 0
+      if (defaultValue === null || defaultValue === undefined || defaultValue === '' || defaultValue === 'null') {
+        formModel[item.vModel] = item.config?.min || 0
+      } else {
+        const numValue = Number(defaultValue)
+        formModel[item.vModel] = isNaN(numValue) ? (item.config?.min || 0) : numValue
+      }
+    }
+    // 数字类型组件 - RATE
+    else if (item.type === 'RATE') {
+      // RATE 类型：必须是 Number，默认值为 0
+      if (defaultValue === null || defaultValue === undefined || defaultValue === '' || defaultValue === 'null') {
+        formModel[item.vModel] = 0
+      } else {
+        const numValue = Number(defaultValue)
+        formModel[item.vModel] = isNaN(numValue) ? 0 : numValue
+      }
+    }
+    // 手写签名组件（字符串类型，默认为空字符串）
+    else if (item.type === 'SIGN_PAD') {
+      // SIGN_PAD 类型：必须是字符串
+      if (defaultValue === null || defaultValue === undefined) {
+        formModel[item.vModel] = ''
+      } else {
+        // 确保转换为字符串（即使是数字 0 也要转为字符串）
+        formModel[item.vModel] = String(defaultValue)
+      }
+    }
+    // 展示类组件不需要初始化表单值
+    else if (item.type === 'DIVIDER' || item.type === 'IMAGE' || item.type === 'IMAGE_CAROUSEL' || item.type === 'DESC_TEXT') {
+      // 这些类型不需要绑定表单模型
+    }
+    // 其他输入类组件（字符串或默认值）
+    else {
+      // INPUT, TEXTAREA, DATE, SELECT, RADIO, CASCADER 等
+      if (defaultValue === null || defaultValue === undefined || defaultValue === 'null') {
+        formModel[item.vModel] = ''
+      } else {
+        formModel[item.vModel] = defaultValue
+      }
     }
   })
 }
@@ -397,8 +587,11 @@ const loadTheme = async () => {
 
 // 验证表单
 const validateForm = () => {
+  // 不需要验证的组件类型
+  const excludeTypes = ['DIVIDER', 'IMAGE', 'IMAGE_CAROUSEL', 'DESC_TEXT']
+  
   for (const item of formItems.value) {
-    if (item.required && item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+    if (item.required && !excludeTypes.includes(item.type)) {
       const value = formModel[item.vModel]
       if (value === null || value === undefined || value === '' || 
           (Array.isArray(value) && value.length === 0)) {
@@ -456,8 +649,11 @@ const handleSubmit = async () => {
 
     // 转换表单数据为答案格式
     const answers = {}
+    // 不需要提交的组件类型（展示类组件）
+    const excludeTypes = ['DIVIDER', 'IMAGE', 'IMAGE_CAROUSEL', 'DESC_TEXT']
+    
     formItems.value.forEach(item => {
-      if (item.type !== 'DIVIDER' && item.type !== 'IMAGE' && item.type !== 'IMAGE_CAROUSEL') {
+      if (!excludeTypes.includes(item.type)) {
         const value = formModel[item.vModel]
         if (value !== null && value !== undefined && value !== '' &&
             !(Array.isArray(value) && value.length === 0)) {
@@ -496,11 +692,37 @@ onMounted(() => {
   position: relative;
 }
 
+.fill-content {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.fill-form-wrapper {
+  width: 100%;
+  height: calc(100vh - 40px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  
+  .fill-scrollbar {
+    height: 100%;
+  }
+}
+
+.fill-form-container {
+  position: relative;
+  padding: 40px;
+  min-height: 500px;
+}
+
 .fill-logo {
   padding: 0;
   display: flex;
-  max-width: 1200px;
-  margin: 0 auto 5px;
+  margin-bottom: 5px;
 
   img {
     width: var(--logo-size, 80px);
@@ -514,8 +736,7 @@ onMounted(() => {
 
 .fill-head-img {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto 20px;
+  margin-bottom: 20px;
   border-radius: 8px 8px 0 0;
   overflow: hidden;
 
@@ -524,22 +745,17 @@ onMounted(() => {
     height: var(--head-img-height, 200px);
     display: block;
     object-fit: cover;
-}
-}
-
-
-.fill-form-wrapper {
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .fill-title {
-  font-size: 24px;
-  font-weight: 500;
-  margin: 0 0 15px 0;
+  font-size: 28px;
+  font-weight: 600;
   color: #303133;
   text-align: center;
+  margin: 0 0 20px 0;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #ebeef5;
 }
 
 .fill-description {
@@ -552,40 +768,122 @@ onMounted(() => {
 
 .fill-submit-buttons {
   margin-top: 40px;
-  text-align: center;
   padding-top: 20px;
   border-top: 1px solid #ebeef5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   .el-button {
     min-width: 120px;
   }
 }
 
-// 移动端适配
-@media (max-width: 768px) {
-  .fill-logo {
-    padding: 15px;
+.error-card {
+  margin-bottom: 20px;
+}
 
-    img {
-      max-width: 100px;
-      max-height: 40px;
-    }
+// 移动端适配（参考预览页移动端样式）
+@media (max-width: 768px) {
+  .survey-fill-container {
+    padding: 0;
   }
 
   .fill-content {
-    padding: 20px 15px;
+    padding: 0;
+    max-width: 100%;
   }
 
   .fill-form-wrapper {
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .fill-form-container {
     padding: 20px;
+    min-height: auto;
+  }
+
+  .fill-logo {
+    margin-bottom: 5px;
+
+    img {
+      width: var(--logo-size, 60px);
+      height: var(--logo-size, 60px);
+      min-width: var(--logo-size, 60px);
+      min-height: var(--logo-size, 60px);
+    }
+  }
+
+  .fill-head-img {
+    margin-bottom: 15px;
+    border-radius: 0;
+
+    img {
+      height: var(--head-img-height, 150px);
+    }
   }
 
   .fill-title {
     font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .fill-description {
+    font-size: 14px;
+    margin-bottom: 15px;
+    line-height: 1.6;
+  }
+
+  .fill-submit-buttons {
+    margin-top: 20px;
+    padding-top: 20px;
   }
 }
 
-.error-card {
-  margin-bottom: 20px;
+// 小屏幕手机适配
+@media (max-width: 480px) {
+  .fill-content {
+    padding: 0;
+  }
+
+  .fill-form-wrapper {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .fill-form-container {
+    padding: 15px;
+  }
+
+  .fill-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+
+  .fill-description {
+    font-size: 13px;
+    margin-bottom: 15px;
+  }
+
+  .fill-logo {
+    img {
+      width: var(--logo-size, 50px);
+      height: var(--logo-size, 50px);
+      min-width: var(--logo-size, 50px);
+      min-height: var(--logo-size, 50px);
+    }
+  }
+
+  .fill-head-img {
+    img {
+      height: var(--head-img-height, 120px);
+    }
+  }
 }
 </style>
