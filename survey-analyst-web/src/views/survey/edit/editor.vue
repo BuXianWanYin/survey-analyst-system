@@ -268,19 +268,27 @@
                         style="width: 100%"
                       />
                       <!-- 文件上传 -->
-                      <el-upload
-                        v-else-if="element.type === 'UPLOAD'"
-                        v-model:file-list="formModel[element.vModel]"
-                        :disabled="element.disabled"
-                        :limit="element.config?.limit || 1"
-                        :accept="element.config?.accept || '*'"
-                        action="#"
-                        :auto-upload="false"
-                      >
-                        <el-button type="primary">
-                          选择文件
-                        </el-button>
-                      </el-upload>
+                      <div v-else-if="element.type === 'UPLOAD'">
+                        <el-upload
+                          v-model:file-list="formModel[element.vModel]"
+                          :disabled="element.disabled"
+                          :limit="element.config?.limit || 1"
+                          :accept="element.config?.accept || '*/*'"
+                          :multiple="element.config?.multiple || false"
+                          action="#"
+                          :auto-upload="element.config?.autoUpload !== false"
+                        >
+                          <el-button type="primary">
+                            选择文件
+                          </el-button>
+                        </el-upload>
+                        <div
+                          v-if="element.config?.showTip"
+                          style="font-size: 12px; color: #909399; margin-top: 8px"
+                        >
+                          {{ getUploadTipText(element) }}
+                        </div>
+                      </div>
                       <!-- 图片上传 -->
                       <el-upload
                         v-else-if="element.type === 'IMAGE_UPLOAD'"
@@ -1606,7 +1614,7 @@
                     <template #label>
                       <span>接受的文件类型</span>
                       <el-tooltip
-                        content="默认：image/*"
+                        content="默认：所有图片类型"
                         placement="top"
                       >
                         <el-icon class="property-tip-icon">
@@ -1614,11 +1622,20 @@
                         </el-icon>
                       </el-tooltip>
                     </template>
-                    <el-input
+                    <el-select
                       v-model="activeData.config.accept"
-                      placeholder="如：image/*, image/png"
-                      @input="handlePropertyChange"
-                    />
+                      placeholder="请选择文件类型"
+                      clearable
+                      style="width: 100%"
+                      @change="handlePropertyChange"
+                    >
+                      <el-option
+                        v-for="option in imageTypeOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </el-select>
                   </el-form-item>
                   <el-form-item label="文件列表类型">
                     <el-radio-group
@@ -1638,7 +1655,7 @@
                   </el-form-item>
                   <el-form-item>
                     <template #label>
-                      <span>文件大小限制（KB）</span>
+                      <span>文件大小限制</span>
                       <el-tooltip
                         content="0表示不限制"
                         placement="top"
@@ -1648,14 +1665,30 @@
                         </el-icon>
                       </el-tooltip>
                     </template>
-                    <el-input
-                      v-model.number="activeData.config.maxSize"
-                      type="number"
-                      :min="0"
-                      placeholder="请输入"
-                      style="width: 100%"
-                      @input="handlePropertyChange"
-                    />
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <el-input
+                        v-model.number="activeData.config.maxSizeValue"
+                        type="number"
+                        :min="0"
+                        placeholder="请输入"
+                        style="flex: 1"
+                        @input="handlePropertyChange"
+                      />
+                      <el-select
+                        v-model="activeData.config.maxSizeUnit"
+                        style="width: 80px"
+                        @change="handlePropertyChange"
+                      >
+                        <el-option
+                          label="KB"
+                          value="KB"
+                        />
+                        <el-option
+                          label="MB"
+                          value="MB"
+                        />
+                      </el-select>
+                    </div>
                   </el-form-item>
                   <el-form-item label="是否必填">
                     <el-switch
@@ -1675,7 +1708,7 @@
                 <!-- 文件上传组件配置 -->
                 <template v-if="activeData.type === 'UPLOAD'">
                   <el-divider />
-                  <el-form-item label="最大上传数量">
+                  <el-form-item label="文件个数">
                     <el-input
                       v-model.number="activeData.config.limit"
                       type="number"
@@ -1686,17 +1719,31 @@
                       @input="handlePropertyChange"
                     />
                   </el-form-item>
-                  <el-form-item label="接受的文件类型">
-                    <el-input
-                      v-model="activeData.config.accept"
-                      placeholder="如：*/*, .pdf, .doc"
-                      @input="handlePropertyChange"
+                  <el-form-item label="多选文件">
+                    <el-switch
+                      v-model="activeData.config.multiple"
+                      @change="handlePropertyChange"
                     />
-                    <span style="font-size: 12px; color: #909399; margin-top: 4px; display: block">默认：*/*</span>
+                  </el-form-item>
+                  <el-form-item label="接受的文件类型">
+                    <el-select
+                      v-model="activeData.config.accept"
+                      placeholder="请选择文件类型"
+                      clearable
+                      style="width: 100%"
+                      @change="handlePropertyChange"
+                    >
+                      <el-option
+                        v-for="option in fileTypeOptions"
+                        :key="option.value"
+                        :label="option.label"
+                        :value="option.value"
+                      />
+                    </el-select>
                   </el-form-item>
                   <el-form-item>
                     <template #label>
-                      <span>文件大小限制（KB）</span>
+                      <span>文件大小限制</span>
                       <el-tooltip
                         content="0表示不限制"
                         placement="top"
@@ -1706,13 +1753,35 @@
                         </el-icon>
                       </el-tooltip>
                     </template>
-                    <el-input
-                      v-model.number="activeData.config.maxSize"
-                      type="number"
-                      :min="0"
-                      placeholder="请输入"
-                      style="width: 100%"
-                      @input="handlePropertyChange"
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <el-input
+                        v-model.number="activeData.config.maxSizeValue"
+                        type="number"
+                        :min="0"
+                        placeholder="请输入"
+                        style="flex: 1"
+                        @input="handlePropertyChange"
+                      />
+                      <el-select
+                        v-model="activeData.config.maxSizeUnit"
+                        style="width: 80px"
+                        @change="handlePropertyChange"
+                      >
+                        <el-option
+                          label="KB"
+                          value="KB"
+                        />
+                        <el-option
+                          label="MB"
+                          value="MB"
+                        />
+                      </el-select>
+                    </div>
+                  </el-form-item>
+                  <el-form-item label="显示提示">
+                    <el-switch
+                      v-model="activeData.config.showTip"
+                      @change="handlePropertyChange"
                     />
                   </el-form-item>
                   <el-form-item label="是否自动上传">
@@ -2039,6 +2108,31 @@ const componentList = [
 // 组件库副本（用于VueDraggable）
 const componentListCopy = ref([...componentList])
 
+// 文件上传类型选项
+const fileTypeOptions = [
+  { label: '所有文件', value: '*/*' },
+  { label: '图片', value: 'image/*' },
+  { label: '视频', value: 'video/*' },
+  { label: '音频', value: 'audio/*' },
+  { label: 'Excel', value: '.xlsx,.xls' },
+  { label: 'Word', value: '.doc,.docx' },
+  { label: 'PDF', value: '.pdf' },
+  { label: 'TXT', value: '.txt' },
+  { label: 'PPT', value: '.ppt,.pptx' },
+  { label: '压缩文件', value: '.zip,.rar,.7z,.tar,.gz' }
+]
+
+// 图片上传类型选项
+const imageTypeOptions = [
+  { label: '所有图片类型', value: 'image/*' },
+  { label: 'JPG', value: '.jpg,.jpeg' },
+  { label: 'PNG', value: '.png' },
+  { label: 'GIF', value: '.gif' },
+  { label: 'BMP', value: '.bmp' },
+  { label: 'WEBP', value: '.webp' },
+  { label: 'SVG', value: '.svg' }
+]
+
 // 设计区域数据
 const drawingList = ref([])
 const activeId = ref(null)
@@ -2288,7 +2382,8 @@ const createFormItem = (type) => {
       limit: 9,
       accept: 'image/*',
       listType: 'picture',
-      maxSize: 0
+      maxSizeValue: 10,
+      maxSizeUnit: 'MB'
     }
   }
   
@@ -2297,7 +2392,10 @@ const createFormItem = (type) => {
     baseItem.config = {
       limit: 1,
       accept: '*/*',
-      maxSize: 0,
+      multiple: false,
+      maxSizeValue: 10,
+      maxSizeUnit: 'MB',
+      showTip: true,
       autoUpload: true
     }
   }
@@ -2442,6 +2540,33 @@ const validateComponentLogic = () => {
     // 如果最大行数小于最小行数，将最小行数调整为最大行数
     activeData.value.config.minRows = activeData.value.config.maxRows
   }
+}
+
+// 获取文件上传提示文本
+const getUploadTipText = (element) => {
+  const limit = element.config?.limit || 1
+  const maxSizeValue = element.config?.maxSizeValue
+  const maxSizeUnit = element.config?.maxSizeUnit || 'MB'
+  
+  let tipText = ''
+  
+  // 如果有文件大小限制
+  if (maxSizeValue && maxSizeValue > 0) {
+    tipText = `只能上传不超过 ${maxSizeValue}${maxSizeUnit} 的文件`
+  }
+  
+  // 添加文件个数限制
+  if (limit > 1) {
+    if (tipText) {
+      tipText += `，最多不超过${limit}个文件`
+    } else {
+      tipText = `最多不超过${limit}个文件`
+    }
+  } else if (!tipText) {
+    tipText = '最多不超过1个文件'
+  }
+  
+  return tipText
 }
 
 // 处理反馈类型变化，自动设置默认错误提示

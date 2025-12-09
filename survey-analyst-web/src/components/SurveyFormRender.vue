@@ -160,29 +160,39 @@
         />
 
         <!-- 文件上传 -->
-        <el-upload
-          v-else-if="element.type === 'UPLOAD'"
-          :file-list="getUploadFileList(element.vModel)"
-          @change="handleUploadChange(element.vModel, $event)"
-          :disabled="element.disabled || previewMode"
-          action="#"
-          :auto-upload="element.config?.autoUpload !== false"
-          :limit="element.config?.limit || 1"
-          :accept="element.config?.accept || '*/*'"
-          :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 1}个文件`)"
-        >
-          <el-button 
-            type="primary" 
-            :disabled="previewMode || element.disabled"
-            :style="{
-              backgroundColor: getThemeColor(),
-              borderColor: getThemeColor()
-            }"
+        <div v-else-if="element.type === 'UPLOAD'">
+          <el-upload
+            :file-list="getUploadFileList(element.vModel)"
+            :disabled="element.disabled || previewMode"
+            action="#"
+            :auto-upload="element.config?.autoUpload !== false"
+            :limit="element.config?.limit || 1"
+            :accept="element.config?.accept || '*/*'"
+            :multiple="element.config?.multiple || false"
+            :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 1}个文件`)"
+            @change="handleUploadChange(element.vModel, $event)"
           >
-            <el-icon><Upload /></el-icon>
-            选择文件
-          </el-button>
-        </el-upload>
+            <el-button 
+              type="primary" 
+              :disabled="previewMode || element.disabled"
+              :style="{
+                backgroundColor: getThemeColor(),
+                borderColor: getThemeColor()
+              }"
+            >
+              <el-icon>
+                <Upload />
+              </el-icon>
+              选择文件
+            </el-button>
+          </el-upload>
+          <div
+            v-if="element.config?.showTip"
+            style="font-size: 12px; color: #909399; margin-top: 8px"
+          >
+            {{ getUploadTipText(element) }}
+          </div>
+        </div>
 
         <!-- 图片上传 -->
         <el-upload
@@ -530,6 +540,33 @@ const setSliderValue = (vModel, value) => {
   if (vModel in props.formModel) {
     props.formModel[vModel] = numValue
   }
+}
+
+// 获取文件上传提示文本
+const getUploadTipText = (element) => {
+  const limit = element.config?.limit || 1
+  const maxSizeValue = element.config?.maxSizeValue
+  const maxSizeUnit = element.config?.maxSizeUnit || 'MB'
+  
+  let tipText = ''
+  
+  // 如果有文件大小限制
+  if (maxSizeValue && maxSizeValue > 0) {
+    tipText = `只能上传不超过 ${maxSizeValue}${maxSizeUnit} 的文件`
+  }
+  
+  // 添加文件个数限制
+  if (limit > 1) {
+    if (tipText) {
+      tipText += `，最多不超过${limit}个文件`
+    } else {
+      tipText = `最多不超过${limit}个文件`
+    }
+  } else if (!tipText) {
+    tipText = '最多不超过1个文件'
+  }
+  
+  return tipText
 }
 
 const formRef = ref(null)
