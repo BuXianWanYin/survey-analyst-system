@@ -13,7 +13,7 @@
       class="form-item-wrapper"
     >
       <el-form-item
-        v-if="element.type !== 'DIVIDER'"
+        v-if="element.type !== 'DIVIDER' && element.type !== 'IMAGE' && element.type !== 'SIGN_PAD' && element.type !== 'IMAGE_CAROUSEL' && element.type !== 'DESC_TEXT'"
         :label="element.label"
         :prop="element.vModel"
         :required="!!element.required || element.required === 1"
@@ -333,9 +333,9 @@
           </el-checkbox-group>
         </div>
 
-        <!-- 默认：单行文本 -->
+        <!-- 默认：单行文本（排除不需要输入框的组件类型） -->
         <el-input
-          v-else
+          v-else-if="element.type !== 'IMAGE' && element.type !== 'SIGN_PAD' && element.type !== 'IMAGE_CAROUSEL' && element.type !== 'DESC_TEXT'"
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
@@ -345,69 +345,111 @@
         </el-form-item>
 
         <!-- 图片展示独立渲染 -->
-        <el-image
-          v-if="element.type === 'IMAGE'"
-          :src="element.config?.imageUrl || ''"
-          :fit="element.config?.fit || 'cover'"
-          style="width: 100%"
-          :preview-src-list="element.config?.previewList || []"
-        />
+        <div v-if="element.type === 'IMAGE'">
+          <div class="form-label-wrapper">
+            <span class="form-label">
+              <span
+                v-if="showNumber"
+                class="question-number"
+              >{{ getQuestionIndex(element) }}. </span>
+              {{ element.label }}
+            </span>
+          </div>
+          <el-image
+            :src="element.config?.imageUrl || ''"
+            :fit="element.config?.fit || 'cover'"
+            style="width: 100%"
+            :preview-src-list="element.config?.previewList || []"
+          />
+        </div>
 
         <!-- 手写签名 -->
-        <SignPad
-          v-else-if="element.type === 'SIGN_PAD'"
-          v-model="formModel[element.vModel]"
-          :width="600"
-          :height="element.config?.height || 300"
-          :background-color="'#ffffff'"
-          :pen-color="element.config?.penColor || '#000000'"
-          :disabled="element.disabled || previewMode"
-        />
+        <div v-else-if="element.type === 'SIGN_PAD'">
+          <div class="form-label-wrapper">
+            <span class="form-label">
+              <span
+                v-if="showNumber"
+                class="question-number"
+              >{{ getQuestionIndex(element) }}. </span>
+              <span
+                v-if="!!element.required || element.required === 1"
+                class="required-mark"
+              >* </span>
+              {{ element.label }}
+            </span>
+          </div>
+          <SignPad
+            v-model="formModel[element.vModel]"
+            :width="600"
+            :height="element.config?.height || 300"
+            :background-color="'#ffffff'"
+            :pen-color="element.config?.penColor || '#000000'"
+            :disabled="element.disabled || previewMode"
+          />
+        </div>
 
         <!-- 图片轮播独立渲染 -->
-        <div
-          v-if="element.type === 'IMAGE_CAROUSEL'"
-          class="image-carousel-wrapper"
-        >
-          <el-carousel
-            v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
-            :key="`carousel-${element.formItemId}`"
-            :height="`${element.config?.height || 300}px`"
-            :interval="element.config?.interval || 4000"
-            :arrow="element.config?.arrow || 'hover'"
-          >
-            <el-carousel-item
-              v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
-              :key="option.url || idx"
+        <div v-if="element.type === 'IMAGE_CAROUSEL'">
+          <div class="form-label-wrapper">
+            <span class="form-label">
+              <span
+                v-if="showNumber"
+                class="question-number"
+              >{{ getQuestionIndex(element) }}. </span>
+              {{ element.label }}
+            </span>
+          </div>
+          <div class="image-carousel-wrapper">
+            <el-carousel
+              v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
+              :key="`carousel-${element.formItemId}`"
+              :height="`${element.config?.height || 300}px`"
+              :interval="element.config?.interval || 4000"
+              :arrow="element.config?.arrow || 'hover'"
             >
-              <el-image
-                :src="option.url"
-                :fit="element.config?.fit || 'cover'"
-                style="width: 100%; height: 100%"
-              />
-            </el-carousel-item>
-          </el-carousel>
-          <div
-            v-else
-            class="carousel-placeholder"
-          >
-            <el-icon><Picture /></el-icon>
-            <span>请添加图片</span>
+              <el-carousel-item
+                v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
+                :key="option.url || idx"
+              >
+                <el-image
+                  :src="option.url"
+                  :fit="element.config?.fit || 'cover'"
+                  style="width: 100%; height: 100%"
+                />
+              </el-carousel-item>
+            </el-carousel>
+            <div
+              v-else
+              class="carousel-placeholder"
+            >
+              <el-icon><Picture /></el-icon>
+              <span>请添加图片</span>
+            </div>
           </div>
         </div>
 
         <!-- 文字描述独立渲染 -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div
-          v-else-if="element.type === 'DESC_TEXT'"
-          class="desc-text-wrapper"
-          :style="{
-            textAlign: element.config?.textAlign || 'left',
-            fontSize: (element.config?.fontSize || 14) + 'px',
-            color: element.config?.color || '#606266'
-          }"
-          v-html="element.config?.content || ''"
-        />
+        <div v-else-if="element.type === 'DESC_TEXT'">
+          <div class="form-label-wrapper">
+            <span class="form-label">
+              <span
+                v-if="showNumber"
+                class="question-number"
+              >{{ getQuestionIndex(element) }}. </span>
+              {{ element.label }}
+            </span>
+          </div>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div
+            class="desc-text-wrapper"
+            :style="{
+              textAlign: element.config?.textAlign || 'left',
+              fontSize: (element.config?.fontSize || 14) + 'px',
+              color: element.config?.color || '#606266'
+            }"
+            v-html="element.config?.content || ''"
+          />
+        </div>
         
         <!-- 分割线独立渲染 -->
         <el-divider
@@ -1102,6 +1144,21 @@ const validateInput = (element) => {
   .required-mark {
     color: #f56c6c;
     margin-right: 4px;
+  }
+}
+
+.form-label-wrapper {
+  margin-bottom: 8px;
+  
+  .form-label {
+    font-weight: 500;
+    font-size: 14px;
+    color: #606266;
+    display: block;
+    
+    .question-number {
+      color: v-bind('getThemeColor()');
+    }
   }
 }
 

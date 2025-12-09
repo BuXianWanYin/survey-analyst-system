@@ -66,7 +66,7 @@
                     :class="{ 'empty-description': !formDescription }"
                     @click="editingFormDescription = true"
                   >
-                    {{ formDescription || '点击添加表单描述（可选）' }}
+                    {{ formDescription || '点击添加问卷描述' }}
                   </span>
                   <el-input
                     v-else
@@ -74,7 +74,7 @@
                     class="form-description-input"
                     type="textarea"
                     :rows="2"
-                    placeholder="请输入表单描述（可选）"
+                    placeholder="请输入问卷描述"
                     @blur="editingFormDescription = false"
                   />
                 </div>
@@ -2276,12 +2276,15 @@ const createFormItem = (type) => {
   const timestamp = Date.now()
   const formItemId = `${type.toLowerCase()}-${timestamp}`
   
+  // 不需要 placeholder 的组件类型
+  const noPlaceholderTypes = ['IMAGE', 'SIGN_PAD', 'IMAGE_CAROUSEL', 'DESC_TEXT', 'DIVIDER']
+  
   const baseItem = {
     formItemId,
     type,
     label: getComponentLabel(type),
     vModel: formItemId,
-    placeholder: `请输入${getComponentLabel(type)}`,
+    placeholder: noPlaceholderTypes.includes(type) ? '' : `请输入${getComponentLabel(type)}`,
     required: false,
     disabled: false,
     readonly: false,

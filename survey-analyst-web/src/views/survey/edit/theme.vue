@@ -852,7 +852,7 @@ onMounted(() => {
     height: 25px;
     background: #1a1a1a;
     border-radius: 0 0 15px 15px;
-    z-index: 10;
+    z-index: 1;
   }
   
   &::after {
