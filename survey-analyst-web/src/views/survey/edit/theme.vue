@@ -188,39 +188,33 @@
       <el-scrollbar class="right-scrollbar">
         <div class="settings-panel">
           <p class="settings-title">外观设置</p>
-
-
-                    <!-- 显示选项 -->
-                    <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示标题</span>
+          <el-form
+            :model="themeForm"
+            label-width="130px"
+            label-position="left"
+            class="settings-form"
+          >
+            <!-- 显示选项 -->
+            <el-form-item label="显示标题">
               <el-switch v-model="themeForm.showTitle" @change="handleSettingChange" />
-            </div>
-          </div>
+            </el-form-item>
 
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示描述</span>
+            <el-form-item label="显示描述">
               <el-switch v-model="themeForm.showDescribe" @change="handleSettingChange" />
-            </div>
-          </div>
+            </el-form-item>
 
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">显示序号</span>
+            <el-form-item label="显示序号">
               <el-switch v-model="themeForm.showNumber" @change="handleSettingChange" />
-            </div>
-          </div>
+            </el-form-item>
 
-          <!-- Logo设置 -->
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">添加logo</span>
+            <el-divider />
+
+            <!-- Logo设置 -->
+            <el-form-item label="添加logo">
               <el-switch v-model="themeForm.logoSetting" @change="handleSettingChange" />
-            </div>
-            <div v-if="themeForm.logoSetting" class="setting-content">
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">logo设置</span>
+            </el-form-item>
+            <template v-if="themeForm.logoSetting">
+              <el-form-item label="logo设置">
                 <div class="logo-preview">
                   <img v-if="themeForm.logoImg" :src="themeForm.logoImg" alt="logo" />
                 </div>
@@ -233,39 +227,34 @@
                 >
                   <el-button size="small" type="text">上传Logo</el-button>
                 </el-upload>
-              </div>
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">logo位置</span>
+              </el-form-item>
+              <el-form-item label="logo位置">
                 <el-radio-group v-model="themeForm.logoPosition" size="small" @change="handleSettingChange">
                   <el-radio-button label="flex-start">左对齐</el-radio-button>
                   <el-radio-button label="center">居中</el-radio-button>
                   <el-radio-button label="flex-end">右对齐</el-radio-button>
                 </el-radio-group>
-              </div>
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">logo大小（移动端）</span>
+              </el-form-item>
+              <el-form-item label="logo大小">
                 <el-input-number
                   v-model="themeForm.logoSize"
                   :min="10"
                   :max="200"
                   :step="1"
-                  size="small"
                   style="width: 100%"
                   @change="handleSettingChange"
                 />
-              </div>
-            </div>
-          </div>
+              </el-form-item>
+            </template>
 
-          <!-- 头图设置 -->
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">头图设置</span>
+            <el-divider />
+
+            <!-- 头图设置 -->
+            <el-form-item label="头图设置">
               <el-switch v-model="themeForm.headImgSetting" @change="handleSettingChange" />
-            </div>
-            <div v-if="themeForm.headImgSetting" class="setting-content">
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">头图设置</span>
+            </el-form-item>
+            <template v-if="themeForm.headImgSetting">
+              <el-form-item label="头图设置">
                 <div class="head-img-preview">
                   <img v-if="themeForm.headImgUrl" :src="themeForm.headImgUrl" alt="head" />
                 </div>
@@ -278,100 +267,64 @@
                 >
                   <el-button size="small" type="text">上传头图</el-button>
                 </el-upload>
-              </div>
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">头图高度（移动端）</span>
+              </el-form-item>
+              <el-form-item label="头图高度">
                 <el-input-number
                   v-model="themeForm.headImgHeight"
                   :min="50"
                   :max="500"
                   :step="10"
-                  size="small"
                   style="width: 100%"
                   @change="handleSettingChange"
                 />
-              </div>
-            </div>
-          </div>
+              </el-form-item>
+            </template>
 
-          <!-- 背景设置 -->
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">背景设置</span>
-              <el-switch v-model="themeForm.backgroundSetting" @change="handleSettingChange" />
-            </div>
-            <div v-if="themeForm.backgroundSetting" class="setting-content">
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">背景颜色</span>
-                <el-color-picker v-model="themeForm.backgroundColor" @change="handleSettingChange" />
-              </div>
-            </div>
-          </div>
+            <el-divider />
 
-          <!-- 按钮设置 -->
-          <div class="setting-item">
-            <div class="setting-header">
-              <span class="setting-label">按钮设置</span>
-              <el-switch v-model="themeForm.btnSetting" @change="handleSettingChange" />
-            </div>
-            <div v-if="themeForm.btnSetting" class="setting-content">
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">显示提交按钮</span>
-                <el-switch v-model="themeForm.showSubmitBtn" @change="handleSettingChange" />
-              </div>
-              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
-                <span class="setting-sub-label">按钮文字</span>
-                <el-input
-                  v-model="themeForm.submitBtnText"
-                  placeholder="提交"
-                  size="small"
-                  @change="handleSettingChange"
-                />
-              </div>
-              <div class="setting-sub-item">
-                <span class="setting-sub-label">主题颜色</span>
-                <el-color-picker v-model="themeForm.themeColor" @change="handleSettingChange" />
-              </div>
-              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
-                <span class="setting-sub-label">按钮字体大小（px）</span>
-                <el-input-number
-                  v-model="themeForm.btnFontSize"
-                  :min="10"
-                  :max="50"
-                  :step="1"
-                  size="small"
-                  style="width: 100%"
-                  @change="handleSettingChange"
-                />
-              </div>
-              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
-                <span class="setting-sub-label">按钮宽度（px）</span>
-                <el-input-number
-                  v-model="themeForm.btnWidth"
-                  :min="100"
-                  :max="1000"
-                  :step="10"
-                  size="small"
-                  style="width: 100%"
-                  @change="handleSettingChange"
-                />
-              </div>
-              <div v-if="themeForm.showSubmitBtn" class="setting-sub-item">
-                <span class="setting-sub-label">按钮高度（px）</span>
-                <el-input-number
-                  v-model="themeForm.btnHeight"
-                  :min="30"
-                  :max="200"
-                  :step="2"
-                  size="small"
-                  style="width: 100%"
-                  @change="handleSettingChange"
-                />
-              </div>
-            </div>
-          </div>
-
-
+            <!-- 按钮设置 -->
+            <div class="section-title">按钮设置</div>
+            <el-form-item label="按钮文字">
+              <el-input
+                v-model="themeForm.submitBtnText"
+                placeholder="提交"
+                @change="handleSettingChange"
+              />
+            </el-form-item>
+            <el-form-item label="主题颜色">
+              <el-color-picker v-model="themeForm.themeColor" @change="handleSettingChange" />
+            </el-form-item>
+            <el-form-item label="字体大小（px）">
+              <el-input-number
+                v-model="themeForm.btnFontSize"
+                :min="10"
+                :max="50"
+                :step="1"
+                style="width: 100%"
+                @change="handleSettingChange"
+              />
+            </el-form-item>
+            <el-form-item label="按钮宽度（px）">
+              <el-input-number
+                v-model="themeForm.btnWidth"
+                :min="100"
+                :max="1000"
+                :step="10"
+                style="width: 100%"
+                @change="handleSettingChange"
+              />
+            </el-form-item>
+            <el-form-item label="按钮高度（px）">
+              <el-input-number
+                v-model="themeForm.btnHeight"
+                :min="30"
+                :max="200"
+                :step="2"
+                style="width: 100%"
+                @change="handleSettingChange"
+              />
+            </el-form-item>
+          </el-form>
         </div>
       </el-scrollbar>
     </div>
@@ -436,7 +389,6 @@ const themeForm = reactive({
   showDescribe: true,
   showNumber: false,
   showSubmitBtn: true,
-  btnSetting: true,
   btnFontSize: 15,
   btnWidth: 240,
   btnHeight: 48
@@ -644,12 +596,12 @@ const loadTheme = async () => {
       if (data.logoSize !== undefined) themeForm.logoSize = data.logoSize
       if (data.submitBtnText) {
         themeForm.submitBtnText = data.submitBtnText
-        themeForm.btnSetting = true
       }
       if (data.showTitle !== undefined) themeForm.showTitle = data.showTitle
       if (data.showDescribe !== undefined) themeForm.showDescribe = data.showDescribe
       if (data.showNumber !== undefined) themeForm.showNumber = data.showNumber
-      if (data.showSubmitBtn !== undefined) themeForm.showSubmitBtn = data.showSubmitBtn
+      // showSubmitBtn 始终为 true，始终显示提交按钮
+      themeForm.showSubmitBtn = true
       if (data.btnFontSize !== undefined && data.btnFontSize !== null) themeForm.btnFontSize = data.btnFontSize
       if (data.btnWidth !== undefined && data.btnWidth !== null) themeForm.btnWidth = data.btnWidth
       if (data.btnHeight !== undefined && data.btnHeight !== null) themeForm.btnHeight = data.btnHeight
@@ -721,11 +673,11 @@ const saveTheme = () => {
         logoImg: themeForm.logoSetting ? getRelativeImageUrl(themeForm.logoImg) : '',
         logoPosition: themeForm.logoPosition,
         logoSize: themeForm.logoSetting ? themeForm.logoSize : null,
-        submitBtnText: themeForm.btnSetting ? themeForm.submitBtnText : '提交',
+        submitBtnText: themeForm.submitBtnText || '提交',
         showTitle: themeForm.showTitle,
         showDescribe: themeForm.showDescribe,
         showNumber: themeForm.showNumber,
-        showSubmitBtn: themeForm.showSubmitBtn,
+        showSubmitBtn: true, // 始终显示提交按钮
         btnFontSize: themeForm.btnFontSize,
         btnWidth: themeForm.btnWidth,
         btnHeight: themeForm.btnHeight
@@ -1084,18 +1036,27 @@ onMounted(() => {
 
 // 右侧：设置项
 .right-container {
-  width: 320px;
+  width: 400px;
   background: #fff;
   border-left: 1px solid #ebeef5;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .right-scrollbar {
   height: 100%;
+  flex: 1;
+  overflow: hidden;
 }
 
 .settings-panel {
-  padding: 20px;
+  padding: 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .settings-title {
@@ -1104,45 +1065,17 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.setting-item {
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.setting-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.setting-label {
-  font-size: 14px;
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
   color: #303133;
+  margin: 20px 0 15px 0;
 }
 
-.setting-content {
-  padding-left: 10px;
-}
-
-.setting-sub-item {
-  margin-bottom: 15px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.setting-sub-label {
-  display: block;
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 8px;
+.settings-form {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 40px;
 }
 
 .logo-preview,
