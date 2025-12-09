@@ -1,3 +1,4 @@
+
 <template>
   <el-form
     ref="formRef"
@@ -19,7 +20,10 @@
       >
         <template #label>
           <span class="form-label">
-            <span v-if="showNumber" class="question-number">{{ getQuestionIndex(element) }}. </span>
+            <span
+              v-if="showNumber"
+              class="question-number"
+            >{{ getQuestionIndex(element) }}. </span>
             {{ element.label }}
           </span>
         </template>
@@ -64,7 +68,7 @@
           :max="element.config?.max"
           :step="element.config?.step || 1"
           :precision="element.config?.precision"
-          :controls-position="element.config?.controlsPosition || 'right'"
+          :controls-position="element.config?.controlsPosition || ''"
           :style="getInputStyle('width: 100%')"
           class="theme-input"
         />
@@ -201,7 +205,6 @@
         <el-upload
           v-else-if="element.type === 'IMAGE_UPLOAD'"
           :file-list="getUploadFileList(element.vModel)"
-          @change="handleUploadChange(element.vModel, $event)"
           :disabled="element.disabled || previewMode"
           action="#"
           :auto-upload="false"
@@ -209,8 +212,11 @@
           :limit="element.config?.limit || 9"
           :accept="element.config?.accept || 'image/*'"
           :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 9}张图片`)"
+          @change="handleUploadChange(element.vModel, $event)"
         >
-          <el-icon v-if="!previewMode"><Plus /></el-icon>
+          <el-icon v-if="!previewMode">
+            <Plus />
+          </el-icon>
         </el-upload>
 
         <!-- 滑块 -->
@@ -221,7 +227,6 @@
         >
           <el-slider
             :model-value="getSliderValue(element.vModel, element.config)"
-            @update:model-value="setSliderValue(element.vModel, $event)"
             :min="element.config?.min || 0"
             :max="element.config?.max || 100"
             :step="element.config?.step || 1"
@@ -232,6 +237,7 @@
             :vertical="element.config?.vertical || false"
             :color="getThemeColor()"
             class="theme-slider"
+            @update:model-value="setSliderValue(element.vModel, $event)"
           />
         </div>
 
@@ -261,12 +267,12 @@
             v-model="formModel[element.vModel]"
             :disabled="element.disabled || previewMode"
             class="image-select-radio-group"
-        >
-          <div
-            v-for="(option, idx) in element.config?.options || []"
-            :key="idx"
-            class="image-select-item"
-            :class="{ active: formModel[element.vModel] === option.value }"
+          >
+            <div
+              v-for="(option, idx) in element.config?.options || []"
+              :key="idx"
+              class="image-select-item"
+              :class="{ active: formModel[element.vModel] === option.value }"
             >
               <el-radio
                 :label="option.value"
@@ -279,7 +285,10 @@
                     fit="cover"
                     class="image-select-img"
                   />
-                  <div v-else class="image-select-placeholder">
+                  <div
+                    v-else
+                    class="image-select-placeholder"
+                  >
                     <el-icon><Picture /></el-icon>
                   </div>
                   <span class="image-select-label">{{ option.label }}</span>
@@ -299,23 +308,26 @@
               :key="idx"
               class="image-select-item"
               :class="{ active: (formModel[element.vModel] || []).includes(option.value) }"
-          >
+            >
               <el-checkbox
                 :label="option.value"
                 class="image-select-checkbox"
               >
                 <div class="image-select-content">
-            <el-image
-              v-if="option.image"
-              :src="option.image"
-              fit="cover"
-              class="image-select-img"
-            />
-                  <div v-else class="image-select-placeholder">
+                  <el-image
+                    v-if="option.image"
+                    :src="option.image"
+                    fit="cover"
+                    class="image-select-img"
+                  />
+                  <div
+                    v-else
+                    class="image-select-placeholder"
+                  >
                     <el-icon><Picture /></el-icon>
                   </div>
-            <span class="image-select-label">{{ option.label }}</span>
-          </div>
+                  <span class="image-select-label">{{ option.label }}</span>
+                </div>
               </el-checkbox>
             </div>
           </el-checkbox-group>
@@ -327,92 +339,91 @@
           v-model="formModel[element.vModel]"
           :placeholder="element.placeholder"
           :disabled="element.disabled || previewMode"
-          :readonly="element.readonly || previewMode"
           :style="getInputStyle()"
           class="theme-input"
         />
-          </el-form-item>
+        </el-form-item>
 
-          <!-- 图片展示独立渲染 -->
-          <el-image
-            v-if="element.type === 'IMAGE'"
-            :src="element.config?.imageUrl || ''"
-            :fit="element.config?.fit || 'cover'"
-            style="width: 100%"
-            :preview-src-list="element.config?.previewList || []"
-          />
+        <!-- 图片展示独立渲染 -->
+        <el-image
+          v-if="element.type === 'IMAGE'"
+          :src="element.config?.imageUrl || ''"
+          :fit="element.config?.fit || 'cover'"
+          style="width: 100%"
+          :preview-src-list="element.config?.previewList || []"
+        />
 
-          <!-- 手写签名 -->
-          <SignPad
-            v-else-if="element.type === 'SIGN_PAD'"
-            v-model="formModel[element.vModel]"
-            :width="600"
-            :height="element.config?.height || 300"
-            :background-color="'#ffffff'"
-            :pen-color="element.config?.penColor || '#000000'"
-            :disabled="element.disabled || previewMode"
-          />
+        <!-- 手写签名 -->
+        <SignPad
+          v-else-if="element.type === 'SIGN_PAD'"
+          v-model="formModel[element.vModel]"
+          :width="600"
+          :height="element.config?.height || 300"
+          :background-color="'#ffffff'"
+          :pen-color="element.config?.penColor || '#000000'"
+          :disabled="element.disabled || previewMode"
+        />
 
-          <!-- 图片轮播独立渲染 -->
-          <div
-            v-if="element.type === 'IMAGE_CAROUSEL'"
-            class="image-carousel-wrapper"
+        <!-- 图片轮播独立渲染 -->
+        <div
+          v-if="element.type === 'IMAGE_CAROUSEL'"
+          class="image-carousel-wrapper"
+        >
+          <el-carousel
+            v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
+            :key="`carousel-${element.formItemId}`"
+            :height="`${element.config?.height || 300}px`"
+            :interval="element.config?.interval || 4000"
+            :arrow="element.config?.arrow || 'hover'"
           >
-            <el-carousel
-              v-if="element.config?.options && element.config.options.filter(opt => opt.url).length > 0"
-              :key="`carousel-${element.formItemId}`"
-              :height="`${element.config?.height || 300}px`"
-              :interval="element.config?.interval || 4000"
-              :arrow="element.config?.arrow || 'hover'"
+            <el-carousel-item
+              v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
+              :key="option.url || idx"
             >
-              <el-carousel-item
-                v-for="(option, idx) in element.config.options.filter(opt => opt.url)"
-                :key="option.url || idx"
-              >
-                <el-image
-                  :src="option.url"
-                  :fit="element.config?.fit || 'cover'"
-                  style="width: 100%; height: 100%"
-                />
-              </el-carousel-item>
-            </el-carousel>
-            <div
-              v-else
-              class="carousel-placeholder"
-            >
-              <el-icon><Picture /></el-icon>
-              <span>请添加图片</span>
-            </div>
+              <el-image
+                :src="option.url"
+                :fit="element.config?.fit || 'cover'"
+                style="width: 100%; height: 100%"
+              />
+            </el-carousel-item>
+          </el-carousel>
+          <div
+            v-else
+            class="carousel-placeholder"
+          >
+            <el-icon><Picture /></el-icon>
+            <span>请添加图片</span>
           </div>
+        </div>
 
-      <!-- 文字描述独立渲染 -->
-      <div
-        v-else-if="element.type === 'DESC_TEXT'"
-        class="desc-text-wrapper"
-        :style="{
-          textAlign: element.config?.textAlign || 'left',
-          fontSize: (element.config?.fontSize || 14) + 'px',
-          color: element.config?.color || '#606266'
-        }"
-        v-html="element.config?.content || ''"
-      />
-      
-      <!-- 分割线独立渲染 -->
-      <el-divider
-        v-else-if="element.type === 'DIVIDER'"
-        :content-position="element.config?.contentPosition || 'center'"
-        :direction="element.config?.direction || 'horizontal'"
-      >
-        {{ element.config?.content || '' }}
-      </el-divider>
+        <!-- 文字描述独立渲染 -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div
+          v-else-if="element.type === 'DESC_TEXT'"
+          class="desc-text-wrapper"
+          :style="{
+            textAlign: element.config?.textAlign || 'left',
+            fontSize: (element.config?.fontSize || 14) + 'px',
+            color: element.config?.color || '#606266'
+          }"
+          v-html="element.config?.content || ''"
+        />
+        
+        <!-- 分割线独立渲染 -->
+        <el-divider
+          v-else-if="element.type === 'DIVIDER'"
+          :content-position="element.config?.contentPosition || 'center'"
+          :direction="element.config?.direction || 'horizontal'"
+        >
+          {{ element.config?.content || '' }}
+        </el-divider>
     </div>
   </el-form>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Upload, Plus, Picture, Rank } from '@element-plus/icons-vue'
-import { VueDraggable } from 'vue-draggable-plus'
+import { Upload, Plus, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SignPad from '@/components/SignPad.vue'
 import { getToken } from '@/utils/auth'
@@ -439,8 +450,6 @@ const props = defineProps({
     default: false
   }
 })
-
-const emit = defineEmits(['update:formModel'])
 
 // 过滤掉隐藏的组件
 const visibleFormItems = computed(() => {
@@ -725,7 +734,7 @@ const formRules = computed(() => {
               trigger: ['blur', 'change']
             })
           } catch (e) {
-            console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+            // 正则表达式错误，跳过该规则
           }
         }
       })
@@ -818,7 +827,7 @@ const formRules = computed(() => {
                 trigger: ['blur', 'change']
               })
             } catch (e) {
-              console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+              // 正则表达式错误，跳过该规则
             }
           }
         })
@@ -924,7 +933,7 @@ const formRules = computed(() => {
               trigger: ['blur', 'change']
             })
           } catch (e) {
-            console.error(`Invalid regex pattern for ${item.label}: ${reg.pattern}`, e)
+            // 正则表达式错误，跳过该规则
           }
         }
       })
@@ -1057,7 +1066,6 @@ const validateInput = (element) => {
           }
         } catch (e) {
           // 正则表达式错误，跳过该规则
-          console.error(`Invalid regex pattern for ${element.label}: ${reg.pattern}`, e)
         }
       }
     }
@@ -1188,9 +1196,9 @@ const validateInput = (element) => {
   width: 100%;
   
   .image-select-radio-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     width: 100%;
   }
   

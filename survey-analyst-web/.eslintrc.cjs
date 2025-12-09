@@ -18,7 +18,10 @@ module.exports = {
   rules: {
     'no-console': 'warn',
     'no-debugger': 'warn',
-    'vue/multi-word-component-names': 'off'
+    'vue/multi-word-component-names': 'off',
+    'vue/no-mutating-props': 'off',
+    'vue/no-v-html': 'warn',
+    'vue/html-indent': 'off'
   }
 }
 
