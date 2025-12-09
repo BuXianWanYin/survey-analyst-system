@@ -122,6 +122,7 @@
               :preview-mode="false"
               :theme-config="themeConfig"
               :show-number="themeConfig.showNumber"
+              :form-logic="formLogic"
             />
 
             <!-- 提交按钮 -->
@@ -173,6 +174,7 @@ const surveyDescription = ref('')
 const formKey = ref(null)
 const formItems = ref([])
 const formModel = reactive({})
+const formLogic = ref([])
 const survey = ref(null)
 const errorMessage = ref('')
 const canFill = ref(false)
@@ -274,6 +276,19 @@ const continueLoadFormData = async () => {
           return sortA - sortB
         })
         initFormModel()
+      }
+    }
+    
+    // 加载逻辑规则（如果有surveyId）
+    if (surveyId.value && formLogic.value.length === 0) {
+      try {
+        const logicRes = await formApi.getFormLogic(surveyId.value)
+        if (logicRes.code === 200 && logicRes.data && logicRes.data.scheme) {
+          formLogic.value = logicRes.data.scheme || []
+        }
+      } catch (error) {
+        console.error('加载逻辑规则失败:', error)
+        // 逻辑规则加载失败不影响表单填写，只记录错误
       }
     }
 
@@ -475,6 +490,19 @@ const loadSurveyData = async () => {
       errorMessage.value = '表单Key不存在，无法加载表单'
       loading.value = false
       return
+    }
+
+    // 加载逻辑规则（如果有surveyId）
+    if (surveyId.value) {
+      try {
+        const logicRes = await formApi.getFormLogic(surveyId.value)
+        if (logicRes.code === 200 && logicRes.data && logicRes.data.scheme) {
+          formLogic.value = logicRes.data.scheme || []
+        }
+      } catch (error) {
+        console.error('加载逻辑规则失败:', error)
+        // 逻辑规则加载失败不影响表单填写，只记录错误
+      }
     }
 
     // 加载外观配置（如果有surveyId）

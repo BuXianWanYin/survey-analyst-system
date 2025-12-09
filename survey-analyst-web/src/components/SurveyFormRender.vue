@@ -464,7 +464,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Upload, Plus, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SignPad from '@/components/SignPad.vue'
@@ -490,13 +490,170 @@ const props = defineProps({
   showNumber: {
     type: Boolean,
     default: false
+  },
+  formLogic: {
+    type: Array,
+    default: () => []
   }
 })
+
+// 存储每个表单项的显示状态（由逻辑规则控制）
+const itemVisibility = ref({})
+
+// 评估逻辑条件
+const evaluateCondition = (condition, formModel, formItems) => {
+  const { formItemId, expression, optionValue, relation } = condition
+  if (!formItemId || !expression) return true
+  
+  const item = formItems.find(i => i.formItemId === formItemId)
+  if (!item) return true
+  
+  const value = formModel[item.vModel]
+  
+  switch (expression) {
+    case 'eq': // 等于/选中
+      if (item.type === 'CHECKBOX') {
+        return Array.isArray(value) && value.includes(optionValue)
+      }
+      return value === optionValue
+    case 'ne': // 不等于/未选中
+      if (item.type === 'CHECKBOX') {
+        return !Array.isArray(value) || !value.includes(optionValue)
+      }
+      return value !== optionValue
+    case 'gt': // 大于
+      return Number(value) > Number(optionValue)
+    case 'ge': // 大于等于
+      return Number(value) >= Number(optionValue)
+    case 'lt': // 小于
+      return Number(value) < Number(optionValue)
+    case 'le': // 小于等于
+      return Number(value) <= Number(optionValue)
+    default:
+      return true
+  }
+}
+
+// 评估逻辑规则
+const evaluateLogicRule = (rule, formModel, formItems) => {
+  const conditionList = rule.conditionList || []
+  if (conditionList.length === 0) {
+    return true
+  }
+  
+  // 评估所有条件
+  let result = true
+  for (let i = 0; i < conditionList.length; i++) {
+    const condition = conditionList[i]
+    const conditionResult = evaluateCondition(condition, formModel, formItems)
+    
+    if (i === 0) {
+      result = conditionResult
+    } else {
+      // 使用第一个条件的relation（所有条件使用相同的relation）
+      const relation = conditionList[0]?.relation || condition.relation || 'AND'
+      if (relation === 'AND') {
+        result = result && conditionResult
+      } else if (relation === 'OR') {
+        result = result || conditionResult
+      }
+    }
+  }
+  
+  return result
+}
+
+// 更新表单项的显示状态
+const updateItemVisibility = () => {
+  // 初始化所有项为显示状态（默认显示）
+  props.formItems.forEach(item => {
+    if (itemVisibility.value[item.formItemId] === undefined) {
+      itemVisibility.value[item.formItemId] = true
+    }
+  })
+  
+  if (!props.formLogic || props.formLogic.length === 0) {
+    return
+  }
+  
+  // 收集所有被逻辑规则控制的表单项ID
+  const controlledItems = new Set()
+  
+  // 遍历所有逻辑规则
+  props.formLogic.forEach(rule => {
+    if (!rule.conditionList || !rule.triggerList) return
+    
+    // 将Set转换为数组（如果必要）
+    const conditionList = Array.isArray(rule.conditionList) 
+      ? rule.conditionList 
+      : (rule.conditionList instanceof Set ? Array.from(rule.conditionList) : [])
+    const triggerList = Array.isArray(rule.triggerList) 
+      ? rule.triggerList 
+      : (rule.triggerList instanceof Set ? Array.from(rule.triggerList) : [])
+    
+    // 记录被控制的项
+    triggerList.forEach(trigger => {
+      if (trigger.formItemId) {
+        controlledItems.add(trigger.formItemId)
+      }
+    })
+    
+    const conditionMet = evaluateLogicRule({ ...rule, conditionList }, props.formModel, props.formItems)
+    
+    // 根据条件是否满足来设置显示/隐藏
+    triggerList.forEach(trigger => {
+      if (trigger.formItemId) {
+        if (conditionMet) {
+          // 条件满足时，执行show/hide操作
+          if (trigger.type === 'show') {
+            itemVisibility.value[trigger.formItemId] = true
+          } else if (trigger.type === 'hide') {
+            itemVisibility.value[trigger.formItemId] = false
+          }
+        } else {
+          // 条件不满足时，执行相反的操作
+          // 如果trigger是show，条件不满足则应该hide
+          // 如果trigger是hide，条件不满足则应该show
+          if (trigger.type === 'show') {
+            itemVisibility.value[trigger.formItemId] = false
+          } else if (trigger.type === 'hide') {
+            itemVisibility.value[trigger.formItemId] = true
+          }
+        }
+      }
+    })
+  })
+  
+  // 对于没有被逻辑规则控制的项，保持默认显示状态
+  props.formItems.forEach(item => {
+    if (!controlledItems.has(item.formItemId) && itemVisibility.value[item.formItemId] === undefined) {
+      itemVisibility.value[item.formItemId] = true
+    }
+  })
+}
+
+// 监听表单模型变化，重新评估逻辑
+watch(() => props.formModel, () => {
+  updateItemVisibility()
+}, { deep: true })
+
+// 监听逻辑规则变化
+watch(() => props.formLogic, () => {
+  updateItemVisibility()
+}, { deep: true, immediate: true })
+
+// 初始化显示状态
+updateItemVisibility()
 
 // 过滤掉隐藏的组件，并按 sort 排序
 const visibleFormItems = computed(() => {
   return props.formItems
-    .filter(item => !item.hideType)
+    .filter(item => {
+      // 排除hideType为true的项
+      if (item.hideType) return false
+      // 根据逻辑规则控制显示/隐藏
+      return itemVisibility.value[item.formItemId] !== false
+    })
     .sort((a, b) => {
       // 确保按 sort 排序
       const sortA = a.sort != null ? a.sort : 0
