@@ -166,7 +166,7 @@
                         :max="element.config?.max"
                         :step="element.config?.step || 1"
                         :precision="element.config?.precision"
-                        :controls-position="element.config?.controlsPosition || 'right'"
+                        :controls-position="element.config?.controlsPosition || ''"
                         style="width: 100%"
                       />
                       <!-- 单选框 -->
@@ -808,8 +808,8 @@
                       v-model="activeData.config.controlsPosition"
                       @change="handlePropertyChange"
                     >
-                      <el-radio label="left">
-                        左侧
+                      <el-radio label="">
+                        默认
                       </el-radio>
                       <el-radio label="right">
                         右侧
@@ -2021,7 +2021,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick, inject } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, inject, markRaw, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -2108,8 +2108,14 @@ const componentList = [
   { type: 'SIGN_PAD', label: '手写签名', icon: SignPadIcon, tag: 'sign-pad' }
 ]
 
-// 组件库副本（用于VueDraggable）
-const componentListCopy = ref([...componentList])
+// 使用 markRaw 标记图标组件，避免被 Vue 变成响应式对象
+const componentListWithMarkRaw = componentList.map(item => ({
+  ...item,
+  icon: markRaw(item.icon)
+}))
+
+// 组件库副本（用于VueDraggable）- 使用 shallowRef 避免深度响应式
+const componentListCopy = shallowRef([...componentListWithMarkRaw])
 
 // 文件上传类型选项
 const fileTypeOptions = [
@@ -2149,6 +2155,22 @@ const getDefaultValue = (type, defaultValue, config) => {
   if (type === 'UPLOAD' || type === 'IMAGE_UPLOAD') {
     return defaultValue && Array.isArray(defaultValue) ? defaultValue : []
   }
+  // 多选框组需要数组类型
+  if (type === 'CHECKBOX') {
+    if (defaultValue === null || defaultValue === undefined || defaultValue === '') {
+      return []
+    }
+    // 如果是字符串，尝试解析为数组
+    if (typeof defaultValue === 'string') {
+      try {
+        const parsed = JSON.parse(defaultValue)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+    return Array.isArray(defaultValue) ? defaultValue : []
+  }
   // 滑块组件需要数字类型
   if (type === 'SLIDER') {
     const numValue = defaultValue !== null && defaultValue !== undefined && defaultValue !== ''
@@ -2162,6 +2184,14 @@ const getDefaultValue = (type, defaultValue, config) => {
       ? Number(defaultValue)
       : undefined
     return isNaN(numValue) ? undefined : numValue
+  }
+  // 评分组件需要数字类型
+  if (type === 'RATE') {
+    if (defaultValue === null || defaultValue === undefined || defaultValue === '') {
+      return 0
+    }
+    const numValue = Number(defaultValue)
+    return isNaN(numValue) ? 0 : numValue
   }
   return defaultValue !== null && defaultValue !== undefined ? defaultValue : ''
 }
@@ -2435,7 +2465,7 @@ const createFormItem = (type) => {
       max: undefined,
       step: 1,
       precision: undefined,
-      controlsPosition: 'right'
+      controlsPosition: ''
     }
   }
   
