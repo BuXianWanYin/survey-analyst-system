@@ -207,8 +207,8 @@ const handleCurrentChange = () => {
 }
 
 const handleView = (row) => {
-  // 跳转到问卷预览/填写页面
-  router.push(`/user/survey/fill/${row.id}`)
+  // 跳转到问卷预览页面（只读，不能提交）
+  router.push(`/survey/preview/${row.id}`)
 }
 
 const handleUpdateStatus = async (row, status) => {
