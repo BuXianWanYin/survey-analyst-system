@@ -26,6 +26,10 @@ public class FormTemplateCategory implements Serializable {
     @ApiModelProperty(value = "主键ID")
     private Long id;
 
+    @TableField("user_id")
+    @ApiModelProperty(value = "用户ID：NULL-系统分类，有值-用户自定义分类")
+    private Long userId;
+
     @TableField("name")
     @ApiModelProperty(value = "分类名称", required = true)
     private String name;

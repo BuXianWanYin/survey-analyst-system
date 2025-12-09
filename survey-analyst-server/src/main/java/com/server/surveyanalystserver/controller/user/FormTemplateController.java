@@ -35,23 +35,38 @@ public class FormTemplateController {
     @Autowired
     private UserService userService;
 
-    @ApiOperation(value = "获取模板分类列表", notes = "获取所有模板分类，按排序号降序")
+    @ApiOperation(value = "获取模板分类列表", notes = "获取系统分类和当前用户的自定义分类，按排序号降序")
     @GetMapping("/type/list")
     public Result<List<FormTemplateCategory>> getTemplateTypeList() {
-        List<FormTemplateCategory> list = formTemplateCategoryService.listAll();
+        User currentUser = userService.getCurrentUser();
+        List<FormTemplateCategory> list = formTemplateCategoryService.listByUserId(currentUser.getId());
         return Result.success("查询成功", list);
     }
 
-    @ApiOperation(value = "分页查询模板列表", notes = "支持按名称模糊查询和分类筛选")
+    @ApiOperation(value = "分页查询模板列表", notes = "支持按名称模糊查询、分类筛选和模板类型筛选")
     @GetMapping("/page")
     public Result<Page<FormTemplate>> getTemplatePage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "12") Integer size,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) Long type) {
+            @RequestParam(required = false) Long type,
+            @RequestParam(required = false) Integer isPublic) {
         Page<FormTemplate> page = new Page<>(current, size);
         LambdaQueryWrapper<FormTemplate> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(FormTemplate::getIsDeleted, 0);
+        
+        // 如果指定了模板类型，则按类型筛选；否则查询所有类型
+        if (isPublic != null) {
+            wrapper.eq(FormTemplate::getIsPublic, isPublic);
+        }
+        
+        // 如果是查询我的模板，需要过滤当前用户的模板
+        if (isPublic != null && isPublic == 0) {
+            User currentUser = userService.getCurrentUser();
+            if (currentUser != null) {
+                wrapper.eq(FormTemplate::getUserId, currentUser.getId());
+            }
+        }
         
         if (StringUtils.hasText(name)) {
             wrapper.like(FormTemplate::getName, name);
@@ -76,25 +91,32 @@ public class FormTemplateController {
         return Result.success("查询成功", template.getScheme());
     }
 
-    @ApiOperation(value = "保存为模板", notes = "将表单保存为模板")
+    @ApiOperation(value = "保存为模板", notes = "将表单保存为模板（保存到我的模板）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/create")
     public Result<String> createTemplate(@RequestBody FormTemplate template) {
         // 从 SecurityContext 获取当前用户ID
         User currentUser = userService.getCurrentUser();
         template.setUserId(currentUser.getId());
+        // 保存为我的模板（isPublic=0）
+        template.setIsPublic(0);
         
         FormTemplate created = formTemplateService.createFormTemplate(template);
         return Result.success("保存成功", created.getFormKey());
     }
 
-    @ApiOperation(value = "删除模板", notes = "根据 formKey 删除模板")
+    @ApiOperation(value = "删除模板", notes = "根据 formKey 删除模板（只能删除我的模板，不能删除公共模板）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/delete")
     public Result<String> deleteTemplate(@RequestBody FormTemplate template) {
         FormTemplate existing = formTemplateService.getByFormKey(template.getFormKey());
         if (existing == null) {
             return Result.error("模板不存在");
+        }
+        
+        // 公共模板不允许删除
+        if (existing.getIsPublic() != null && existing.getIsPublic() == 1) {
+            return Result.error("公共模板不允许删除");
         }
         
         // 检查权限：只能删除自己创建的模板
@@ -108,6 +130,76 @@ public class FormTemplateController {
         formTemplateService.getBaseMapper().updateById(existing);
         
         return Result.success("删除成功", template.getFormKey());
+    }
+
+    @ApiOperation(value = "创建用户自定义分类", notes = "创建用户自己的模板分类")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/category/create")
+    public Result<FormTemplateCategory> createCategory(@RequestBody FormTemplateCategory category) {
+        User currentUser = userService.getCurrentUser();
+        category.setUserId(currentUser.getId());
+        
+        // 设置默认排序号
+        if (category.getSort() == null) {
+            category.setSort(0);
+        }
+        
+        formTemplateCategoryService.save(category);
+        return Result.success("创建成功", category);
+    }
+
+    @ApiOperation(value = "更新用户自定义分类", notes = "更新用户自己的模板分类")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/category/update")
+    public Result<String> updateCategory(@RequestBody FormTemplateCategory category) {
+        FormTemplateCategory existing = formTemplateCategoryService.getById(category.getId());
+        if (existing == null) {
+            return Result.error("分类不存在");
+        }
+        
+        // 只能更新自己的分类，系统分类不允许更新
+        User currentUser = userService.getCurrentUser();
+        if (existing.getUserId() == null) {
+            return Result.error("系统分类不允许修改");
+        }
+        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ROLE_ADMIN")) {
+            return Result.error("无权修改此分类");
+        }
+        
+        existing.setName(category.getName());
+        if (category.getSort() != null) {
+            existing.setSort(category.getSort());
+        }
+        formTemplateCategoryService.updateById(existing);
+        
+        return Result.success("更新成功", category.getId().toString());
+    }
+
+    @ApiOperation(value = "删除用户自定义分类", notes = "删除用户自己的模板分类（只能删除自己的分类，不能删除系统分类）")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/category/delete")
+    public Result<String> deleteCategory(@RequestBody FormTemplateCategory category) {
+        FormTemplateCategory existing = formTemplateCategoryService.getById(category.getId());
+        if (existing == null) {
+            return Result.error("分类不存在");
+        }
+        
+        // 系统分类不允许删除
+        if (existing.getUserId() == null) {
+            return Result.error("系统分类不允许删除");
+        }
+        
+        // 只能删除自己的分类
+        User currentUser = userService.getCurrentUser();
+        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ROLE_ADMIN")) {
+            return Result.error("无权删除此分类");
+        }
+        
+        // 逻辑删除
+        existing.setIsDeleted(1);
+        formTemplateCategoryService.updateById(existing);
+        
+        return Result.success("删除成功", category.getId().toString());
     }
 }
 

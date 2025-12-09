@@ -32,14 +32,16 @@
               <el-icon><HomeFilled /></el-icon>
               <span>首页</span>
             </el-menu-item>
-            <el-menu-item index="/survey/list">
-              <el-icon><Document /></el-icon>
-              <span>我的问卷</span>
-            </el-menu-item>
-            <el-menu-item index="/survey/template">
-              <el-icon><Document /></el-icon>
-              <span>问卷模板</span>
-            </el-menu-item>
+            <template v-if="userStore.userInfo?.role !== 'ADMIN'">
+              <el-menu-item index="/survey/list">
+                <el-icon><Document /></el-icon>
+                <span>我的问卷</span>
+              </el-menu-item>
+              <el-menu-item index="/survey/template">
+                <el-icon><Document /></el-icon>
+                <span>问卷模板</span>
+              </el-menu-item>
+            </template>
             <el-sub-menu
               v-if="userStore.userInfo?.role === 'ADMIN'"
               index="/system"
@@ -51,6 +53,7 @@
               <el-menu-item index="/system/dashboard">数据概览</el-menu-item>
               <el-menu-item index="/system/user">用户管理</el-menu-item>
               <el-menu-item index="/system/survey">问卷管理</el-menu-item>
+              <el-menu-item index="/system/template">公共模板管理</el-menu-item>
               <el-menu-item index="/system/data">数据管理</el-menu-item>
               <el-menu-item index="/system/monitor">系统监控</el-menu-item>
             </el-sub-menu>

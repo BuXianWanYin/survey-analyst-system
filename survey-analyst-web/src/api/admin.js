@@ -58,5 +58,22 @@ export const adminApi = {
   // 系统监控
   getSystemOverview() {
     return request.get('/admin/system/overview')
+  },
+
+  // 公共模板管理
+  getTemplateList(params) {
+    return request.get('/admin/template/page', { params })
+  },
+  getTemplateDetails(key) {
+    return request.get(`/admin/template/details/${key}`)
+  },
+  createTemplate(data) {
+    return request.post('/admin/template/create', data)
+  },
+  updateTemplate(data) {
+    return request.post('/admin/template/update', data)
+  },
+  deleteTemplate(formKey) {
+    return request.post('/admin/template/delete', { formKey })
   }
 }

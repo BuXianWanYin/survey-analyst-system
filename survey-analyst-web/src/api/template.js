@@ -14,7 +14,7 @@ export const templateApi = {
 
   /**
    * 分页查询模板列表
-   * @param {Object} params 查询参数 { current, size, name, type }
+   * @param {Object} params 查询参数 { current, size, name, type, isPublic }
    * @returns {Promise} 模板列表
    */
   getTemplatePage(params) {
@@ -55,6 +55,33 @@ export const templateApi = {
    */
   useTemplateCreateSurvey(formKey) {
     return request.post('/user/form/use-template/create', { formKey })
+  },
+
+  /**
+   * 创建用户自定义分类
+   * @param {Object} data 分类数据 { name, sort }
+   * @returns {Promise} 创建结果
+   */
+  createCategory(data) {
+    return request.post('/form/template/category/create', data)
+  },
+
+  /**
+   * 更新用户自定义分类
+   * @param {Object} data 分类数据 { id, name, sort }
+   * @returns {Promise} 更新结果
+   */
+  updateCategory(data) {
+    return request.post('/form/template/category/update', data)
+  },
+
+  /**
+   * 删除用户自定义分类
+   * @param {Object} data 分类数据 { id }
+   * @returns {Promise} 删除结果
+   */
+  deleteCategory(data) {
+    return request.post('/form/template/category/delete', data)
   }
 }
 

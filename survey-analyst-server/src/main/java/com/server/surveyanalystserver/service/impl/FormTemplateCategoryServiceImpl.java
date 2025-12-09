@@ -8,6 +8,7 @@ import com.server.surveyanalystserver.service.FormTemplateCategoryService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 表单模板分类服务实现类
@@ -19,6 +20,25 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
     public List<FormTemplateCategory> listAll() {
         LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(FormTemplateCategory::getIsDeleted, 0);
+        wrapper.orderByDesc(FormTemplateCategory::getSort);
+        return this.list(wrapper);
+    }
+
+    @Override
+    public List<FormTemplateCategory> listByUserId(Long userId) {
+        LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormTemplateCategory::getIsDeleted, 0);
+        // 查询系统分类（user_id为NULL）或当前用户的分类
+        wrapper.and(w -> w.isNull(FormTemplateCategory::getUserId).or().eq(FormTemplateCategory::getUserId, userId));
+        wrapper.orderByDesc(FormTemplateCategory::getSort);
+        return this.list(wrapper);
+    }
+
+    @Override
+    public List<FormTemplateCategory> listSystemCategories() {
+        LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormTemplateCategory::getIsDeleted, 0);
+        wrapper.isNull(FormTemplateCategory::getUserId);
         wrapper.orderByDesc(FormTemplateCategory::getSort);
         return this.list(wrapper);
     }

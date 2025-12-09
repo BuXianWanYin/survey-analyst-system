@@ -253,6 +253,16 @@ const routes = [
         }
       },
       {
+        path: 'system/template',
+        name: 'SystemTemplate',
+        component: () => import('@/views/system/template/index.vue'),
+        meta: {
+          title: '公共模板管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
         path: 'system/data',
         name: 'SystemData',
         component: () => import('@/views/system/data/index.vue'),

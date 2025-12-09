@@ -56,6 +56,10 @@ public class FormTemplate implements Serializable {
     @ApiModelProperty(value = "创建用户ID")
     private Long userId;
 
+    @TableField("is_public")
+    @ApiModelProperty(value = "是否公共模板：0-我的模板，1-公共模板")
+    private Integer isPublic;
+
     /**
      * 模板内容定义（JSON格式存储）
      */
