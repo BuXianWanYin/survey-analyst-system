@@ -28,11 +28,6 @@
               {{ userForm.role === 'ADMIN' ? '管理员' : '用户' }}
             </el-tag>
           </el-form-item>
-          <el-form-item label="状态">
-            <el-tag :type="userForm.status === 1 ? 'success' : 'danger'">
-              {{ userForm.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSaveInfo">保存信息</el-button>
           </el-form-item>

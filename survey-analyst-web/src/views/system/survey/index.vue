@@ -22,12 +22,87 @@
             </el-select>
             <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
+          <div class="view-toggle-item">
+            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
+              <el-radio-button :label="'card'">
+                <el-icon><Grid /></el-icon>
+              </el-radio-button>
+              <el-radio-button :label="'table'">
+                <el-icon><List /></el-icon>
+              </el-radio-button>
+            </el-radio-group>
+          </div>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="surveyList" border>
+      <!-- 卡片视图 -->
+      <div v-if="viewMode === 'card'" class="card-view-container" v-loading="loading">
+        <div class="survey-grid-view">
+          <div
+            v-for="survey in surveyList"
+            :key="survey.id"
+            class="survey-card-item"
+          >
+            <div class="survey-card-header">
+              <h3 class="survey-card-title">{{ survey.title }}</h3>
+              <el-tag :type="getStatusType(survey.status)" size="small">
+                {{ getStatusText(survey.status) }}
+              </el-tag>
+            </div>
+            <div class="survey-card-content">
+              <p class="survey-card-desc" v-if="survey.description">
+                {{ survey.description }}
+              </p>
+              <p class="survey-card-desc" v-else style="color: #909399">暂无描述</p>
+              <div class="survey-card-info">
+                <span class="info-item">
+                  <el-icon><User /></el-icon>
+                  创建用户：{{ survey.username || '未知' }}
+                </span>
+                <span class="info-item">
+                  <el-icon><Lock /></el-icon>
+                  访问类型：{{ getAccessTypeText(survey.accessType) }}
+                </span>
+                <span class="info-item">
+                  <el-icon><Clock /></el-icon>
+                  {{ survey.createTime }}
+                </span>
+              </div>
+            </div>
+            <div class="survey-card-actions">
+              <el-button type="primary" size="small" @click="handleView(survey)">查看</el-button>
+              <el-button
+                v-if="survey.status === 'PUBLISHED'"
+                type="warning"
+                size="small"
+                @click="handleUpdateStatus(survey, 'PAUSED')"
+              >
+                暂停
+              </el-button>
+              <el-button
+                v-if="survey.status === 'PAUSED'"
+                type="success"
+                size="small"
+                @click="handleUpdateStatus(survey, 'PUBLISHED')"
+              >
+                恢复
+              </el-button>
+              <el-button type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
+            </div>
+          </div>
+        </div>
+        <el-empty v-if="!loading && surveyList.length === 0" description="暂无问卷" />
+      </div>
+
+      <!-- 表格视图 -->
+      <el-table v-else v-loading="loading" :data="surveyList" border>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="问卷标题" min-width="200" />
+        <el-table-column prop="username" label="创建用户" width="120">
+          <template #default="{ row }">
+            {{ row.username || '未知' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -83,11 +158,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Grid, List, User, Clock, Lock } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const router = useRouter()
 
 const loading = ref(false)
+const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图
 const surveyList = ref([])
 const searchKeyword = ref('')
 const statusFilter = ref('')
@@ -130,7 +207,8 @@ const handleCurrentChange = () => {
 }
 
 const handleView = (row) => {
-  router.push(`/survey/edit/editor?id=${row.id}`)
+  // 跳转到问卷预览/填写页面
+  router.push(`/user/survey/fill/${row.id}`)
 }
 
 const handleUpdateStatus = async (row, status) => {
@@ -220,6 +298,97 @@ onMounted(() => {
 .search-section {
   display: flex;
   align-items: center;
+}
+
+.view-toggle-item {
+  margin-left: auto;
+}
+
+.view-toggle-group {
+  display: flex;
+  justify-content: center;
+}
+
+.card-view-container {
+  min-height: 400px;
+}
+
+.survey-grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.survey-card-item {
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.survey-card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.survey-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.survey-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  flex: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.survey-card-content {
+  margin-bottom: 16px;
+}
+
+.survey-card-desc {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.survey-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.survey-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
 }
 
 .pagination {
