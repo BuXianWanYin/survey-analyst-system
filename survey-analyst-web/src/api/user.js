@@ -46,6 +46,14 @@ export const userApi = {
    */
   changePassword(data) {
     return request.put('/user/password', data)
+  },
+
+  /**
+   * 用户登出
+   * @returns {Promise} 登出结果
+   */
+  logout() {
+    return request.post('/user/logout')
   }
 }
 

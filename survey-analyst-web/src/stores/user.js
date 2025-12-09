@@ -43,10 +43,19 @@ export const useUserStore = defineStore('user', {
     /**
      * 退出登录
      */
-    logout() {
-      this.userInfo = null
-      this.token = ''
-      removeToken()
+    async logout() {
+      try {
+        // 调用后端接口记录登出日志
+        const { userApi } = await import('@/api')
+        await userApi.logout()
+      } catch (error) {
+        // 登出日志记录失败不影响登出操作
+        console.error('记录登出日志失败:', error)
+      } finally {
+        this.userInfo = null
+        this.token = ''
+        removeToken()
+      }
     }
   }
 })

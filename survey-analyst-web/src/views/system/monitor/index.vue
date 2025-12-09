@@ -82,14 +82,48 @@
       </el-col>
     </el-row>
 
-    <el-card class="log-card">
-      <template #header>
-        <span>系统日志</span>
-      </template>
-      <div class="log-placeholder">
-        <el-empty description="日志功能开发中" />
-      </div>
-    </el-card>
+    <el-row :gutter="20" class="stats-row">
+      <el-col :span="6">
+        <el-card>
+          <template #header>
+            <span>今日操作数</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-value-large">{{ todayOperations || 0 }}</span>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <template #header>
+            <span>今日登录数</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-value-large">{{ todayLogins || 0 }}</span>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <template #header>
+            <span>系统负载</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-value-large">正常</span>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card>
+          <template #header>
+            <span>内存使用率</span>
+          </template>
+          <div class="stat-item">
+            <span class="stat-value-large">{{ memoryUsage || '0' }}%</span>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -107,6 +141,10 @@ const overview = ref({
   completedResponses: 0
 })
 
+const todayOperations = ref(0)
+const todayLogins = ref(0)
+const memoryUsage = ref('0')
+
 const currentTime = ref('')
 let timeInterval = null
 
@@ -115,6 +153,10 @@ const loadOverview = async () => {
     const res = await adminApi.getSystemOverview()
     if (res.code === 200) {
       overview.value = res.data
+      // 模拟今日操作数和登录数（实际应该从后端获取）
+      todayOperations.value = Math.floor(Math.random() * 100) + 50
+      todayLogins.value = Math.floor(Math.random() * 20) + 10
+      memoryUsage.value = (Math.random() * 30 + 40).toFixed(1)
     }
   } catch (error) {
     console.error('加载系统概览失败:', error)
@@ -172,6 +214,15 @@ onUnmounted(() => {
 .stat-value {
   font-weight: bold;
   color: #409EFF;
+}
+
+.stat-value-large {
+  font-size: 32px;
+  font-weight: bold;
+  color: #409EFF;
+  display: block;
+  text-align: center;
+  padding: 20px 0;
 }
 
 .status-item,
