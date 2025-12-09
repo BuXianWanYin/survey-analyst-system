@@ -20,6 +20,7 @@
             </el-select>
             <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
+          <el-button type="primary" @click="handleAdd">添加用户</el-button>
         </div>
       </template>
 
@@ -70,6 +71,40 @@
       />
     </el-card>
 
+    <!-- 添加对话框 -->
+    <el-dialog v-model="addDialogVisible" title="添加用户" width="500px" @close="handleAddDialogClose">
+      <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="100px">
+        <el-form-item label="账号" prop="account">
+          <el-input v-model="addForm.account" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="addForm.email" />
+        </el-form-item>
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="addForm.username" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="addForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="addForm.phone" />
+        </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="addForm.role" style="width: 100%">
+            <el-option label="用户" value="USER" />
+            <el-option label="管理员" value="ADMIN" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-switch v-model="addForm.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAddSave">保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 编辑对话框 -->
     <el-dialog v-model="editDialogVisible" title="编辑用户" width="500px">
       <el-form :model="editForm" label-width="100px">
@@ -81,6 +116,9 @@
         </el-form-item>
         <el-form-item label="用户名">
           <el-input v-model="editForm.username" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="editForm.phone" />
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="editForm.role" style="width: 100%">
@@ -114,12 +152,45 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
+const addDialogVisible = ref(false)
+const addFormRef = ref(null)
+const addForm = reactive({
+  account: '',
+  email: '',
+  username: '',
+  password: '',
+  phone: '',
+  role: 'USER',
+  status: 1
+})
+
+const addFormRules = {
+  account: [
+    { required: true, message: '请输入账号', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
+  role: [
+    { required: true, message: '请选择角色', trigger: 'change' }
+  ]
+}
+
 const editDialogVisible = ref(false)
 const editForm = reactive({
   id: null,
   account: '',
   email: '',
   username: '',
+  phone: '',
   role: 'USER',
   status: 1
 })
@@ -156,6 +227,47 @@ const handleSizeChange = () => {
 
 const handleCurrentChange = () => {
   loadUserList()
+}
+
+const handleAdd = () => {
+  addDialogVisible.value = true
+}
+
+const handleAddDialogClose = () => {
+  if (addFormRef.value) {
+    addFormRef.value.resetFields()
+  }
+  Object.assign(addForm, {
+    account: '',
+    email: '',
+    username: '',
+    password: '',
+    phone: '',
+    role: 'USER',
+    status: 1
+  })
+}
+
+const handleAddSave = async () => {
+  if (!addFormRef.value) {
+    return
+  }
+
+  await addFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const res = await adminApi.createUser(addForm)
+        if (res.code === 200) {
+          ElMessage.success('创建成功')
+          addDialogVisible.value = false
+          handleAddDialogClose()
+          loadUserList()
+        }
+      } catch (error) {
+        ElMessage.error(error.message || '创建失败')
+      }
+    }
+  })
 }
 
 const handleEdit = (row) => {

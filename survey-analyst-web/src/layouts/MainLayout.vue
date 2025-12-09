@@ -56,6 +56,7 @@
               <el-menu-item index="/system/template">公共模板管理</el-menu-item>
               <el-menu-item index="/system/data">数据管理</el-menu-item>
               <el-menu-item index="/system/monitor">系统监控</el-menu-item>
+              <el-menu-item index="/system/log">系统日志</el-menu-item>
             </el-sub-menu>
           </el-menu>
         </el-aside>
@@ -92,8 +93,7 @@ const handleCommand = (command) => {
       router.push('/login')
     }).catch(() => {})
   } else if (command === 'profile') {
-    // TODO: 跳转到个人中心
-    ElMessage.info('个人中心功能开发中')
+    router.push('/user/profile')
   }
 }
 </script>

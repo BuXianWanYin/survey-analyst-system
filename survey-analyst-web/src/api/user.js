@@ -28,6 +28,24 @@ export const userApi = {
    */
   getCurrentUser() {
     return request.get('/user/current')
+  },
+
+  /**
+   * 更新用户信息
+   * @param {Object} data 用户信息
+   * @returns {Promise} 更新结果
+   */
+  updateUserInfo(data) {
+    return request.put('/user/info', data)
+  },
+
+  /**
+   * 修改密码
+   * @param {Object} data 密码信息 {oldPassword, newPassword}
+   * @returns {Promise} 修改结果
+   */
+  changePassword(data) {
+    return request.put('/user/password', data)
   }
 }
 

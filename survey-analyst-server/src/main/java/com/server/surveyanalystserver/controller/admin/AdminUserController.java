@@ -7,6 +7,7 @@ import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.user.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,9 @@ public class AdminUserController {
 
     @Autowired
     private UserService userService;
+
+    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder = 
+        new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
 
     @ApiOperation(value = "分页查询用户列表", notes = "管理员分页查询所有用户")
     @PreAuthorize("hasRole('ADMIN')")
@@ -85,6 +89,42 @@ public class AdminUserController {
     public Result<Void> deleteUser(@PathVariable Long id) {
         userService.removeById(id);
         return Result.success("删除成功");
+    }
+
+    @ApiOperation(value = "创建用户", notes = "管理员创建新用户")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public Result<User> createUser(@ApiParam(value = "用户信息", required = true) @RequestBody User user) {
+        // 检查账号是否已存在
+        LambdaQueryWrapper<User> accountWrapper = new LambdaQueryWrapper<>();
+        accountWrapper.eq(User::getAccount, user.getAccount());
+        if (userService.count(accountWrapper) > 0) {
+            return Result.error("账号已存在");
+        }
+
+        // 检查邮箱是否已存在
+        LambdaQueryWrapper<User> emailWrapper = new LambdaQueryWrapper<>();
+        emailWrapper.eq(User::getEmail, user.getEmail());
+        if (userService.count(emailWrapper) > 0) {
+            return Result.error("邮箱已存在");
+        }
+
+        // 设置默认值
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("USER");
+        }
+        if (user.getStatus() == null) {
+            user.setStatus(1);
+        }
+
+        // 密码加密
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+
+        userService.save(user);
+        User createdUser = userService.getById(user.getId());
+        return Result.success("创建成功", createdUser);
     }
 
     @ApiOperation(value = "获取用户统计", notes = "获取用户统计数据")

@@ -281,6 +281,25 @@ const routes = [
           requiresAuth: true,
           requiresAdmin: true
         }
+      },
+      {
+        path: 'user/profile',
+        name: 'UserProfile',
+        component: () => import('@/views/user/Profile.vue'),
+        meta: {
+          title: '个人中心',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'system/log',
+        name: 'SystemLog',
+        component: () => import('@/views/system/log/index.vue'),
+        meta: {
+          title: '系统日志',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
       }
     ]
   }

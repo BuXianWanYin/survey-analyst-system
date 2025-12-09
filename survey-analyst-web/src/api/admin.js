@@ -23,6 +23,14 @@ export const adminApi = {
   getUserStatistics() {
     return request.get('/admin/user/statistics')
   },
+  createUser(data) {
+    return request.post('/admin/user', data)
+  },
+
+  // 系统日志
+  getSystemLogs(params) {
+    return request.get('/admin/system/logs', { params })
+  },
 
   // 问卷管理
   getSurveyList(params) {
