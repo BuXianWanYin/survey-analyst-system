@@ -17,19 +17,23 @@
       
       <!-- 搜索栏 -->
       <div class="filter-container">
-        <el-form :inline="true">
-          <el-form-item label="">
-            <el-input
-              v-model="queryParams.name"
-              class="width80"
-              placeholder="请输入模板名称"
-              @keyup.enter="queryTemplatePage"
-            />
-          </el-form-item>
+        <el-form :inline="true" class="filter-form">
+          <div class="search-row">
+            <el-form-item label="" class="search-form-item">
+              <el-input
+                v-model="queryParams.name"
+                class="search-input"
+                placeholder="请输入模板名称"
+                @keyup.enter="queryTemplatePage"
+              />
+            </el-form-item>
+            <el-form-item class="search-button-item">
+              <el-button class="search-template-btn" type="primary" @click="queryTemplatePage" :icon="Search">
+                查询
+              </el-button>
+            </el-form-item>
+          </div>
           <el-form-item>
-            <el-button class="search-template-btn" type="primary" @click="queryTemplatePage" :icon="Search">
-              查询
-            </el-button>
             <!-- 我的模板显示管理分类下拉框 -->
             <el-dropdown
               v-if="activeTab === 'my'"
@@ -78,17 +82,6 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-          </el-form-item>
-          <!-- 视图切换按钮 -->
-          <el-form-item class="view-toggle-item">
-            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
-              <el-radio-button :label="'card'">
-                <el-icon><Grid /></el-icon>
-              </el-radio-button>
-              <el-radio-button :label="'table'">
-                <el-icon><List /></el-icon>
-              </el-radio-button>
-            </el-radio-group>
           </el-form-item>
         </el-form>
       </div>
@@ -719,11 +712,32 @@ onMounted(() => {
   display: flex;
   justify-content: flex-start;
   margin-top: 20px !important;
+}
 
-  .el-input {
-    display: inline-block;
-    width: 300px !important;
-  }
+.filter-form {
+  width: 100%;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-form-item {
+  flex: 1;
+  min-width: 200px;
+  margin-right: 0 !important;
+}
+
+.search-button-item {
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
 }
 
 .project-grid-container {
@@ -773,7 +787,7 @@ onMounted(() => {
 
 .project-template-view {
   width: 100%;
-  height: 320px;
+  min-height: 320px;
   line-height: 20px;
   border-radius: 10px;
   text-align: center;
@@ -785,6 +799,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .project-template-view:hover {
@@ -810,6 +825,15 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.template-actions .el-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 5px 10px;
 }
 
 .template-tabs {
@@ -888,6 +912,13 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination-container :deep(.el-pagination) {
+  flex-wrap: nowrap;
+  justify-content: center;
 }
 
 .template-cover-container {

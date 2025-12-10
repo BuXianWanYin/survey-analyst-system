@@ -38,7 +38,7 @@
             :default-active="activeMenu"
             router
             class="sidebar-menu"
-            :collapse="isMobile && !isCollapse"
+            :collapse="false"
           >
             <template v-if="userStore.userInfo?.role !== 'ADMIN'">
               <el-menu-item index="/survey/list">
@@ -206,6 +206,14 @@ const handleCommand = (command) => {
 .sidebar-menu {
   border: none;
   height: 100%;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  padding: 0 20px;
+}
+
+.sidebar-menu :deep(.el-menu-item span) {
+  margin-left: 8px;
 }
 
 .main-content {

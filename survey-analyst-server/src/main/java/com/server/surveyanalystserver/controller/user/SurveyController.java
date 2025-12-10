@@ -77,7 +77,7 @@ public class SurveyController {
         return Result.success("发布成功");
     }
     
-    @ApiOperation(value = "取消发布问卷", notes = "取消发布问卷（改为草稿）")
+    @ApiOperation(value = "取消发布问卷", notes = "取消发布问卷（改为已结束）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/{id}/unpublish")
     public Result<Void> unpublishSurvey(@PathVariable Long id) {

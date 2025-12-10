@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="survey-management">
 
 
@@ -17,20 +17,9 @@
               <el-option label="全部" value="" />
               <el-option label="草稿" value="DRAFT" />
               <el-option label="已发布" value="PUBLISHED" />
-              <el-option label="已暂停" value="PAUSED" />
               <el-option label="已结束" value="ENDED" />
             </el-select>
             <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
-          </div>
-          <div class="view-toggle-item">
-            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
-              <el-radio-button :label="'card'">
-                <el-icon><Grid /></el-icon>
-              </el-radio-button>
-              <el-radio-button :label="'table'">
-                <el-icon><List /></el-icon>
-              </el-radio-button>
-            </el-radio-group>
           </div>
         </div>
       </template>
@@ -76,20 +65,11 @@
                 :icon="VideoPause"
                 type="warning"
                 size="small"
-                @click="handleUpdateStatus(survey, 'PAUSED')"
+                @click="handleUpdateStatus(survey, 'ENDED')"
               >
-                暂停
+                停止发布
               </el-button>
-              <el-button
-                v-if="survey.status === 'PAUSED'"
-                :icon="VideoPlay"
-                type="success"
-                size="small"
-                @click="handleUpdateStatus(survey, 'PUBLISHED')"
-              >
-                恢复
-              </el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
+<el-button :icon="Delete" type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
             </div>
           </div>
         </div>
@@ -126,18 +106,9 @@
               :icon="VideoPause"
               type="warning"
               size="small"
-              @click="handleUpdateStatus(row, 'PAUSED')"
+              @click="handleUpdateStatus(row, 'ENDED')"
             >
-              暂停
-            </el-button>
-            <el-button
-              v-if="row.status === 'PAUSED'"
-              :icon="VideoPlay"
-              type="success"
-              size="small"
-              @click="handleUpdateStatus(row, 'PUBLISHED')"
-            >
-              恢复
+              停止发布
             </el-button>
             <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -162,7 +133,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Grid, List, User, Clock, Lock, Search, View, VideoPause, VideoPlay, Delete } from '@element-plus/icons-vue'
+import { Grid, List, User, Clock, Lock, Search, View, VideoPause, Delete } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const router = useRouter()
@@ -251,7 +222,6 @@ const getStatusText = (status) => {
   const statusMap = {
     DRAFT: '草稿',
     PUBLISHED: '已发布',
-    PAUSED: '已暂停',
     ENDED: '已结束'
   }
   return statusMap[status] || '未知'
@@ -261,7 +231,6 @@ const getStatusType = (status) => {
   const typeMap = {
     DRAFT: 'info',
     PUBLISHED: 'success',
-    PAUSED: 'warning',
     ENDED: 'danger'
   }
   return typeMap[status] || 'info'
@@ -412,12 +381,20 @@ onMounted(() => {
   flex-wrap: wrap;
   padding-top: 12px;
   border-top: 1px solid #ebeef5;
+  align-items: center;
+  justify-content: center;
 }
 
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination :deep(.el-pagination) {
+  flex-wrap: nowrap;
 }
 
 /* 响应式设计 */

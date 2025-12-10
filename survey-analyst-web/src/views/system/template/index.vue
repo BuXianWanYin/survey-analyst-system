@@ -4,19 +4,22 @@
       <!-- 搜索栏 -->
       <div class="filter-container">
         <el-form :inline="true" class="filter-form">
-          <el-form-item label="">
-            <el-input
-              v-model="queryParams.name"
-              class="width80"
-              placeholder="请输入模板名称"
-              @keyup.enter="handleSearch"
-            />
-          </el-form-item>
+          <div class="search-row">
+            <el-form-item label="" class="search-form-item">
+              <el-input
+                v-model="queryParams.name"
+                class="search-input"
+                placeholder="请输入模板名称"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item class="search-button-item">
+              <el-button class="search-template-btn" type="primary" @click="handleSearch" :icon="Search">
+                查询
+              </el-button>
+            </el-form-item>
+          </div>
           <el-form-item>
-            <el-button class="search-template-btn" type="primary" @click="handleSearch" :icon="Search">
-              查询
-            </el-button>
-          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleAddTemplate" :icon="Plus">
               添加模板
@@ -68,17 +71,6 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-          </el-form-item>
-          <el-form-item class="view-toggle-item">
-            <!-- 视图切换按钮 -->
-            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
-              <el-radio-button :label="'card'">
-                <el-icon><Grid /></el-icon>
-              </el-radio-button>
-              <el-radio-button :label="'table'">
-                <el-icon><List /></el-icon>
-              </el-radio-button>
-            </el-radio-group>
           </el-form-item>
         </el-form>
       </div>
@@ -152,10 +144,12 @@
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
         <el-table-column label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
-            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -750,17 +744,32 @@ onMounted(() => {
   display: flex;
   justify-content: flex-start;
   margin-top: 20px !important;
-
-  .el-input {
-    display: inline-block;
-    width: 300px !important;
-  }
 }
 
 .filter-form {
-  display: flex;
   width: 100%;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
   align-items: center;
+}
+
+.search-form-item {
+  flex: 1;
+  min-width: 200px;
+  margin-right: 0 !important;
+}
+
+.search-button-item {
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
 }
 
 .view-toggle-item {
@@ -818,7 +827,7 @@ onMounted(() => {
 
 .project-template-view {
   width: 100%;
-  height: 320px;
+  min-height: 320px;
   line-height: 20px;
   border-radius: 10px;
   text-align: center;
@@ -827,6 +836,10 @@ onMounted(() => {
   background: white;
   position: relative;
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .project-template-view:hover {
@@ -852,6 +865,18 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  padding: 0 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.template-actions .el-button {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 5px 10px;
 }
 
 .table-container {
@@ -868,6 +893,13 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination-container :deep(.el-pagination) {
+  flex-wrap: nowrap;
+  justify-content: center;
 }
 
 .el-menu.el-menu--horizontal {
@@ -953,6 +985,13 @@ onMounted(() => {
   opacity: 1;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .template-list-container {
@@ -968,13 +1007,24 @@ onMounted(() => {
     width: 100%;
   }
 
+  .search-row {
+    width: 100%;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .search-form-item {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-button-item {
+    flex-shrink: 0;
+  }
+
   .filter-form .el-form-item {
     width: 100%;
     margin-right: 0;
-  }
-
-  .width80 {
-    width: 100% !important;
   }
 
   .view-toggle-item {
@@ -1000,6 +1050,10 @@ onMounted(() => {
     padding: 5px 8px;
     font-size: 12px;
     margin: 2px;
+  }
+  
+  .action-buttons {
+    flex-wrap: wrap;
   }
 
   .template-actions {

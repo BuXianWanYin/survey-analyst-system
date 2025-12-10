@@ -157,11 +157,6 @@ onMounted(() => {
 .search-section {
   display: flex;
   align-items: center;
-}
-
-.search-section {
-  display: flex;
-  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   width: 100%;
@@ -182,6 +177,12 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination :deep(.el-pagination) {
+  flex-wrap: nowrap;
 }
 
 /* 响应式设计 */
@@ -208,8 +209,19 @@ onMounted(() => {
     width: 100%;
   }
 
+  .search-section {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .search-input {
+    flex: 1;
+    min-width: 0;
+  }
+
   .search-button {
-    width: 100%;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   :deep(.el-table) {
@@ -235,8 +247,12 @@ onMounted(() => {
     min-width: 80px !important;
   }
 
+  .pagination {
+    overflow-x: auto;
+  }
+  
   :deep(.el-pagination) {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 }
 </style>

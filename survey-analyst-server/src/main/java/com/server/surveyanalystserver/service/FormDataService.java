@@ -22,6 +22,16 @@ public interface FormDataService extends IService<FormData> {
     FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId);
     
     /**
+     * 填写前校验（检查各种限制）
+     * @param formKey 表单key
+     * @param ipAddress IP地址
+     * @param deviceId 设备ID
+     * @param userId 用户ID
+     * @throws RuntimeException 如果校验失败，抛出异常
+     */
+    void validateBeforeFill(String formKey, String ipAddress, String deviceId, Long userId);
+    
+    /**
      * 分页查询表单数据
      */
     Page<FormData> getFormDataList(Page<FormData> page, String formKey);

@@ -39,6 +39,44 @@ public class FormDataController {
     @Autowired(required = false)
     private UserService userService;
     
+    @ApiOperation(value = "填写前校验", notes = "在开始填写问卷前进行校验（检查各种限制）")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/validate")
+    public Result<Void> validateBeforeFill(@RequestBody Map<String, Object> params, HttpServletRequest request) {
+        String formKey = (String) params.get("formKey");
+        if (formKey == null || formKey.isEmpty()) {
+            return Result.error("表单Key不能为空");
+        }
+        
+        // 获取IP地址
+        String ipAddress = IpUtils.getIpAddress(request);
+        
+        // 获取设备ID（从请求参数中获取，如果前端传递了deviceId）
+        String deviceId = (String) params.get("deviceId");
+        
+        // 获取用户ID（系统不支持匿名提交，必须登录）
+        Long userId = null;
+        if (userService != null) {
+            // 从SecurityContext获取当前登录用户
+            com.server.surveyanalystserver.entity.User currentUser = userService.getCurrentUser();
+            if (currentUser != null) {
+                userId = currentUser.getId();
+            } else {
+                return Result.error("用户未登录，无法填写");
+            }
+        } else {
+            return Result.error("用户服务未配置，无法填写");
+        }
+        
+        // 执行校验
+        try {
+            formDataService.validateBeforeFill(formKey, ipAddress, deviceId, userId);
+            return Result.success("校验通过，可以开始填写");
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+    
     @ApiOperation(value = "保存表单数据", notes = "保存表单填写数据（需要登录）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -61,10 +99,10 @@ public class FormDataController {
             if (currentUser != null) {
                 userId = currentUser.getId();
             } else {
-                throw new RuntimeException("用户未登录，无法提交");
+                return Result.error("用户未登录，无法提交");
             }
         } else {
-            throw new RuntimeException("用户服务未配置，无法提交");
+            return Result.error("用户服务未配置，无法提交");
         }
         
         // 保存表单数据（会进行限制验证）

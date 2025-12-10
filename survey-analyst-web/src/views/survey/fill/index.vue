@@ -228,6 +228,29 @@ const continueLoadFormData = async () => {
       }
     }
 
+    // 填写前校验（检查各种限制）
+    if (formKey.value) {
+      // 生成设备ID（使用localStorage存储，用于设备限制）
+      let deviceId = localStorage.getItem('deviceId')
+      if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        localStorage.setItem('deviceId', deviceId)
+      }
+      
+      try {
+        const validateRes = await formApi.validateBeforeFill(formKey.value, deviceId)
+        if (validateRes.code !== 200) {
+          errorMessage.value = validateRes.message || '校验失败，无法填写'
+          canFill.value = false
+          return
+        }
+      } catch (error) {
+        errorMessage.value = error.response?.data?.message || error.message || '校验失败，无法填写'
+        canFill.value = false
+        return
+      }
+    }
+
     // 加载表单项
     if (formKey.value && formItems.value.length === 0) {
       const itemsRes = await formApi.getFormItems(formKey.value)
@@ -516,9 +539,28 @@ const loadSurveyData = async () => {
       await loadTheme()
     }
 
-    // 如果不需要密码验证，允许填写
+    // 如果不需要密码验证，进行填写前校验
     if (!survey.value || survey.value.accessType !== 'PASSWORD') {
+      // 生成设备ID（使用localStorage存储，用于设备限制）
+      let deviceId = localStorage.getItem('deviceId')
+      if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        localStorage.setItem('deviceId', deviceId)
+      }
+      
+      // 填写前校验（检查各种限制）
+      try {
+        const validateRes = await formApi.validateBeforeFill(formKey.value, deviceId)
+        if (validateRes.code === 200) {
       canFill.value = true
+        } else {
+          errorMessage.value = validateRes.message || '校验失败，无法填写'
+          canFill.value = false
+        }
+      } catch (error) {
+        errorMessage.value = error.response?.data?.message || error.message || '校验失败，无法填写'
+        canFill.value = false
+      }
     }
   } catch (error) {
     // 加载问卷失败，显示错误提示
@@ -775,9 +817,9 @@ const handleSubmit = async () => {
       
       if (submitJump && submitJumpUrl) {
         // 跳转到指定URL
-        setTimeout(() => {
+      setTimeout(() => {
           window.location.href = submitJumpUrl
-        }, 1500)
+      }, 1500)
       } else {
         // 默认跳转：已登录跳转到问卷列表，未登录跳转到登录页
         setTimeout(() => {

@@ -44,16 +44,18 @@
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
         <el-table-column label="操作" min-width="200" fixed="right">
           <template #default="{ row }">
-            <el-button :icon="Edit" type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button
-              :icon="row.status === 1 ? Lock : Unlock"
-              :type="row.status === 1 ? 'warning' : 'success'"
-              size="small"
-              @click="handleToggleStatus(row)"
-            >
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <el-button :icon="Edit" type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button
+                :icon="row.status === 1 ? Lock : Unlock"
+                :type="row.status === 1 ? 'warning' : 'success'"
+                size="small"
+                @click="handleToggleStatus(row)"
+              >
+                {{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -389,6 +391,19 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination :deep(.el-pagination) {
+  flex-wrap: nowrap;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 /* 响应式设计 */
@@ -452,7 +467,16 @@ onMounted(() => {
   }
 
   :deep(.el-pagination) {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+  
+  :deep(.el-table .el-button) {
+    margin: 2px;
   }
 }
 </style>

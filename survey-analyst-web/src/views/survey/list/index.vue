@@ -411,7 +411,7 @@ const handlePublish = (id) => {
 
 const handleUnpublish = async (id) => {
   try {
-    await ElMessageBox.confirm('确定要停止发布该问卷吗？停止后将变为草稿状态。', '提示', {
+    await ElMessageBox.confirm('确定要停止发布该问卷吗？停止后将变为已结束状态。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -569,11 +569,18 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .search-section {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .search-input {
+    flex: 1;
+    min-width: 0;
   }
   
   .search-section .el-button {
-    width: 100%;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 

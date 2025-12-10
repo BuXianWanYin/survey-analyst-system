@@ -260,7 +260,7 @@ const createSurveyByTemplate = async () => {
 
   .use-btn {
     position: absolute;
-    top: 20px;
+    top: -50px;
     right: 30px;
     z-index: 10;
   }

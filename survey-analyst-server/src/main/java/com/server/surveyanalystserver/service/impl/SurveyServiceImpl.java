@@ -6,9 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.Survey;
+import com.server.surveyanalystserver.mapper.FormDataMapper;
 import com.server.surveyanalystserver.mapper.SurveyMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
-import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.FormLogicService;
 import com.server.surveyanalystserver.service.FormSettingService;
@@ -40,7 +40,7 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
     private FormThemeService formThemeService;
     
     @Autowired
-    private FormDataService formDataService;
+    private FormDataMapper formDataMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -100,7 +100,7 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
         if (survey == null) {
             throw new RuntimeException("问卷不存在");
         }
-        survey.setStatus("DRAFT");
+        survey.setStatus("ENDED");
         return this.updateById(survey);
     }
 
@@ -116,10 +116,10 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
             // 2. 删除 form_item（通过 formKey）
             formItemService.deleteByFormKey(formKey);
             
-            // 3. 删除 form_data（通过 formKey）
+            // 3. 删除 form_data（通过 formKey，直接使用Mapper避免循环依赖）
             LambdaQueryWrapper<FormData> dataWrapper = new LambdaQueryWrapper<>();
             dataWrapper.eq(FormData::getFormKey, formKey);
-            formDataService.remove(dataWrapper);
+            formDataMapper.delete(dataWrapper);
             
             // 4. 删除 form_config
             formConfigService.deleteById(formConfig.getId());

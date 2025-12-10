@@ -21,7 +21,7 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
     @Autowired
     private SurveyService surveyService;
 
-    @Value("${app.frontend.url}")
+    @Value("${survey.access.url}")
     private String frontendUrl;
 
     @Override

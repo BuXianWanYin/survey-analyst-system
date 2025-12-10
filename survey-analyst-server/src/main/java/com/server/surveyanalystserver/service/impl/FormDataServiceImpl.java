@@ -7,8 +7,10 @@ import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.FormDataMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
+import com.server.surveyanalystserver.mapper.SurveyMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormSettingService;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -33,9 +36,11 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     @Autowired
     private ResponseMapper responseMapper;
     
+    @Autowired
+    private SurveyMapper surveyMapper;
+    
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId) {
+    public void validateBeforeFill(String formKey, String ipAddress, String deviceId, Long userId) {
         // 获取表单配置，用于获取surveyId
         FormConfig formConfig = formConfigService.getByFormKey(formKey);
         if (formConfig == null) {
@@ -43,6 +48,37 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         }
         
         Long surveyId = formConfig.getSurveyId();
+        
+        // 检查问卷是否存在（直接使用Mapper避免循环依赖）
+        Survey survey = surveyMapper.selectById(surveyId);
+        if (survey == null) {
+            throw new RuntimeException("问卷不存在");
+        }
+        
+        // 检查问卷状态
+        if (!"PUBLISHED".equals(survey.getStatus())) {
+            throw new RuntimeException("问卷尚未发布，无法填写");
+        }
+        
+        // 检查时间限制
+        LocalDateTime now = LocalDateTime.now();
+        if (survey.getStartTime() != null && now.isBefore(survey.getStartTime())) {
+            throw new RuntimeException("问卷尚未开始，无法填写");
+        }
+        if (survey.getEndTime() != null && now.isAfter(survey.getEndTime())) {
+            throw new RuntimeException("问卷已结束，无法填写");
+        }
+        
+        // 检查最大填写数
+        if (survey.getMaxResponses() != null && survey.getMaxResponses() > 0) {
+            LambdaQueryWrapper<Response> countWrapper = new LambdaQueryWrapper<>();
+            countWrapper.eq(Response::getSurveyId, surveyId)
+                       .eq(Response::getStatus, "COMPLETED");
+            long currentCount = responseMapper.selectCount(countWrapper);
+            if (currentCount >= survey.getMaxResponses()) {
+                throw new RuntimeException("已超出该问卷的填写数量（" + survey.getMaxResponses() + "份），无法继续填写");
+            }
+        }
         
         // 获取表单设置，检查限制
         FormSetting formSetting = formSettingService.getBySurveyId(surveyId);
@@ -80,7 +116,7 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
                     long ipCount = responseMapper.selectCount(ipWrapper);
                     
                     if (ipCount >= ipLimit) {
-                        throw new RuntimeException("该IP地址已达到答题次数限制（" + ipLimit + "次），无法继续提交");
+                        throw new RuntimeException("该IP地址已达到答题次数限制（" + ipLimit + "次），无法继续填写");
                     }
                 }
             }
@@ -108,16 +144,13 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
                         }
                     }
                     
-                    // 查询该设备的提交次数（从FormData表查询，通过submit_ua中的设备标识）
+                    // 查询该设备的提交次数（从FormData表查询）
                     LambdaQueryWrapper<FormData> deviceWrapper = new LambdaQueryWrapper<>();
                     deviceWrapper.eq(FormData::getFormKey, formKey);
-                    // 注意：这里需要根据实际存储的设备标识字段来查询
-                    // 如果设备ID存储在submit_ua中，需要特殊处理
-                    // 暂时先查询所有，后续可以根据实际需求优化
                     long deviceCount = this.count(deviceWrapper);
                     
                     if (deviceCount >= deviceLimit) {
-                        throw new RuntimeException("该设备已达到答题次数限制（" + deviceLimit + "次），无法继续提交");
+                        throw new RuntimeException("该设备已达到答题次数限制（" + deviceLimit + "次），无法继续填写");
                     }
                 }
             }
@@ -153,11 +186,20 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
                     long userCount = responseMapper.selectCount(userWrapper);
                     
                     if (userCount >= userLimit) {
-                        throw new RuntimeException("该用户已达到答题次数限制（" + userLimit + "次），无法继续提交");
+                        throw new RuntimeException("您已达到答题次数限制（" + userLimit + "次），无法继续填写");
                     }
                 }
+            } else {
+                throw new RuntimeException("用户未登录，无法填写");
             }
         }
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId) {
+        // 在保存前再次校验（双重校验，确保数据一致性）
+        validateBeforeFill(formKey, ipAddress, deviceId, userId);
         
         // 保存表单数据
         FormData formData = new FormData();

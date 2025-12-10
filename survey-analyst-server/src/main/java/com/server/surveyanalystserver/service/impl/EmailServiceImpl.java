@@ -26,7 +26,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
-    @Value("${app.frontend.url}")
+    @Value("${survey.access.url}")
     private String frontendUrl;
 
     @Override

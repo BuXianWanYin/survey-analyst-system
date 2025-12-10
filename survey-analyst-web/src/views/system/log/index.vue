@@ -201,6 +201,12 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.pagination :deep(.el-pagination) {
+  flex-wrap: nowrap;
 }
 
 /* 响应式设计 */
@@ -255,8 +261,12 @@ onMounted(() => {
     min-width: 80px !important;
   }
 
+  .pagination {
+    overflow-x: auto;
+  }
+  
   :deep(.el-pagination) {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 }
 </style>

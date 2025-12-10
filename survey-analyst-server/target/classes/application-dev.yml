@@ -108,8 +108,8 @@ file:
     path: upload
     max-size: 104857600  # 100MB (100 * 1024 * 1024)
 
-# 应用配置 问卷访问链接
-app:
-  frontend:
+# 问卷访问链接配置
+survey:
+  access:
     url: http://192.168.31.33:3001
 

@@ -71,7 +71,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         
         // 检查问卷状态
         if (!"PUBLISHED".equals(survey.getStatus())) {
-            throw new RuntimeException("问卷未发布，无法提交");
+            throw new RuntimeException("问卷尚未发布，无法提交");
         }
         
         // 检查时间限制
@@ -87,7 +87,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         if (survey.getMaxResponses() != null && survey.getMaxResponses() > 0) {
             long currentCount = getResponseCount(response.getSurveyId());
             if (currentCount >= survey.getMaxResponses()) {
-                throw new RuntimeException("问卷已达到最大填写数，无法继续提交");
+                throw new RuntimeException("已超出该问卷的填写数量（" + survey.getMaxResponses() + "份），无法继续提交");
             }
         }
         
@@ -161,7 +161,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
                     long userCount = this.count(userWrapper);
                     
                     if (userCount >= userLimit) {
-                        throw new RuntimeException("该用户已达到答题次数限制（" + userLimit + "次），无法继续提交");
+                        throw new RuntimeException("您已达到答题次数限制（" + userLimit + "次），无法继续提交");
                     }
                 }
             }

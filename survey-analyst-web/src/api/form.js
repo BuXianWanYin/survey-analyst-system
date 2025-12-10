@@ -140,6 +140,22 @@ export const formApi = {
   },
 
   /**
+   * 填写前校验
+   * @param {String} formKey 表单key
+   * @param {String} deviceId 设备ID（可选）
+   * @returns {Promise} 校验结果
+   */
+  validateBeforeFill(formKey, deviceId) {
+    const params = {
+      formKey
+    }
+    if (deviceId) {
+      params.deviceId = deviceId
+    }
+    return request.post('/form/data/validate', params)
+  },
+
+  /**
    * 提交表单数据
    * @param {String} formKey 表单key
    * @param {Object} answers 答案数据
