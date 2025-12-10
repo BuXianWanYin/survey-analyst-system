@@ -33,20 +33,11 @@ const routes = [
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
-    redirect: '/home',
+    redirect: '/survey/list',
     meta: {
       requiresAuth: true
     },
     children: [
-      {
-        path: 'home',
-        name: 'Home',
-        component: () => import('@/views/Home.vue'),
-        meta: {
-          title: '首页',
-          requiresAuth: true
-        }
-      },
       {
         path: 'survey/list',
         name: 'SurveyList',
@@ -232,16 +223,6 @@ const routes = [
         }
       },
       {
-        path: 'system/dashboard',
-        name: 'SystemDashboard',
-        component: () => import('@/views/system/dashboard/index.vue'),
-        meta: {
-          title: '数据概览',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
-      },
-      {
         path: 'system/user',
         name: 'SystemUser',
         component: () => import('@/views/system/user/index.vue'),
@@ -277,16 +258,6 @@ const routes = [
         component: () => import('@/views/system/data/index.vue'),
         meta: {
           title: '数据管理',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
-      },
-      {
-        path: 'system/monitor',
-        name: 'SystemMonitor',
-        component: () => import('@/views/system/monitor/index.vue'),
-        meta: {
-          title: '系统监控',
           requiresAuth: true,
           requiresAdmin: true
         }

@@ -100,9 +100,9 @@ const handleLogin = async () => {
           } else {
             // 根据用户角色跳转到不同页面
             if (res.data.user && res.data.user.role === 'ADMIN') {
-              router.push('/system/dashboard')
+              router.push('/system/user')
             } else {
-              router.push('/home')
+              router.push('/survey/list')
             }
           }
         }
@@ -137,10 +137,13 @@ const goToRegister = () => {
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .login-box {
   width: 400px;
+  max-width: 100%;
   padding: 40px;
   background: #fff;
   border-radius: 8px;
@@ -172,5 +175,32 @@ const goToRegister = () => {
 
 .login-footer .el-link {
   margin-left: 5px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 15px;
+  }
+
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .login-title {
+    font-size: 20px;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 25px 15px;
+  }
+
+  .login-title {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
 }
 </style>

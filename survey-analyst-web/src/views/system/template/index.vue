@@ -18,7 +18,7 @@
             </el-button>
           </el-form-item>
           <el-form-item>
-            <el-button type="success" @click="handleAddTemplate" :icon="Plus">
+            <el-button type="primary" @click="handleAddTemplate" :icon="Plus">
               添加模板
             </el-button>
           </el-form-item>
@@ -28,7 +28,7 @@
               trigger="click"
               @command="handleCategoryCommand"
             >
-              <el-button type="success" size="default" :icon="Setting">
+              <el-button type="primary" size="default" :icon="Setting">
                 管理分类
                 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
@@ -951,5 +951,77 @@ onMounted(() => {
 
 .template-cover-preview-wrapper:hover .template-cover-actions {
   opacity: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .template-list-container {
+    padding: 15px;
+  }
+
+  .filter-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-form {
+    width: 100%;
+  }
+
+  .filter-form .el-form-item {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .width80 {
+    width: 100% !important;
+  }
+
+  .view-toggle-item {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .view-toggle-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-container {
+    padding: 15px;
+    overflow-x: auto;
+  }
+
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  :deep(.el-table .el-button) {
+    padding: 5px 8px;
+    font-size: 12px;
+    margin: 2px;
+  }
+
+  .template-actions {
+    flex-direction: column;
+  }
+
+  .template-actions .el-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .template-list-container {
+    padding: 10px;
+  }
+
+  .table-container {
+    padding: 10px;
+  }
+
+  :deep(.el-table-column) {
+    min-width: 80px !important;
+  }
 }
 </style>

@@ -34,7 +34,7 @@ export function setupRouterGuard(router) {
       const userStore = useUserStore()
       if (!userStore.userInfo || userStore.userInfo.role !== 'ADMIN') {
         ElMessage.warning('您没有权限访问此页面')
-        next({ name: 'Home' })
+        next('/survey/list')
         return
       }
     }

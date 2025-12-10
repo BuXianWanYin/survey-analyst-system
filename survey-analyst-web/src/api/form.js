@@ -143,13 +143,18 @@ export const formApi = {
    * 提交表单数据
    * @param {String} formKey 表单key
    * @param {Object} answers 答案数据
+   * @param {String} deviceId 设备ID（可选）
    * @returns {Promise} 提交结果
    */
-  submitFormData(formKey, answers) {
-    return request.post('/form/data', {
+  submitFormData(formKey, answers, deviceId) {
+    const params = {
       formKey,
       originalData: answers
-    })
+    }
+    if (deviceId) {
+      params.deviceId = deviceId
+    }
+    return request.post('/form/data', params)
   }
 }
 

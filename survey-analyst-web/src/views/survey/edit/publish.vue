@@ -433,5 +433,84 @@ onMounted(() => {
   white-space: nowrap;
   word-break: keep-all;
 }
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .publish-container {
+    padding: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .card-header .el-button {
+    width: 100%;
+  }
+
+  .publish-settings-card,
+  .recovery-limits-card,
+  .publish-success-card {
+    margin-bottom: 15px;
+  }
+
+  .publish-success-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .qrcode-section {
+    width: 100%;
+  }
+
+  .link-section {
+    width: 100%;
+  }
+
+  .link-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .link-input {
+    width: 100%;
+  }
+
+  .share-buttons {
+    flex-direction: column;
+  }
+
+  .share-buttons .el-button {
+    width: 100%;
+  }
+
+  :deep(.el-form-item__label) {
+    width: 100px !important;
+  }
+
+  :deep(.el-input),
+  :deep(.el-date-picker),
+  :deep(.el-input-number) {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .publish-container {
+    padding: 10px;
+  }
+
+  .qrcode-image {
+    width: 150px;
+    height: 150px;
+  }
+
+  :deep(.el-form-item__label) {
+    width: 80px !important;
+    font-size: 14px;
+  }
+}
 </style>
 

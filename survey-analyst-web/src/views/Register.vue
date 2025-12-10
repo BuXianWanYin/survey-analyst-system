@@ -183,14 +183,19 @@ const goToLogin = () => {
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .register-box {
   width: 450px;
+  max-width: 100%;
   padding: 40px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin: auto;
 }
 
 .register-title {
@@ -218,5 +223,34 @@ const goToLogin = () => {
 
 .register-footer .el-link {
   margin-left: 5px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 30px;
+  }
+
+  .register-box {
+    padding: 30px 20px;
+  }
+
+  .register-title {
+    font-size: 20px;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-box {
+    padding: 25px 15px;
+  }
+
+  .register-title {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
 }
 </style>

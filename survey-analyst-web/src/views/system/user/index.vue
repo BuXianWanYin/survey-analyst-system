@@ -1,7 +1,5 @@
 <template>
   <div class="user-management">
-    <h2 class="page-title">用户管理</h2>
-
     <el-card>
       <template #header>
         <div class="card-header">
@@ -10,17 +8,17 @@
               v-model="searchKeyword"
               placeholder="搜索账号/邮箱/用户名"
               clearable
-              style="width: 300px"
+              class="search-input"
               @keyup.enter="handleSearch"
             />
-            <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 150px; margin-left: 10px">
+            <el-select v-model="statusFilter" placeholder="状态筛选" clearable class="status-select">
               <el-option label="全部" value="" />
               <el-option label="启用" :value="1" />
               <el-option label="禁用" :value="0" />
             </el-select>
-            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
           </div>
-          <el-button :icon="Plus" type="primary" @click="handleAdd">添加用户</el-button>
+          <el-button :icon="Plus" type="primary" @click="handleAdd" class="add-button">添加用户</el-button>
         </div>
       </template>
 
@@ -73,7 +71,7 @@
     </el-card>
 
     <!-- 添加对话框 -->
-    <el-dialog v-model="addDialogVisible" title="添加用户" width="500px" @close="handleAddDialogClose">
+    <el-dialog v-model="addDialogVisible" title="添加用户" :width="dialogWidth" @close="handleAddDialogClose">
       <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="100px">
         <el-form-item label="账号" prop="account">
           <el-input v-model="addForm.account" />
@@ -107,7 +105,7 @@
     </el-dialog>
 
     <!-- 编辑对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑用户" width="500px">
+    <el-dialog v-model="editDialogVisible" title="编辑用户" :width="dialogWidth">
       <el-form :model="editForm" label-width="100px">
         <el-form-item label="账号">
           <el-input v-model="editForm.account" disabled />
@@ -140,11 +138,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Edit, Lock, Unlock, Delete, Close, Check } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 import dayjs from 'dayjs'
+import { useWindowSize } from '@vueuse/core'
+
+const { width } = useWindowSize()
+
+const dialogWidth = computed(() => {
+  if (width.value < 768) {
+    return '90%'
+  } else {
+    return '500px'
+  }
+})
 
 const loading = ref(false)
 const userList = ref([])
@@ -344,17 +353,107 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .search-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input {
+  width: 300px;
+  min-width: 150px;
+  flex: 1;
+}
+
+.status-select {
+  width: 150px;
+  min-width: 120px;
+}
+
+.search-button {
+  margin-left: 0;
+}
+
+.add-button {
+  white-space: nowrap;
 }
 
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-management {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .status-select {
+    width: 100%;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  .add-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  :deep(.el-table .el-button) {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-management {
+    padding: 10px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  :deep(.el-table-column) {
+    min-width: 80px !important;
+  }
+
+  :deep(.el-pagination) {
+    flex-wrap: wrap;
+  }
 }
 </style>
 

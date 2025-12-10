@@ -63,7 +63,7 @@ export const adminApi = {
     return request.get('/admin/data/statistics')
   },
 
-  // 系统监控
+  // 系统概览（数据概览）
   getSystemOverview() {
     return request.get('/admin/system/overview')
   },

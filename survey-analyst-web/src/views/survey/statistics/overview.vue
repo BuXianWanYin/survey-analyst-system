@@ -11,7 +11,7 @@
 
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-cards">
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ statistics.totalResponses || 0 }}</div>
@@ -19,7 +19,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ statistics.completedResponses || 0 }}</div>
@@ -27,7 +27,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ statistics.validRate || 0 }}%</div>
@@ -35,7 +35,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ statistics.draftResponses || 0 }}</div>
@@ -48,7 +48,7 @@
     <!-- 图表区域 -->
     <el-row :gutter="20" class="charts-row">
       <!-- 填写趋势图 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
         <el-card>
           <template #header>
             <div class="card-header">
@@ -70,7 +70,7 @@
       </el-col>
 
       <!-- 填写来源图 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
         <el-card>
           <template #header>
             <span>填写来源</span>
@@ -87,7 +87,7 @@
 
     <el-row :gutter="20" class="charts-row">
       <!-- 设备类型图 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
         <el-card>
           <template #header>
             <span>设备类型分布</span>
@@ -364,6 +364,77 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .statistics-overview {
+    padding: 15px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .el-button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stats-cards {
+    margin-bottom: 15px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .charts-row {
+    margin-bottom: 15px;
+  }
+
+  .charts-row .el-col {
+    margin-bottom: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statistics-overview {
+    padding: 10px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
+  .header-actions .el-button {
+    width: 100%;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
 }
 </style>
 

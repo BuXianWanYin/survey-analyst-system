@@ -1,18 +1,19 @@
 <template>
   <div class="survey-list-container">
     <el-row :gutter="20" class="toolbar">
-      <el-col :xs="24" :sm="24" :md="12" :lg="8" :xl="6">
-        <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey" style="width: 100%">
+      <el-col :xs="24" :sm="24" :md="6" :lg="5" :xl="4">
+        <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey">
           创建问卷
         </el-button>
       </el-col>
-      <el-col :xs="24" :sm="24" :md="12" :lg="16" :xl="18">
+      <el-col :xs="24" :sm="24" :md="18" :lg="19" :xl="20">
         <div class="search-section">
           <el-input
             v-model="searchKeyword"
             placeholder="请输入问卷标题"
             clearable
             class="search-input"
+            style="max-width: 400px;"
             @keyup.enter="handleSearch"
           />
           <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
@@ -599,7 +600,7 @@ onMounted(() => {
 
 .survey-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -696,10 +697,10 @@ onMounted(() => {
 
 .card-footer {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid #ebeef5;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
 }
 

@@ -1,6 +1,5 @@
 <template>
   <div class="profile-container">
-    <h2 class="page-title">个人中心</h2>
 
     <el-card>
       <template #header>
@@ -190,6 +189,45 @@ onMounted(() => {
 
 .profile-content {
   padding: 20px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .profile-content {
+    padding: 15px 0;
+  }
+
+  :deep(.el-form) {
+    max-width: 100% !important;
+  }
+
+  :deep(.el-form-item__label) {
+    width: 100px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 10px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  :deep(.el-form-item__label) {
+    width: 80px !important;
+    font-size: 14px;
+  }
 }
 </style>
 

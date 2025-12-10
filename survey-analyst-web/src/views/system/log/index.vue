@@ -1,6 +1,5 @@
 <template>
   <div class="log-management">
-    <h2 class="page-title">系统日志</h2>
 
     <el-card>
       <template #header>
@@ -10,14 +9,14 @@
               v-model="searchUserId"
               placeholder="用户ID"
               clearable
-              style="width: 150px"
+              class="search-input"
               @keyup.enter="handleSearch"
             />
             <el-select
               v-model="searchOperationType"
               placeholder="操作类型"
               clearable
-              style="width: 200px; margin-left: 10px"
+              class="operation-select"
             >
               <el-option label="全部" value="" />
               <el-option label="查询" value="查询" />
@@ -29,7 +28,7 @@
               <el-option label="导出" value="导出" />
               <el-option label="导入" value="导入" />
             </el-select>
-            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
           </div>
         </div>
       </template>
@@ -176,12 +175,89 @@ onMounted(() => {
 .search-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.search-input {
+  width: 150px;
+  min-width: 120px;
+  flex: 0 0 auto;
+}
+
+.operation-select {
+  width: 200px;
+  min-width: 150px;
+  flex: 0 0 auto;
+}
+
+.search-button {
+  margin-left: 0;
+  white-space: nowrap;
 }
 
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .log-management {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+    flex: 1;
+  }
+
+  .operation-select {
+    width: 100%;
+    flex: 1;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .log-management {
+    padding: 10px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  :deep(.el-table-column) {
+    min-width: 80px !important;
+  }
+
+  :deep(.el-pagination) {
+    flex-wrap: wrap;
+  }
 }
 </style>
 

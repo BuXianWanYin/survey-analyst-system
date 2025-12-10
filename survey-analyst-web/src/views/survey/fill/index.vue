@@ -304,7 +304,13 @@ const continueLoadFormData = async () => {
 const handleCancelPassword = () => {
   passwordDialogVisible.value = false
   inputPassword.value = ''
-  router.push('/home')
+  // 根据登录状态跳转
+  const token = getToken()
+  if (token) {
+    router.push('/survey/list')
+  } else {
+    router.push('/login')
+  }
 }
 
 // 外观配置（默认值）
@@ -740,13 +746,49 @@ const handleSubmit = async () => {
       }
     })
 
+    // 生成设备ID（使用localStorage存储，用于设备限制）
+    let deviceId = localStorage.getItem('deviceId')
+    if (!deviceId) {
+      deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+      localStorage.setItem('deviceId', deviceId)
+    }
+
     // 使用表单数据提交接口
-    const formDataRes = await formApi.submitFormData(formKey.value, answers)
+    const formDataRes = await formApi.submitFormData(formKey.value, answers, deviceId)
     if (formDataRes && formDataRes.code === 200) {
-      ElMessage.success('提交成功，感谢您的参与！')
-      setTimeout(() => {
-        router.push('/home')
-      }, 1500)
+      const data = formDataRes.data || {}
+      const submitSettings = data.submitSettings || {}
+      
+      // 根据提交设置显示提示信息
+      const submitShowType = submitSettings.submitShowType || 1
+      let message = '提交成功，感谢您的参与！'
+      
+      if (submitShowType === 2 && submitSettings.submitShowCustomPageContent) {
+        message = submitSettings.submitShowCustomPageContent
+      }
+      
+      ElMessage.success(message)
+      
+      // 根据提交设置进行跳转
+      const submitJump = submitSettings.submitJump
+      const submitJumpUrl = submitSettings.submitJumpUrl
+      
+      if (submitJump && submitJumpUrl) {
+        // 跳转到指定URL
+        setTimeout(() => {
+          window.location.href = submitJumpUrl
+        }, 1500)
+      } else {
+        // 默认跳转：已登录跳转到问卷列表，未登录跳转到登录页
+        setTimeout(() => {
+          const token = getToken()
+          if (token) {
+            router.push('/survey/list')
+          } else {
+            router.push('/login')
+          }
+        }, 1500)
+      }
     } else {
       ElMessage.error('提交失败，请稍后重试')
     }

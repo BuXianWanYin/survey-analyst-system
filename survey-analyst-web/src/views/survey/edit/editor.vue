@@ -4333,6 +4333,146 @@ onMounted(() => {
 .template-cover-preview-wrapper:hover .template-cover-actions {
   opacity: 1;
 }
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .right-board {
+    width: 350px;
+  }
+
+  .left-board {
+    width: 220px;
+  }
+}
+
+@media (max-width: 992px) {
+  .main-container {
+    flex-direction: column;
+  }
+
+  .left-board {
+    width: 100%;
+    height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #ebeef5;
+    overflow-y: auto;
+  }
+
+  .right-board {
+    width: 100%;
+    height: 300px;
+    border-left: none;
+    border-top: 1px solid #ebeef5;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .center-board {
+    margin-bottom: 300px;
+  }
+
+  .center-board-row {
+    max-width: 100%;
+    padding: 15px;
+  }
+
+  .center-scrollbar {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-edit-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .left-board {
+    height: 150px;
+  }
+
+  .right-board {
+    height: 250px;
+  }
+
+  .center-board {
+    margin-bottom: 250px;
+  }
+
+  .center-board-row {
+    padding: 10px;
+  }
+
+  .form-name-text {
+    font-size: 20px;
+  }
+
+  .form-name-input {
+    font-size: 20px;
+  }
+
+  .center-scrollbar {
+    padding: 10px;
+  }
+
+  .components-item {
+    font-size: 12px;
+  }
+
+  .component-label {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .left-board {
+    height: 120px;
+  }
+
+  .right-board {
+    height: 200px;
+  }
+
+  .center-board {
+    margin-bottom: 200px;
+  }
+
+  .form-name-text {
+    font-size: 18px;
+  }
+
+  .form-name-input {
+    font-size: 18px;
+  }
+
+  .center-board-row {
+    padding: 8px;
+  }
+
+  .drawing-item-drag,
+  .drawing-item-copy,
+  .drawing-item-delete {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .drawing-item-drag {
+    right: 70px;
+  }
+
+  .drawing-item-copy {
+    right: 44px;
+  }
+
+  .drawing-item-delete {
+    right: 18px;
+  }
+}
 </style>
 
 

@@ -1,6 +1,6 @@
 <template>
   <div class="survey-management">
-    <h2 class="page-title">问卷管理</h2>
+
 
     <el-card>
       <template #header>
@@ -10,17 +10,17 @@
               v-model="searchKeyword"
               placeholder="搜索问卷标题"
               clearable
-              style="width: 300px"
+              class="search-input"
               @keyup.enter="handleSearch"
             />
-            <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 150px; margin-left: 10px">
+            <el-select v-model="statusFilter" placeholder="状态筛选" clearable class="status-select">
               <el-option label="全部" value="" />
               <el-option label="草稿" value="DRAFT" />
               <el-option label="已发布" value="PUBLISHED" />
               <el-option label="已暂停" value="PAUSED" />
               <el-option label="已结束" value="ENDED" />
             </el-select>
-            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
           </div>
           <div class="view-toggle-item">
             <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
@@ -302,6 +302,25 @@ onMounted(() => {
 .search-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input {
+  width: 300px;
+  min-width: 150px;
+  flex: 1;
+}
+
+.status-select {
+  width: 150px;
+  min-width: 120px;
+}
+
+.search-button {
+  margin-left: 0;
 }
 
 .view-toggle-item {
@@ -399,6 +418,89 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .survey-management {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .status-select {
+    width: 100%;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  .view-toggle-item {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .survey-grid-view {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .survey-card-item {
+    padding: 15px;
+  }
+
+  .survey-card-actions {
+    flex-direction: column;
+  }
+
+  .survey-card-actions .el-button {
+    width: 100%;
+  }
+
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  :deep(.el-table .el-button) {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .survey-management {
+    padding: 10px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .survey-card-item {
+    padding: 12px;
+  }
+
+  :deep(.el-table-column) {
+    min-width: 80px !important;
+  }
 }
 </style>
 

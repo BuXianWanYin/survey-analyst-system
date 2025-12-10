@@ -284,5 +284,66 @@ onMounted(async () => {
   align-items: center;
   height: 100%;
 }
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header {
+    padding: 15px;
+  }
+
+  .survey-preview-content {
+    height: calc(100vh - 80px);
+  }
+
+  .survey-scrollbar {
+    padding: 15px;
+  }
+
+  .preview-wrapper {
+    padding: 15px;
+  }
+
+  .form-preview-card {
+    padding: 20px;
+    
+    .form-title {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    
+    .form-description {
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 10px;
+  }
+
+  .survey-scrollbar {
+    padding: 10px;
+  }
+
+  .preview-wrapper {
+    padding: 10px;
+  }
+
+  .form-preview-card {
+    padding: 15px;
+    
+    .form-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    .form-description {
+      font-size: 12px;
+      margin-bottom: 15px;
+    }
+  }
+}
 </style>
 

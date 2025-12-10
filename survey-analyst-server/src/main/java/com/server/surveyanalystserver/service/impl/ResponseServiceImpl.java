@@ -91,6 +91,82 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             }
         }
         
+        // 检查IP/设备/用户限制（从表单设置中读取）
+        FormSetting formSetting = formSettingService.getBySurveyId(response.getSurveyId());
+        if (formSetting != null && formSetting.getSettings() != null) {
+            Map<String, Object> settings = formSetting.getSettings();
+            
+            // 检查IP限制
+            if (response.getIpAddress() != null && !response.getIpAddress().isEmpty()) {
+                Object ipLimitStatusObj = settings.get("ipWriteCountLimitStatus");
+                boolean ipLimitStatus = false;
+                if (ipLimitStatusObj instanceof Boolean) {
+                    ipLimitStatus = (Boolean) ipLimitStatusObj;
+                } else if (ipLimitStatusObj != null) {
+                    ipLimitStatus = Boolean.parseBoolean(ipLimitStatusObj.toString());
+                }
+                
+                if (ipLimitStatus) {
+                    Object ipLimitObj = settings.get("ipWriteCountLimit");
+                    int ipLimit = 1;
+                    if (ipLimitObj instanceof Number) {
+                        ipLimit = ((Number) ipLimitObj).intValue();
+                    } else if (ipLimitObj != null) {
+                        try {
+                            ipLimit = Integer.parseInt(ipLimitObj.toString());
+                        } catch (NumberFormatException e) {
+                            ipLimit = 1;
+                        }
+                    }
+                    
+                    LambdaQueryWrapper<Response> ipWrapper = new LambdaQueryWrapper<>();
+                    ipWrapper.eq(Response::getSurveyId, response.getSurveyId())
+                             .eq(Response::getIpAddress, response.getIpAddress())
+                             .eq(Response::getStatus, "COMPLETED");
+                    long ipCount = this.count(ipWrapper);
+                    
+                    if (ipCount >= ipLimit) {
+                        throw new RuntimeException("该IP地址已达到答题次数限制（" + ipLimit + "次），无法继续提交");
+                    }
+                }
+            }
+            
+            // 检查用户限制
+            if (response.getUserId() != null) {
+                Object userLimitStatusObj = settings.get("accountWriteCountLimitStatus");
+                boolean userLimitStatus = false;
+                if (userLimitStatusObj instanceof Boolean) {
+                    userLimitStatus = (Boolean) userLimitStatusObj;
+                } else if (userLimitStatusObj != null) {
+                    userLimitStatus = Boolean.parseBoolean(userLimitStatusObj.toString());
+                }
+                
+                if (userLimitStatus) {
+                    Object userLimitObj = settings.get("accountWriteCountLimit");
+                    int userLimit = 1;
+                    if (userLimitObj instanceof Number) {
+                        userLimit = ((Number) userLimitObj).intValue();
+                    } else if (userLimitObj != null) {
+                        try {
+                            userLimit = Integer.parseInt(userLimitObj.toString());
+                        } catch (NumberFormatException e) {
+                            userLimit = 1;
+                        }
+                    }
+                    
+                    LambdaQueryWrapper<Response> userWrapper = new LambdaQueryWrapper<>();
+                    userWrapper.eq(Response::getSurveyId, response.getSurveyId())
+                               .eq(Response::getUserId, response.getUserId())
+                               .eq(Response::getStatus, "COMPLETED");
+                    long userCount = this.count(userWrapper);
+                    
+                    if (userCount >= userLimit) {
+                        throw new RuntimeException("该用户已达到答题次数限制（" + userLimit + "次），无法继续提交");
+                    }
+                }
+            }
+        }
+        
         response.setStatus("COMPLETED");
         response.setSubmitTime(LocalDateTime.now());
         if (response.getStartTime() != null) {
@@ -124,7 +200,13 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
                 }
                 
                 if (!originalData.isEmpty()) {
-                    formDataService.saveFormData(formConfig.getFormKey(), originalData);
+                    // 获取IP地址（从response中获取）
+                    String ipAddress = response.getIpAddress();
+                    // 设备ID暂时为空，后续可以从request中获取
+                    String deviceId = null;
+                    // 用户ID从response中获取
+                    Long userId = response.getUserId();
+                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId);
                 }
             }
         } catch (Exception e) {
@@ -134,7 +216,10 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         
         // 发送邮件通知
         try {
-            FormSetting formSetting = formSettingService.getBySurveyId(response.getSurveyId());
+            // 复用之前获取的formSetting，如果为null则重新获取
+            if (formSetting == null) {
+                formSetting = formSettingService.getBySurveyId(response.getSurveyId());
+            }
             if (formSetting != null && formSetting.getSettings() != null) {
                 Object emailNotifyObj = formSetting.getSettings().get("emailNotify");
                 Object emailListObj = formSetting.getSettings().get("newWriteNotifyEmail");
