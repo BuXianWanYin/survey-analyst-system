@@ -134,23 +134,23 @@
     <!-- 表格视图 -->
     <div v-else class="table-container">
       <el-table v-loading="loading" :data="templateList" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="模板名称" width="200" />
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="categoryId" label="分类" width="120">
+        <el-table-column prop="id" label="ID" min-width="80" />
+        <el-table-column prop="name" label="模板名称" min-width="150" />
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="categoryId" label="分类" min-width="120">
           <template #default="{ row }">
             {{ getCategoryName(row.categoryId) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column prop="createTime" label="创建时间" min-width="180" />
+        <el-table-column label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>

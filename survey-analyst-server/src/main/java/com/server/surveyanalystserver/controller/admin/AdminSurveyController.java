@@ -108,14 +108,12 @@ public class AdminSurveyController {
         long totalSurveys = surveyService.count();
         long draftSurveys = surveyService.count(new LambdaQueryWrapper<Survey>().eq(Survey::getStatus, "DRAFT"));
         long publishedSurveys = surveyService.count(new LambdaQueryWrapper<Survey>().eq(Survey::getStatus, "PUBLISHED"));
-        long pausedSurveys = surveyService.count(new LambdaQueryWrapper<Survey>().eq(Survey::getStatus, "PAUSED"));
         long endedSurveys = surveyService.count(new LambdaQueryWrapper<Survey>().eq(Survey::getStatus, "ENDED"));
         
         java.util.Map<String, Object> statistics = new java.util.HashMap<>();
         statistics.put("totalSurveys", totalSurveys);
         statistics.put("draftSurveys", draftSurveys);
         statistics.put("publishedSurveys", publishedSurveys);
-        statistics.put("pausedSurveys", pausedSurveys);
         statistics.put("endedSurveys", endedSurveys);
         
         return Result.success("获取成功", statistics);

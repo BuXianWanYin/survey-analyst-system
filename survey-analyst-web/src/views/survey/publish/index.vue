@@ -90,21 +90,39 @@
           </div>
         </el-tab-pane>
 
-        <!-- 社交媒体分享 -->
-        <el-tab-pane label="社交媒体分享" name="share">
+        <!-- 快速分享 -->
+        <el-tab-pane label="快速分享" name="share">
           <div class="tool-section">
+            <div class="share-tips">
+              <el-alert
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #title>
+                  <span>推荐使用二维码或复制链接分享，兼容性最好，无限制</span>
+                </template>
+              </el-alert>
+            </div>
+            
             <div class="share-buttons">
-              <el-button @click="handleShare('wechat')">
-                <el-icon><Share /></el-icon>
-                微信分享
+              <!-- 浏览器原生分享（推荐） -->
+              <el-button 
+                v-if="isWebShareSupported" 
+                type="primary" 
+                @click="handleWebShare"
+              >
+                系统分享（推荐）
               </el-button>
-              <el-button @click="handleShare('weibo')">
-                <el-icon><Share /></el-icon>
-                微博分享
+              
+              <!-- 邮件分享 -->
+              <el-button @click="handleEmailShare">
+                邮件分享
               </el-button>
-              <el-button @click="handleShare('qq')">
-                <el-icon><Share /></el-icon>
-                QQ分享
+              
+              <!-- 二维码分享 -->
+              <el-button @click="handleQRCodeShare">
+                二维码分享
               </el-button>
             </div>
           </div>
@@ -115,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Share } from '@element-plus/icons-vue'
@@ -138,6 +156,11 @@ const surveyLink = ref('')
 const qrCodeBase64 = ref('')
 const loadingQRCode = ref(false)
 const publishing = ref(false)
+
+// 检查是否支持Web Share API
+const isWebShareSupported = computed(() => {
+  return navigator.share !== undefined
+})
 
 const loadSurveyData = async () => {
   const surveyId = route.query.id
@@ -231,19 +254,48 @@ const handleDownloadQRCode = () => {
   link.click()
 }
 
-const handleShare = async (platform) => {
+// 浏览器原生分享（推荐）
+const handleWebShare = async () => {
+  if (!isWebShareSupported.value) {
+    ElMessage.warning('您的浏览器不支持系统分享功能')
+    return
+  }
+  
   try {
-    const res = await surveyPublishApi.getShareLinks(route.query.id)
-    if (res.code === 200) {
-      const shareUrl = res.data[platform]
-      if (shareUrl) {
-        window.open(shareUrl, '_blank')
-      } else {
-        ElMessage.warning('该平台分享链接暂不可用')
-      }
+    const shareData = {
+      title: survey.value.title || '问卷分享',
+      text: `邀请您填写问卷：${survey.value.title || '问卷'}`,
+      url: surveyLink.value
     }
+    
+    await navigator.share(shareData)
+    ElMessage.success('分享成功')
   } catch (error) {
-    ElMessage.error('获取分享链接失败')
+    // 用户取消分享或其他错误
+    if (error.name !== 'AbortError') {
+      ElMessage.warning('分享失败，请使用其他方式')
+    }
+  }
+}
+
+// 邮件分享
+const handleEmailShare = () => {
+  const subject = encodeURIComponent(`邀请填写问卷：${survey.value.title || '问卷'}`)
+  const body = encodeURIComponent(`您好，\n\n邀请您填写以下问卷：\n\n${survey.value.title || '问卷'}\n\n问卷链接：${surveyLink.value}\n\n感谢您的参与！`)
+  const mailtoLink = `mailto:?subject=${subject}&body=${body}`
+  window.location.href = mailtoLink
+}
+
+// 二维码分享
+const handleQRCodeShare = async () => {
+  if (!qrCodeBase64.value) {
+    await loadQRCode()
+  }
+  if (qrCodeBase64.value) {
+    activeTab.value = 'qrcode'
+    ElMessage.info('请扫描二维码或下载二维码图片进行分享')
+  } else {
+    ElMessage.error('生成二维码失败，请稍后重试')
   }
 }
 
@@ -289,6 +341,10 @@ onMounted(() => {
 .qrcode-actions {
   display: flex;
   gap: 10px;
+}
+
+.share-tips {
+  margin-bottom: 20px;
 }
 
 .share-buttons {

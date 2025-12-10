@@ -7,6 +7,7 @@ import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.service.ResponseService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,22 +23,20 @@ public class AdminDataController {
     @Autowired
     private ResponseService responseService;
 
-    @ApiOperation(value = "分页查询填写记录", notes = "管理员分页查询所有填写记录")
+    @ApiOperation(value = "分页查询填写记录", notes = "管理员分页查询所有填写记录（包含问卷名称、发布用户名称、填写用户名称）")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/response/list")
-    public Result<Page<Response>> getResponseList(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) Long surveyId) {
-        Page<Response> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
-        
-        if (surveyId != null) {
-            wrapper.eq(Response::getSurveyId, surveyId);
-        }
-        
-        wrapper.orderByDesc(Response::getCreateTime);
-        Page<Response> result = responseService.page(page, wrapper);
+    public Result<Page<com.server.surveyanalystserver.entity.dto.ResponseVO>> getResponseList(
+            @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
+            @ApiParam(value = "每页数量", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize,
+            @ApiParam(value = "问卷ID（可选）") @RequestParam(required = false) Long surveyId,
+            @ApiParam(value = "问卷名称（可选，模糊查询）") @RequestParam(required = false) String surveyTitle,
+            @ApiParam(value = "发布用户名称（可选，模糊查询）") @RequestParam(required = false) String publisherName,
+            @ApiParam(value = "填写用户名称（可选，模糊查询）") @RequestParam(required = false) String userName) {
+        Page<com.server.surveyanalystserver.entity.dto.ResponseVO> page = 
+            new Page<>(pageNum, pageSize);
+        Page<com.server.surveyanalystserver.entity.dto.ResponseVO> result = 
+            responseService.getResponseListWithDetails(page, surveyId, surveyTitle, publisherName, userName);
         return Result.success("查询成功", result);
     }
 

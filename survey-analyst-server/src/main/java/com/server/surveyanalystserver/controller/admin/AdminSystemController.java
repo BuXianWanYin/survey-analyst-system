@@ -3,7 +3,6 @@ package com.server.surveyanalystserver.controller.admin;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
-import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
@@ -72,11 +71,42 @@ public class AdminSystemController {
             @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
             @ApiParam(value = "每页数量", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize,
             @ApiParam(value = "用户ID（可选）") @RequestParam(required = false) Long userId,
-            @ApiParam(value = "操作类型（可选）") @RequestParam(required = false) String operationType) {
+            @ApiParam(value = "操作类型（可选）") @RequestParam(required = false) String operationType,
+            @ApiParam(value = "开始时间（可选，格式：yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss）") @RequestParam(required = false) String startTime,
+            @ApiParam(value = "结束时间（可选，格式：yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss）") @RequestParam(required = false) String endTime) {
         Page<com.server.surveyanalystserver.entity.dto.OperationLogVO> page = 
             new Page<>(pageNum, pageSize);
+        
+        // 解析时间参数
+        java.time.LocalDateTime startDateTime = null;
+        java.time.LocalDateTime endDateTime = null;
+        try {
+            if (startTime != null && !startTime.isEmpty()) {
+                if (startTime.length() == 10) {
+                    // 只有日期，设置为当天的00:00:00
+                    startDateTime = java.time.LocalDate.parse(startTime, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        .atStartOfDay();
+                } else {
+                    startDateTime = java.time.LocalDateTime.parse(startTime, 
+                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                }
+            }
+            if (endTime != null && !endTime.isEmpty()) {
+                if (endTime.length() == 10) {
+                    // 只有日期，设置为当天的23:59:59
+                    endDateTime = java.time.LocalDate.parse(endTime, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        .atTime(23, 59, 59);
+                } else {
+                    endDateTime = java.time.LocalDateTime.parse(endTime, 
+                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                }
+            }
+        } catch (Exception e) {
+            return Result.error("时间格式错误，请使用 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss 格式");
+        }
+        
         Page<com.server.surveyanalystserver.entity.dto.OperationLogVO> result = 
-            operationLogService.getLogPageWithUsername(page, userId, operationType);
+            operationLogService.getLogPageWithUsername(page, userId, operationType, startDateTime, endDateTime);
         return Result.success("查询成功", result);
     }
 }

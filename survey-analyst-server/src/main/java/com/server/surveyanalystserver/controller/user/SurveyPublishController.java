@@ -45,7 +45,7 @@ public class SurveyPublishController {
         return Result.success("获取成功", embedCode);
     }
 
-    @ApiOperation(value = "获取社交媒体分享链接", notes = "获取微信、微博、QQ等分享链接")
+    @ApiOperation(value = "获取分享链接", notes = "获取问卷分享链接")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/{id}/share-links")
     public Result<Map<String, String>> getShareLinks(@PathVariable Long id) {

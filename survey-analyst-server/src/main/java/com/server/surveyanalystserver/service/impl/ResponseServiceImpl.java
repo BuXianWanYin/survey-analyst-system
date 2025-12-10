@@ -8,8 +8,11 @@ import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.entity.Survey;
+import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.entity.dto.ResponseVO;
 import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
+import com.server.surveyanalystserver.mapper.user.UserMapper;
 import com.server.surveyanalystserver.service.EmailService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
@@ -54,6 +57,9 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response submitResponse(Response response, Map<Long, Object> answers) {
@@ -65,7 +71,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         
         // 检查问卷状态
         if (!"PUBLISHED".equals(survey.getStatus())) {
-            throw new RuntimeException("问卷未发布或已暂停，无法提交");
+            throw new RuntimeException("问卷未发布，无法提交");
         }
         
         // 检查时间限制
@@ -187,6 +193,99 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         wrapper.eq(Response::getSurveyId, surveyId);
         wrapper.eq(Response::getStatus, "COMPLETED");
         return this.count(wrapper);
+    }
+
+    @Override
+    public Page<ResponseVO> getResponseListWithDetails(Page<ResponseVO> page, Long surveyId, 
+            String surveyTitle, String publisherName, String userName) {
+        // 判断是否有需要在内存中筛选的条件
+        boolean needMemoryFilter = (surveyTitle != null && !surveyTitle.isEmpty()) 
+            || (publisherName != null && !publisherName.isEmpty())
+            || (userName != null && !userName.isEmpty());
+        
+        // 如果需要在内存中筛选，查询更多数据（最多1000条）
+        int querySize = needMemoryFilter ? 1000 : (int) page.getSize();
+        long queryPage = needMemoryFilter ? 1 : page.getCurrent();
+        
+        // 先查询Response
+        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
+        
+        if (surveyId != null) {
+            wrapper.eq(Response::getSurveyId, surveyId);
+        }
+        
+        wrapper.orderByDesc(Response::getCreateTime);
+        Page<Response> responsePage = new Page<>(queryPage, querySize);
+        Page<Response> result = this.page(responsePage, wrapper);
+        
+        // 转换为VO并填充关联信息
+        List<ResponseVO> voList = result.getRecords().stream().map(response -> {
+            ResponseVO vo = new ResponseVO();
+            vo.setId(response.getId());
+            vo.setSurveyId(response.getSurveyId());
+            vo.setUserId(response.getUserId());
+            vo.setIpAddress(response.getIpAddress());
+            vo.setDeviceType(response.getDeviceType());
+            vo.setStartTime(response.getStartTime());
+            vo.setSubmitTime(response.getSubmitTime());
+            vo.setDuration(response.getDuration());
+            vo.setStatus(response.getStatus());
+            vo.setCreateTime(response.getCreateTime());
+            
+            // 查询问卷信息
+            if (response.getSurveyId() != null) {
+                Survey survey = surveyService.getById(response.getSurveyId());
+                if (survey != null) {
+                    vo.setSurveyTitle(survey.getTitle());
+                    vo.setPublisherId(survey.getUserId());
+                    
+                    // 查询发布用户信息
+                    if (survey.getUserId() != null) {
+                        User publisher = userMapper.selectById(survey.getUserId());
+                        if (publisher != null) {
+                            vo.setPublisherName(publisher.getUsername());
+                        }
+                    }
+                }
+            }
+            
+            // 查询填写用户信息
+            if (response.getUserId() != null) {
+                User user = userMapper.selectById(response.getUserId());
+                if (user != null) {
+                    vo.setUserName(user.getUsername());
+                }
+            }
+            
+            return vo;
+        }).collect(java.util.stream.Collectors.toList());
+        
+        // 应用筛选条件（问卷名称、发布用户名称、填写用户名称）
+        if (surveyTitle != null && !surveyTitle.isEmpty()) {
+            voList = voList.stream()
+                .filter(vo -> vo.getSurveyTitle() != null && vo.getSurveyTitle().contains(surveyTitle))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        if (publisherName != null && !publisherName.isEmpty()) {
+            voList = voList.stream()
+                .filter(vo -> vo.getPublisherName() != null && vo.getPublisherName().contains(publisherName))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        if (userName != null && !userName.isEmpty()) {
+            voList = voList.stream()
+                .filter(vo -> vo.getUserName() != null && vo.getUserName().contains(userName))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
+        // 手动分页
+        int total = voList.size();
+        int start = (int) ((page.getCurrent() - 1) * page.getSize());
+        int end = Math.min(start + (int) page.getSize(), total);
+        List<ResponseVO> pagedList = start < total ? voList.subList(start, end) : new java.util.ArrayList<>();
+        
+        Page<ResponseVO> voPage = new Page<>(page.getCurrent(), page.getSize(), total);
+        voPage.setRecords(pagedList);
+        return voPage;
     }
 
     /**

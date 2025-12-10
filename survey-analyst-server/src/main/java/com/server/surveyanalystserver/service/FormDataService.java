@@ -12,8 +12,14 @@ import java.util.Map;
 public interface FormDataService extends IService<FormData> {
     /**
      * 保存表单数据
+     * @param formKey 表单key
+     * @param originalData 原始数据
+     * @param ipAddress IP地址
+     * @param deviceId 设备ID
+     * @param userId 用户ID
+     * @return 保存的表单数据
      */
-    FormData saveFormData(String formKey, Map<String, Object> originalData);
+    FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId);
     
     /**
      * 分页查询表单数据

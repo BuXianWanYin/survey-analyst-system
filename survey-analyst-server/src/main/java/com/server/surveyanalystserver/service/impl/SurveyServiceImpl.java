@@ -95,12 +95,12 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean stopPublishSurvey(Long id) {
+    public boolean unpublishSurvey(Long id) {
         Survey survey = this.getById(id);
         if (survey == null) {
             throw new RuntimeException("问卷不存在");
         }
-        survey.setStatus("PAUSED");
+        survey.setStatus("DRAFT");
         return this.updateById(survey);
     }
 

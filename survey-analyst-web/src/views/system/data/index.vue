@@ -18,29 +18,29 @@
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="responseList" border>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="surveyId" label="问卷ID" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
+      <el-table v-loading="loading" :data="responseList" border style="width: 100%">
+        <el-table-column prop="id" label="ID" min-width="80" />
+        <el-table-column prop="surveyId" label="问卷ID" min-width="100" />
+        <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 'COMPLETED' ? 'success' : 'info'">
               {{ row.status === 'COMPLETED' ? '已完成' : '草稿' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceType" label="设备类型" width="100">
+        <el-table-column prop="deviceType" label="设备类型" min-width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.deviceType || '未知' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="duration" label="填写时长" width="100">
+        <el-table-column prop="duration" label="填写时长" min-width="100">
           <template #default="{ row }">
             {{ row.duration ? row.duration + '秒' : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="submitTime" label="提交时间" width="180" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="submitTime" label="提交时间" min-width="180" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180" />
+        <el-table-column label="操作" min-width="150" fixed="right">
           <template #default="{ row }">
             <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>

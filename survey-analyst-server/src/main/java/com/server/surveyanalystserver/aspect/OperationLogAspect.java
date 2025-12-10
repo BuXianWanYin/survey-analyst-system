@@ -54,6 +54,11 @@ public class OperationLogAspect {
             if (requestUrl.contains("/admin/system/logs") || requestUrl.contains("/admin/system/overview")) {
                 return;
             }
+            
+            // 跳过登录接口，因为登录接口已经在AuthController中手动记录了日志
+            if (requestUrl.contains("/auth/login")) {
+                return;
+            }
 
             // 获取当前用户
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

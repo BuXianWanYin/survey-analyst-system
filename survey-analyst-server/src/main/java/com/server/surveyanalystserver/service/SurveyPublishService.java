@@ -29,9 +29,9 @@ public interface SurveyPublishService {
     String generateEmbedCode(Long surveyId);
 
     /**
-     * 获取社交媒体分享链接
+     * 获取分享链接
      * @param surveyId 问卷ID
-     * @return 分享链接Map（微信、微博、QQ等）
+     * @return 分享链接Map（包含link等）
      */
     Map<String, String> getShareLinks(Long surveyId);
 }

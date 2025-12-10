@@ -1,50 +1,57 @@
 <template>
   <div class="survey-list-container">
-    <div class="toolbar">
-      <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey">
-        创建问卷
-      </el-button>
-      <div class="search-section">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="请输入问卷标题"
-          clearable
-          style="width: 300px"
-          @keyup.enter="handleSearch"
-        />
-        <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
-      </div>
-    </div>
+    <el-row :gutter="20" class="toolbar">
+      <el-col :xs="24" :sm="24" :md="12" :lg="8" :xl="6">
+        <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey" style="width: 100%">
+          创建问卷
+        </el-button>
+      </el-col>
+      <el-col :xs="24" :sm="24" :md="12" :lg="16" :xl="18">
+        <div class="search-section">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入问卷标题"
+            clearable
+            class="search-input"
+            @keyup.enter="handleSearch"
+          />
+          <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
+        </div>
+      </el-col>
+    </el-row>
 
-    <div class="status-filter">
-      <div class="filter-left">
-        <el-radio-group v-model="statusFilter" @change="handleStatusChange">
-          <el-radio-button label="all">全部</el-radio-button>
-          <el-radio-button label="DRAFT">草稿</el-radio-button>
-          <el-radio-button label="PUBLISHED">已发布</el-radio-button>
-          <el-radio-button label="PAUSED">已暂停</el-radio-button>
-          <el-radio-button label="ENDED">已结束</el-radio-button>
-        </el-radio-group>
-      </div>
-      <div class="view-toggle">
-        <el-button-group>
-          <el-button
-            :type="viewMode === 'grid' ? 'primary' : 'default'"
-            size="small"
-            @click="viewMode = 'grid'"
-          >
-            <el-icon><Grid /></el-icon>
-          </el-button>
-          <el-button
-            :type="viewMode === 'table' ? 'primary' : 'default'"
-            size="small"
-            @click="viewMode = 'table'"
-          >
-            <el-icon><List /></el-icon>
-          </el-button>
-        </el-button-group>
-      </div>
-    </div>
+    <el-row :gutter="20" class="status-filter">
+      <el-col :xs="24" :sm="24" :md="18" :lg="20" :xl="20">
+        <div class="filter-left">
+          <el-radio-group v-model="statusFilter" @change="handleStatusChange" size="small">
+            <el-radio-button label="all">全部</el-radio-button>
+            <el-radio-button label="DRAFT">草稿</el-radio-button>
+            <el-radio-button label="PUBLISHED">已发布</el-radio-button>
+            <el-radio-button label="ENDED">已结束</el-radio-button>
+          </el-radio-group>
+        </div>
+      </el-col>
+      <el-col :xs="24" :sm="24" :md="6" :lg="4" :xl="4">
+        <div class="view-toggle">
+          <el-button-group>
+            <el-button
+              :type="viewMode === 'grid' ? 'primary' : 'default'"
+              size="small"
+              @click="viewMode = 'grid'"
+            >
+              <el-icon><Grid /></el-icon>
+            </el-button>
+            <el-button
+              :type="viewMode === 'table' ? 'primary' : 'default'"
+              size="small"
+              @click="viewMode = 'table'"
+            >
+              <el-icon><List /></el-icon>
+            </el-button>
+          </el-button-group>
+        </div>
+      </el-col>
+    </el-row>
 
     <!-- 卡片视图 -->
     <div v-if="viewMode === 'grid'" v-loading="loading" class="survey-grid">
@@ -69,9 +76,7 @@
                 circle
                 class="share-button"
                 @click.stop
-              >
-                <el-icon><Share /></el-icon>
-              </el-button>
+              />
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item :command="{ action: 'copyLink', id: survey.id }">
@@ -79,20 +84,8 @@
                     <span style="margin-left: 8px">复制链接</span>
                   </el-dropdown-item>
                   <el-dropdown-item :command="{ action: 'copyQRCode', id: survey.id }">
-                    <el-icon><QrCode /></el-icon>
+                    <img src="/icons/qrcode.svg" class="share-icon" alt="二维码" />
                     <span style="margin-left: 8px">复制二维码</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item divided :command="{ action: 'wechat', id: survey.id }">
-                    <img src="/icons/wechat.svg" class="share-icon" alt="微信" />
-                    <span style="margin-left: 8px">微信分享</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="{ action: 'weibo', id: survey.id }">
-                    <img src="/icons/weibo.svg" class="share-icon" alt="微博" />
-                    <span style="margin-left: 8px">微博分享</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="{ action: 'qq', id: survey.id }">
-                    <img src="/icons/qq.svg" class="share-icon" alt="QQ" />
-                    <span style="margin-left: 8px">QQ分享</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -111,7 +104,24 @@
         </div>
         <div class="card-footer">
           <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(survey.id)">编辑</el-button>
-          <el-button :icon="Promotion" type="success" size="small" @click.stop="handlePublish(survey.id)">发布</el-button>
+          <el-button 
+            v-if="survey.status === 'PUBLISHED'" 
+            :icon="Promotion" 
+            type="warning" 
+            size="small" 
+            @click.stop="handleUnpublish(survey.id)"
+          >
+            停止发布
+          </el-button>
+          <el-button 
+            v-else 
+            :icon="Promotion" 
+            type="success" 
+            size="small" 
+            @click.stop="handlePublish(survey.id)"
+          >
+            发布
+          </el-button>
           <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(survey.id)">统计</el-button>
           <el-button :icon="Delete" type="danger" size="small" @click.stop="handleDelete(survey.id)">删除</el-button>
         </div>
@@ -142,7 +152,24 @@
         <el-table-column label="操作" width="350" align="center" fixed="right">
           <template #default="{ row }">
             <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(row.id)">编辑</el-button>
-            <el-button :icon="Promotion" type="success" size="small" @click.stop="handlePublish(row.id)">发布</el-button>
+            <el-button 
+              v-if="row.status === 'PUBLISHED'" 
+              :icon="Promotion" 
+              type="warning" 
+              size="small" 
+              @click.stop="handleUnpublish(row.id)"
+            >
+              停止发布
+            </el-button>
+            <el-button 
+              v-else 
+              :icon="Promotion" 
+              type="success" 
+              size="small" 
+              @click.stop="handlePublish(row.id)"
+            >
+              发布
+            </el-button>
             <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(row.id)">统计</el-button>
             <el-dropdown
               v-if="row.status === 'PUBLISHED'"
@@ -151,7 +178,6 @@
               @command="handleShareCommand"
             >
               <el-button :icon="Share" type="info" size="small" @click.stop>
-                <el-icon><Share /></el-icon>
                 分享
               </el-button>
               <template #dropdown>
@@ -161,20 +187,8 @@
                     <span style="margin-left: 8px">复制链接</span>
                   </el-dropdown-item>
                   <el-dropdown-item :command="{ action: 'copyQRCode', id: row.id }">
-                    <el-icon><QrCode /></el-icon>
+                    <img src="/icons/qrcode.svg" class="share-icon" alt="二维码" />
                     <span style="margin-left: 8px">复制二维码</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item divided :command="{ action: 'wechat', id: row.id }">
-                    <img src="/icons/wechat.svg" class="share-icon" alt="微信" />
-                    <span style="margin-left: 8px">微信分享</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="{ action: 'weibo', id: row.id }">
-                    <img src="/icons/weibo.svg" class="share-icon" alt="微博" />
-                    <span style="margin-left: 8px">微博分享</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="{ action: 'qq', id: row.id }">
-                    <img src="/icons/qq.svg" class="share-icon" alt="QQ" />
-                    <span style="margin-left: 8px">QQ分享</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -191,7 +205,7 @@
     <el-dialog
       v-model="showQRCodeDialog"
       title="问卷二维码"
-      width="400px"
+      :width="qrCodeDialogWidth"
       align-center
     >
       <div v-if="currentQRCode" class="qrcode-dialog-content">
@@ -211,7 +225,7 @@
     <el-dialog
       v-model="showCreateDialog"
       title="创建问卷"
-      width="500px"
+      :width="dialogWidth"
       :close-on-click-modal="false"
     >
       <el-form :model="createForm" label-width="80px">
@@ -255,14 +269,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, QrCode, Loading } from '@element-plus/icons-vue'
+import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, Loading } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi } from '@/api'
 import dayjs from 'dayjs'
+import { useWindowSize } from '@vueuse/core'
 
 const router = useRouter()
+const { width } = useWindowSize()
+
+const dialogWidth = computed(() => {
+  if (width.value < 768) {
+    return '90%'
+  } else if (width.value < 992) {
+    return '80%'
+  } else {
+    return '500px'
+  }
+})
+
+const qrCodeDialogWidth = computed(() => {
+  if (width.value < 768) {
+    return '90%'
+  } else {
+    return '400px'
+  }
+})
 
 const loading = ref(false)
 const surveyList = ref([])
@@ -371,7 +405,27 @@ const handleEdit = (id) => {
 }
 
 const handlePublish = (id) => {
-  router.push(`/survey/publish?id=${id}`)
+  router.push(`/survey/edit/publish?id=${id}`)
+}
+
+const handleUnpublish = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定要停止发布该问卷吗？停止后将变为草稿状态。', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await surveyApi.unpublishSurvey(id)
+    if (res.code === 200) {
+      ElMessage.success('已停止发布')
+      await loadSurveyList()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
+  }
 }
 
 const handleStatistics = (id) => {
@@ -401,8 +455,7 @@ const handleDelete = async (id) => {
 const getStatusText = (status) => {
   const statusMap = {
     DRAFT: '草稿',
-    PUBLISHED: '已发布',
-    PAUSED: '已暂停',
+    PUBLISHED: '收集中',
     ENDED: '已结束'
   }
   return statusMap[status] || '未知'
@@ -412,7 +465,6 @@ const getStatusClass = (status) => {
   const classMap = {
     DRAFT: 'status-draft',
     PUBLISHED: 'status-published',
-    PAUSED: 'status-paused',
     ENDED: 'status-ended'
   }
   return classMap[status] || ''
@@ -447,20 +499,6 @@ const handleShareCommand = async ({ action, id }) => {
         } else {
           ElMessage.error('生成二维码失败')
           showQRCodeDialog.value = false
-        }
-        break
-      }
-      case 'wechat':
-      case 'weibo':
-      case 'qq': {
-        const res = await surveyPublishApi.getShareLinks(id)
-        if (res.code === 200) {
-          const shareUrl = res.data[action]
-          if (shareUrl) {
-            window.open(shareUrl, '_blank')
-          } else {
-            ElMessage.warning('该平台分享链接暂不可用')
-          }
         }
         break
       }
@@ -514,37 +552,63 @@ onMounted(() => {
 }
 
 .toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
 
 .search-section {
   display: flex;
   gap: 10px;
+  width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .search-section {
+    flex-direction: column;
+  }
+  
+  .search-section .el-button {
+    width: 100%;
+  }
 }
 
 .status-filter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
 
 .filter-left {
-  flex: 1;
+  width: 100%;
+  overflow-x: auto;
 }
 
 .view-toggle {
-  margin-left: 20px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+@media (min-width: 768px) {
+  .view-toggle {
+    margin-top: 0;
+  }
 }
 
 .survey-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .survey-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 }
 
 .survey-card {
@@ -579,6 +643,7 @@ onMounted(() => {
   vertical-align: middle;
   display: inline-block;
   margin-right: 0;
+  object-fit: contain;
 }
 
 .card-body {
@@ -663,8 +728,10 @@ onMounted(() => {
 }
 
 .qrcode-dialog-image {
-  width: 300px;
-  height: 300px;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  aspect-ratio: 1;
   border: 1px solid #ebeef5;
   border-radius: 4px;
 }
@@ -681,4 +748,5 @@ onMounted(() => {
   padding: 40px;
 }
 </style>
+
 

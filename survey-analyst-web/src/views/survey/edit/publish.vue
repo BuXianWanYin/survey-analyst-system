@@ -5,8 +5,14 @@
       <template #header>
         <div class="card-header">
           <span>发布设置</span>
-          <el-button :icon="Promotion" type="primary" @click="handlePublish" :loading="publishing">
-            {{ survey.status === 'PUBLISHED' ? '已发布' : '发布问卷' }}
+          <el-button 
+            v-if="survey.status !== 'PUBLISHED'"
+            :icon="Promotion" 
+            type="primary" 
+            @click="handlePublish" 
+            :loading="publishing"
+          >
+            发布问卷
           </el-button>
         </div>
       </template>
@@ -112,57 +118,39 @@
       </el-form>
     </el-card>
 
-    <!-- 卡片3：多渠道发布工具 -->
-    <el-card class="publish-tools-card">
+    <!-- 卡片3：发布成功后的分享信息 -->
+    <el-card v-if="survey.status === 'PUBLISHED'" class="publish-success-card">
       <template #header>
-        <span>多渠道发布工具</span>
+        <span>分享问卷</span>
       </template>
 
-      <el-tabs v-model="activeTab">
-        <!-- 问卷链接 -->
-        <el-tab-pane label="问卷链接" name="link">
-          <div class="tool-section">
+      <div class="publish-success-content">
+        <!-- 二维码 -->
+        <div class="qrcode-section">
+          <div v-if="qrCodeBase64" class="qrcode-container">
+            <img :src="qrCodeBase64" alt="二维码" class="qrcode-image" />
+            <el-button :icon="Download" type="primary" @click="handleDownloadQRCode" style="margin-top: 15px">
+              下载二维码
+            </el-button>
+          </div>
+          <el-button v-else type="primary" @click="loadQRCode" :loading="loadingQRCode">
+            生成二维码
+          </el-button>
+        </div>
+
+        <!-- 链接 -->
+        <div class="link-section">
+          <div class="link-label">问卷链接</div>
+          <div class="link-input-group">
             <el-input
               v-model="surveyLink"
               readonly
-              style="width: 70%"
+              class="link-input"
             />
             <el-button :icon="Link" type="primary" @click="handleCopyLink">复制链接</el-button>
           </div>
-        </el-tab-pane>
-
-        <!-- 二维码 -->
-        <el-tab-pane label="二维码" name="qrcode">
-          <div class="tool-section">
-            <div v-if="qrCodeBase64" class="qrcode-container">
-              <img :src="qrCodeBase64" alt="二维码" class="qrcode-image" />
-              <div class="qrcode-actions">
-                <el-button :icon="Download" type="primary" @click="handleDownloadQRCode">下载二维码</el-button>
-              </div>
-            </div>
-            <el-button v-else type="primary" @click="loadQRCode" :loading="loadingQRCode">
-              生成二维码
-            </el-button>
-          </div>
-        </el-tab-pane>
-
-        <!-- 社交媒体分享 -->
-        <el-tab-pane label="社交媒体分享" name="share">
-          <div class="tool-section">
-            <div class="share-buttons">
-              <el-button :icon="Share" @click="handleShare('wechat')">
-                微信分享
-              </el-button>
-              <el-button :icon="Share" @click="handleShare('weibo')">
-                微博分享
-              </el-button>
-              <el-button :icon="Share" @click="handleShare('qq')">
-                QQ分享
-              </el-button>
-            </div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+        </div>
+      </div>
     </el-card>
   </div>
 </template>
@@ -338,6 +326,8 @@ const handlePublish = async () => {
         ElMessage.success('发布成功')
         survey.value.status = 'PUBLISHED'
         await loadSurveyData()
+        // 发布成功后自动加载二维码
+        await loadQRCode()
       }
     }
   } catch (error) {
@@ -365,41 +355,6 @@ const handleDownloadQRCode = () => {
   link.click()
 }
 
-const handleShare = async (platform) => {
-  try {
-    const res = await surveyPublishApi.getShareLinks(route.query.id)
-    if (res.code === 200) {
-      const shareUrl = res.data[platform]
-      if (shareUrl) {
-        window.open(shareUrl, '_blank')
-      } else {
-        // 如果接口不存在，使用默认分享链接
-        const shareUrls = {
-          wechat: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(surveyLink.value)}`,
-          weibo: `https://service.weibo.com/share/share.php?url=${encodeURIComponent(surveyLink.value)}`,
-          qq: `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(surveyLink.value)}`
-        }
-        if (shareUrls[platform]) {
-          window.open(shareUrls[platform], '_blank')
-        } else {
-          ElMessage.warning('该平台分享链接暂不可用')
-        }
-      }
-    }
-  } catch (error) {
-    // 如果接口不存在，使用默认分享链接
-    const shareUrls = {
-      wechat: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(surveyLink.value)}`,
-      weibo: `https://service.weibo.com/share/share.php?url=${encodeURIComponent(surveyLink.value)}`,
-      qq: `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(surveyLink.value)}`
-    }
-    if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank')
-    } else {
-      ElMessage.error('获取分享链接失败')
-    }
-  }
-}
 
 onMounted(() => {
   loadSurveyData()
@@ -413,7 +368,7 @@ onMounted(() => {
 
 .publish-settings-card,
 .recovery-limits-card,
-.publish-tools-card {
+.publish-success-card {
   margin-bottom: 20px;
 }
 
@@ -423,27 +378,49 @@ onMounted(() => {
   align-items: center;
 }
 
-.tool-section {
-  padding: 20px 0;
+.publish-success-content {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.qrcode-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .qrcode-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
 }
 
 .qrcode-image {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   border: 1px solid #ebeef5;
   border-radius: 4px;
 }
 
-.qrcode-actions {
+.link-section {
+  flex: 1;
+}
+
+.link-label {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 10px;
+}
+
+.link-input-group {
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.link-input {
+  flex: 1;
 }
 
 .share-buttons {

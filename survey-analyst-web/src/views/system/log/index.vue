@@ -13,27 +13,48 @@
               style="width: 150px"
               @keyup.enter="handleSearch"
             />
-            <el-input
+            <el-select
               v-model="searchOperationType"
               placeholder="操作类型"
               clearable
               style="width: 200px; margin-left: 10px"
-              @keyup.enter="handleSearch"
-            />
+            >
+              <el-option label="全部" value="" />
+              <el-option label="查询" value="查询" />
+              <el-option label="新增" value="新增" />
+              <el-option label="修改" value="修改" />
+              <el-option label="删除" value="删除" />
+              <el-option label="登录" value="登录" />
+              <el-option label="登出" value="登出" />
+              <el-option label="导出" value="导出" />
+              <el-option label="导入" value="导入" />
+            </el-select>
             <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="logList" border>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="operationType" label="操作类型" width="120" />
+      <el-table v-loading="loading" :data="logList" border style="width: 100%">
+        <el-table-column prop="id" label="ID" min-width="80" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="operationType" label="操作类型" min-width="120">
+          <template #default="{ row }">
+            <el-tag :type="getOperationTypeTagType(row.operationType)">
+              {{ row.operationType }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="operationDesc" label="操作描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="requestMethod" label="请求方法" width="100" />
+        <el-table-column prop="requestMethod" label="请求方法" min-width="100">
+          <template #default="{ row }">
+            <el-tag :type="getMethodTagType(row.requestMethod)" size="small">
+              {{ row.requestMethod }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="requestUrl" label="请求URL" min-width="250" show-overflow-tooltip />
-        <el-table-column prop="ipAddress" label="IP地址" width="130" />
-        <el-table-column prop="createTime" label="操作时间" width="180" />
+        <el-table-column prop="ipAddress" label="IP地址" min-width="130" />
+        <el-table-column prop="createTime" label="操作时间" min-width="180" />
       </el-table>
 
       <el-pagination
@@ -100,6 +121,33 @@ const handleSizeChange = () => {
 
 const handleCurrentChange = () => {
   loadLogList()
+}
+
+// 根据操作类型返回对应的标签类型（颜色）
+const getOperationTypeTagType = (operationType) => {
+  const typeMap = {
+    '查询': 'info',
+    '新增': 'success',
+    '修改': 'warning',
+    '删除': 'danger',
+    '登录': 'success',
+    '登出': 'info',
+    '导出': 'primary',
+    '导入': 'primary'
+  }
+  return typeMap[operationType] || ''
+}
+
+// 根据请求方法返回对应的标签类型（颜色）
+const getMethodTagType = (method) => {
+  const methodMap = {
+    'GET': 'info',
+    'POST': 'success',
+    'PUT': 'warning',
+    'DELETE': 'danger',
+    'PATCH': 'warning'
+  }
+  return methodMap[method] || ''
 }
 
 onMounted(() => {

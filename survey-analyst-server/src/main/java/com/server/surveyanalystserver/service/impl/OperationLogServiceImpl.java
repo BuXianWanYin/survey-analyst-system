@@ -46,7 +46,8 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
     }
 
     @Override
-    public Page<OperationLogVO> getLogPageWithUsername(Page<OperationLogVO> page, Long userId, String operationType) {
+    public Page<OperationLogVO> getLogPageWithUsername(Page<OperationLogVO> page, Long userId, String operationType, 
+            java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
         // 先查询日志
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
         
@@ -56,6 +57,16 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         
         if (operationType != null && !operationType.isEmpty()) {
             wrapper.like(OperationLog::getOperationType, operationType);
+        }
+        
+        // 时间区间筛选
+        if (startTime != null) {
+            wrapper.ge(OperationLog::getCreateTime, startTime);
+        }
+        if (endTime != null) {
+            // 结束时间需要包含当天的23:59:59
+            java.time.LocalDateTime endDateTime = endTime.toLocalDate().atTime(23, 59, 59);
+            wrapper.le(OperationLog::getCreateTime, endDateTime);
         }
         
         wrapper.orderByDesc(OperationLog::getCreateTime);

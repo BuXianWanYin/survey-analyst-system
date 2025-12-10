@@ -21,7 +21,7 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
     @Autowired
     private SurveyService surveyService;
 
-    @Value("${app.frontend.url:http://localhost:3000}")
+    @Value("${app.frontend.url}")
     private String frontendUrl;
 
     @Override
@@ -57,20 +57,9 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
     @Override
     public Map<String, String> getShareLinks(Long surveyId) {
         String surveyLink = generateSurveyLink(surveyId);
-        Survey survey = surveyService.getSurveyById(surveyId);
         
         Map<String, String> shareLinks = new HashMap<>();
-        
-        // 微信分享
-        shareLinks.put("wechat", "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=TOKEN&url=" + surveyLink);
-        
-        // 微博分享
-        shareLinks.put("weibo", "https://service.weibo.com/share/share.php?url=" + surveyLink + "&title=" + (survey != null ? survey.getTitle() : "问卷"));
-        
-        // QQ分享
-        shareLinks.put("qq", "https://connect.qq.com/widget/shareqq/index.html?url=" + surveyLink + "&title=" + (survey != null ? survey.getTitle() : "问卷"));
-        
-        // 复制链接
+        // 只返回链接，供复制使用
         shareLinks.put("link", surveyLink);
         
         return shareLinks;

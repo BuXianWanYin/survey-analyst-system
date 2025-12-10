@@ -110,6 +110,17 @@
             <artifactId>hutool-extra</artifactId>
             <version>5.8.22</version>
         </dependency>
+        <!-- ZXing 二维码生成核心库（Hutool二维码功能依赖） -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.1</version>
+        </dependency>
 
         <!-- Apache Commons工具类 -->
         <dependency>

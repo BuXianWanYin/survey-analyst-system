@@ -41,7 +41,7 @@ public class Survey implements Serializable {
     private String description;
 
     @TableField("status")
-    @ApiModelProperty(value = "状态：DRAFT-草稿，PUBLISHED-已发布，PAUSED-已暂停，ENDED-已结束")
+    @ApiModelProperty(value = "状态：DRAFT-草稿，PUBLISHED-收集中，ENDED-已结束")
     private String status;
 
     @TableField("access_type")

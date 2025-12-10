@@ -97,28 +97,28 @@
       </div>
 
       <!-- 表格视图 -->
-      <el-table v-else v-loading="loading" :data="surveyList" border>
-        <el-table-column prop="id" label="ID" width="80" />
+      <el-table v-else v-loading="loading" :data="surveyList" border style="width: 100%">
+        <el-table-column prop="id" label="ID" min-width="80" />
         <el-table-column prop="title" label="问卷标题" min-width="200" />
-        <el-table-column prop="username" label="创建用户" width="120">
+        <el-table-column prop="username" label="创建用户" min-width="120">
           <template #default="{ row }">
             {{ row.username || '未知' }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="accessType" label="访问类型" width="120">
+        <el-table-column prop="accessType" label="访问类型" min-width="120">
           <template #default="{ row }">
             <el-tag size="small">{{ getAccessTypeText(row.accessType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column prop="createTime" label="创建时间" min-width="180" />
+        <el-table-column label="操作" min-width="250" fixed="right">
           <template #default="{ row }">
             <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button

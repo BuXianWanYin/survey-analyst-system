@@ -60,12 +60,12 @@ export const surveyApi = {
   },
 
   /**
-   * 停止发布问卷
+   * 取消发布问卷（改为草稿）
    * @param {Number} id 问卷ID
-   * @returns {Promise} 停止发布结果
+   * @returns {Promise} 取消发布结果
    */
-  stopPublishSurvey(id) {
-    return request.post(`/survey/${id}/stop`)
+  unpublishSurvey(id) {
+    return request.post(`/survey/${id}/unpublish`)
   },
 
   /**
