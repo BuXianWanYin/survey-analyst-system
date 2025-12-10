@@ -27,5 +27,11 @@ public interface FormTemplateCategoryService extends IService<FormTemplateCatego
      * @return 系统分类列表
      */
     List<FormTemplateCategory> listSystemCategories();
+    
+    /**
+     * 删除分类及其下的所有模板和相关数据
+     * @param categoryId 分类ID
+     */
+    void deleteCategoryWithTemplates(Long categoryId);
 }
 

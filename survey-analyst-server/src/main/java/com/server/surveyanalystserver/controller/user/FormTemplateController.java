@@ -148,7 +148,7 @@ public class FormTemplateController {
         return Result.success("创建成功", category);
     }
 
-    @ApiOperation(value = "更新用户自定义分类", notes = "更新用户自己的模板分类")
+    @ApiOperation(value = "更新分类", notes = "更新分类。普通用户只能更新自己的分类，管理员可以更新所有分类（包括系统分类）。")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/category/update")
     public Result<String> updateCategory(@RequestBody FormTemplateCategory category) {
@@ -157,12 +157,16 @@ public class FormTemplateController {
             return Result.error("分类不存在");
         }
         
-        // 只能更新自己的分类，系统分类不允许更新
         User currentUser = userService.getCurrentUser();
-        if (existing.getUserId() == null) {
-            return Result.error("系统分类不允许修改");
+        
+        // 如果是系统分类，只有管理员可以更新
+        if (existing.getUserId() == null && !"ADMIN".equals(currentUser.getRole())) {
+            return Result.error("系统分类只能由管理员修改");
         }
-        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ROLE_ADMIN")) {
+        
+        // 如果是用户分类，只能更新自己的分类（管理员可以更新所有）
+        if (existing.getUserId() != null && !existing.getUserId().equals(currentUser.getId()) 
+            && !"ADMIN".equals(currentUser.getRole())) {
             return Result.error("无权修改此分类");
         }
         
@@ -175,7 +179,7 @@ public class FormTemplateController {
         return Result.success("更新成功", category.getId().toString());
     }
 
-    @ApiOperation(value = "删除用户自定义分类", notes = "删除用户自己的模板分类（只能删除自己的分类，不能删除系统分类）")
+    @ApiOperation(value = "删除分类", notes = "删除分类（会同时删除该分类下的所有模板及其相关数据）。普通用户只能删除自己的分类，管理员可以删除所有分类。")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/category/delete")
     public Result<String> deleteCategory(@RequestBody FormTemplateCategory category) {
@@ -184,20 +188,21 @@ public class FormTemplateController {
             return Result.error("分类不存在");
         }
         
-        // 系统分类不允许删除
-        if (existing.getUserId() == null) {
-            return Result.error("系统分类不允许删除");
-        }
-        
-        // 只能删除自己的分类
         User currentUser = userService.getCurrentUser();
-        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ROLE_ADMIN")) {
+        
+        // 权限检查：普通用户只能删除自己的分类，管理员可以删除所有分类
+        if (existing.getUserId() != null && !existing.getUserId().equals(currentUser.getId()) 
+            && !"ADMIN".equals(currentUser.getRole())) {
             return Result.error("无权删除此分类");
         }
         
-        // 逻辑删除
-        existing.setIsDeleted(1);
-        formTemplateCategoryService.updateById(existing);
+        // 如果是系统分类，只有管理员可以删除
+        if (existing.getUserId() == null && !"ADMIN".equals(currentUser.getRole())) {
+            return Result.error("系统分类只能由管理员删除");
+        }
+        
+        // 删除该分类下的所有模板及其相关数据
+        formTemplateCategoryService.deleteCategoryWithTemplates(existing.getId());
         
         return Result.success("删除成功", category.getId().toString());
     }

@@ -30,17 +30,54 @@
             <el-button class="search-template-btn" type="primary" @click="queryTemplatePage" :icon="Search">
               查询
             </el-button>
-            <!-- 我的模板显示添加分类按钮 -->
-            <el-button
+            <!-- 我的模板显示管理分类下拉框 -->
+            <el-dropdown
               v-if="activeTab === 'my'"
-              type="success"
-              size="default"
-              icon="Plus"
-              @click="handleAddCategory"
+              trigger="click"
+              @command="handleCategoryCommand"
               style="margin-left: 10px"
             >
+              <el-button type="success" size="default" icon="Setting">
+                管理分类
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="add">
+                    <el-icon><Plus /></el-icon>
               添加分类
-            </el-button>
+                  </el-dropdown-item>
+                  <el-divider />
+                  <!-- 分类列表：分类名称 编辑图标 删除图标 -->
+                  <template v-for="category in templateTypeList" :key="category.id">
+                    <el-dropdown-item
+                      v-if="category.userId === currentUserId || (isAdmin && !category.userId)"
+                      divided
+                    >
+                      <div class="category-dropdown-item" @click.stop>
+                        <span class="category-name">{{ category.name }}</span>
+                        <div class="category-actions">
+                          <el-icon 
+                            class="action-icon edit-icon" 
+                            @click="handleEditCategory(category)"
+                            :title="'编辑'"
+                          >
+                            <Edit />
+                          </el-icon>
+                          <el-icon 
+                            class="action-icon delete-icon" 
+                            @click="handleDeleteCategory(category)"
+                            :title="'删除'"
+                          >
+                            <Delete />
+                          </el-icon>
+                        </div>
+                      </div>
+                    </el-dropdown-item>
+                  </template>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </el-form-item>
         </el-form>
       </div>
@@ -52,27 +89,13 @@
         @select="handleCategorySelect"
       >
         <el-menu-item :index="null">全部</el-menu-item>
-        <el-menu-item v-for="(item, index) in templateTypeList" :key="index" :index="item.id.toString()">
-          <span>{{ item.name }}</span>
-          <!-- 用户自定义分类显示操作按钮 -->
-          <span v-if="activeTab === 'my' && item.userId" class="category-actions">
-            <el-button
-              type="text"
-              size="small"
-              icon="Edit"
-              style="margin-left: 5px; padding: 0"
-              @click.stop="handleEditCategory(item)"
-              title="编辑"
-            />
-            <el-button
-              type="text"
-              size="small"
-              icon="Delete"
-              style="margin-left: 2px; padding: 0"
-              @click.stop="handleDeleteCategory(item)"
-              title="删除"
-            />
-          </span>
+        <!-- 我的模板只显示用户自己的分类，公共模板显示所有分类（包括系统分类） -->
+        <el-menu-item 
+          v-for="(item, index) in filteredCategoryList" 
+          :key="index" 
+          :index="item.id.toString()"
+        >
+          {{ item.name }}
         </el-menu-item>
       </el-menu>
     </div>
@@ -130,14 +153,6 @@
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="排序号">
-          <el-input-number
-            v-model="categoryForm.sort"
-            :min="0"
-            :max="999"
-            placeholder="数字越小越靠前"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="categoryDialogVisible = false">取消</el-button>
@@ -161,13 +176,36 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Delete, Plus, Edit } from '@element-plus/icons-vue'
+import { Search, Delete, Plus, Edit, ArrowDown } from '@element-plus/icons-vue'
 import { templateApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => {
+  return userStore.userInfo?.role === 'ADMIN'
+})
+
+// 获取当前用户ID
+const currentUserId = computed(() => {
+  return userStore.userInfo?.id
+})
+
+// 过滤后的分类列表：我的模板只显示用户自己的分类，公共模板显示所有分类
+const filteredCategoryList = computed(() => {
+  if (activeTab.value === 'my') {
+    // 我的模板：只显示用户自己的分类
+    return templateTypeList.value.filter(category => category.userId === currentUserId.value)
+  } else {
+    // 公共模板：显示所有分类（包括系统分类）
+    return templateTypeList.value
+  }
+})
 
 const loading = ref(false)
 const activeTab = ref('my') // 'my' 我的模板, 'public' 公共模板
@@ -202,7 +240,7 @@ const queryTemplateType = async () => {
       templateTypeList.value = res.data || []
     }
   } catch (error) {
-    console.error('加载模板分类失败', error)
+    // 加载模板分类失败
   }
 }
 
@@ -331,19 +369,51 @@ const handleSaveCategory = async () => {
   }
 }
 
+// 处理分类管理下拉框命令
+const handleCategoryCommand = (command) => {
+  if (command === 'add') {
+    handleAddCategory()
+  } else if (command.startsWith('edit-')) {
+    const categoryId = Number(command.replace('edit-', ''))
+    const category = templateTypeList.value.find(c => c.id === categoryId)
+    if (category) {
+      // 检查权限：系统分类只能由管理员编辑
+      if (!category.userId && !isAdmin.value) {
+        ElMessage.warning('系统分类只能由管理员编辑')
+        return
+      }
+      handleEditCategory(category)
+    }
+  } else if (command.startsWith('delete-')) {
+    const categoryId = Number(command.replace('delete-', ''))
+    const category = templateTypeList.value.find(c => c.id === categoryId)
+    if (category) {
+      handleDeleteCategory(category)
+    }
+  }
+}
+
 // 删除分类
 const handleDeleteCategory = async (category) => {
-  // 系统分类不允许删除
-  if (!category.userId) {
-    ElMessage.warning('系统分类不允许删除')
+  try {
+    // 检查是否为系统分类（管理员可以删除系统分类）
+    const isSystemCategory = !category.userId
+    
+    if (isSystemCategory && !isAdmin.value) {
+      ElMessage.warning('系统分类只能由管理员删除')
     return
   }
 
-  try {
-    await ElMessageBox.confirm(`此操作将永久删除分类"${category.name}"，是否继续?`, '提示', {
+    // 提示信息：说明会删除分类下的模板
+    const message = isSystemCategory 
+      ? `此操作将永久删除系统分类"${category.name}"及其下的所有模板和相关数据，是否继续？`
+      : `此操作将永久删除分类"${category.name}"及其下的所有模板和相关数据，是否继续？`
+    
+    await ElMessageBox.confirm(message, '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
+      dangerouslyUseHTMLString: false
     })
 
     const res = await templateApi.deleteCategory({ id: category.id })
@@ -452,10 +522,45 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.category-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+}
+
+.category-name {
+  flex: 1;
+}
+
 .category-actions {
   display: inline-flex;
   align-items: center;
-  margin-left: 5px;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.edit-icon {
+  color: #409eff;
+}
+
+.edit-icon:hover {
+  color: #66b1ff;
+}
+
+.delete-icon {
+  color: #f56c6c;
+}
+
+.delete-icon:hover {
+  color: #f78989;
 }
 
 .el-menu.el-menu--horizontal {

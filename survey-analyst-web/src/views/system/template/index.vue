@@ -22,6 +22,53 @@
               添加模板
             </el-button>
           </el-form-item>
+          <el-form-item>
+            <!-- 管理分类下拉框 -->
+            <el-dropdown
+              trigger="click"
+              @command="handleCategoryCommand"
+            >
+              <el-button type="success" size="default" icon="Setting">
+                管理分类
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="add">
+                    <el-icon><Plus /></el-icon>
+                    添加分类
+                  </el-dropdown-item>
+                  <el-divider />
+                  <!-- 分类列表：分类名称 编辑图标 删除图标 -->
+                  <el-dropdown-item
+                    v-for="category in templateTypeList"
+                    :key="category.id"
+                    divided
+                  >
+                    <div class="category-dropdown-item" @click.stop>
+                      <span class="category-name">{{ category.name }}</span>
+                      <div class="category-actions">
+                        <el-icon 
+                          class="action-icon edit-icon" 
+                          @click="handleEditCategory(category)"
+                          :title="'编辑'"
+                        >
+                          <Edit />
+                        </el-icon>
+                        <el-icon 
+                          class="action-icon delete-icon" 
+                          @click="handleDeleteCategory(category)"
+                          :title="'删除'"
+                        >
+                          <Delete />
+                        </el-icon>
+                      </div>
+                    </div>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </el-form-item>
           <el-form-item class="view-toggle-item">
             <!-- 视图切换按钮 -->
             <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
@@ -195,7 +242,23 @@
           </el-select>
         </el-form-item>
         <el-form-item label="封面图">
-          <el-input v-model="editForm.coverImg" placeholder="请输入封面图URL" />
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleTemplateCoverUpload"
+            accept="image/*"
+            class="template-cover-upload"
+          >
+            <el-button type="primary">选择图片</el-button>
+          </el-upload>
+          <el-image
+            v-if="editForm.coverImg"
+            :src="editForm.coverImg"
+            class="template-cover-preview"
+            fit="cover"
+            style="width: 200px; height: 120px; margin-top: 10px; border: 1px solid #dcdfe6; border-radius: 4px;"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="editForm.status" :active-value="1" :inactive-value="0" />
@@ -206,15 +269,34 @@
         <el-button type="primary" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 添加/编辑分类对话框 -->
+    <el-dialog
+      v-model="categoryDialogVisible"
+      :title="editingCategory ? '编辑分类' : '添加分类'"
+      width="500px"
+    >
+      <el-form :model="categoryForm" label-width="100px">
+        <el-form-item label="分类名称" required>
+          <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="categoryDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveCategory">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Edit, Delete, Grid, List, Setting, Plus } from '@element-plus/icons-vue'
+import { Search, View, Edit, Delete, Grid, List, Setting, Plus, ArrowDown } from '@element-plus/icons-vue'
 import { adminApi, templateApi, surveyApi } from '@/api'
+import { getToken } from '@/utils/auth'
+import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
 
@@ -232,6 +314,13 @@ const templateList = ref([])
 
 const editDialogVisible = ref(false)
 const addTemplateDialogVisible = ref(false)
+const categoryDialogVisible = ref(false)
+const editingCategory = ref(null)
+const categoryForm = ref({
+  id: null,
+  name: '',
+  sort: 0
+})
 const editForm = ref({
   id: null,
   formKey: null,
@@ -249,6 +338,31 @@ const addTemplateForm = ref({
 
 // 默认封面图（如果没有图片，使用占位图）
 const defaultCoverImg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEzMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEzMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjYzBjNGNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+6L+Z5Liq5Zu+54mHPC90ZXh0Pjwvc3ZnPg=='
+
+// 图片上传相关
+const uploadUrl = computed(() => {
+  const baseUrl = import.meta.env.VITE_APP_BASE_API
+  return `${baseUrl}/file/upload`
+})
+
+const uploadHeaders = computed(() => {
+  return {
+    Authorization: `Bearer ${getToken()}`
+  }
+})
+
+// 处理模板封面图上传
+const handleTemplateCoverUpload = (response) => {
+  if (response && response.code === 200 && response.data) {
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    // 转换为完整的后端URL
+    const fullImageUrl = getImageUrl(imageUrl)
+    editForm.value.coverImg = fullImageUrl
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response?.message || '图片上传失败')
+  }
+}
 
 // 加载模板分类
 const loadCategories = async () => {
@@ -471,6 +585,96 @@ const handleConfirmAddTemplate = async () => {
   }
 }
 
+// 处理分类管理下拉框命令
+const handleCategoryCommand = (command) => {
+  if (command === 'add') {
+    handleAddCategory()
+  }
+}
+
+// 添加分类
+const handleAddCategory = () => {
+  editingCategory.value = null
+  categoryForm.value = {
+    id: null,
+    name: '',
+    sort: 0
+  }
+  categoryDialogVisible.value = true
+}
+
+// 编辑分类
+const handleEditCategory = (category) => {
+  editingCategory.value = category
+  categoryForm.value = {
+    id: category.id,
+    name: category.name,
+    sort: category.sort || 0
+  }
+  categoryDialogVisible.value = true
+}
+
+// 保存分类
+const handleSaveCategory = async () => {
+  if (!categoryForm.value.name || !categoryForm.value.name.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+
+  try {
+    let res
+    if (editingCategory.value) {
+      res = await templateApi.updateCategory(categoryForm.value)
+    } else {
+      res = await templateApi.createCategory(categoryForm.value)
+    }
+
+    if (res.code === 200) {
+      ElMessage.success(editingCategory.value ? '更新成功' : '创建成功')
+      categoryDialogVisible.value = false
+      // 重新加载分类列表
+      await loadCategories()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+// 删除分类
+const handleDeleteCategory = async (category) => {
+  try {
+    // 提示信息：说明会删除分类下的模板
+    const message = `此操作将永久删除分类"${category.name}"及其下的所有模板和相关数据，是否继续？`
+    
+    await ElMessageBox.confirm(message, '警告', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+      dangerouslyUseHTMLString: false
+    })
+
+    const res = await templateApi.deleteCategory({ id: category.id })
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      // 重新加载分类列表
+      await loadCategories()
+      // 如果当前选中的分类被删除，重置为全部
+      if (queryParams.value.type === category.id) {
+        queryParams.value.type = null
+        loadTemplateList()
+      }
+    } else {
+      ElMessage.error(res.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
 onMounted(() => {
   loadCategories()
   loadTemplateList()
@@ -627,5 +831,46 @@ onMounted(() => {
 
 .text-center {
   text-align: center;
+}
+
+.category-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+}
+
+.category-name {
+  flex: 1;
+}
+
+.category-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.edit-icon {
+  color: #409eff;
+}
+
+.edit-icon:hover {
+  color: #66b1ff;
+}
+
+.delete-icon {
+  color: #f56c6c;
+}
+
+.delete-icon:hover {
+  color: #f78989;
 }
 </style>

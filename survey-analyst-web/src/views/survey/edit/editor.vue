@@ -1966,9 +1966,22 @@
           label="封面图"
           prop="coverImg"
         >
-          <el-input
-            v-model="templateForm.coverImg"
-            placeholder="请输入封面图URL（可选）"
+          <el-upload
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleTemplateCoverUpload"
+            accept="image/*"
+            class="template-cover-upload"
+          >
+            <el-button type="primary">选择图片</el-button>
+          </el-upload>
+          <el-image
+            v-if="templateForm.coverImg"
+            :src="templateForm.coverImg"
+            class="template-cover-preview"
+            fit="cover"
+            style="width: 200px; height: 120px; margin-top: 10px; border: 1px solid #dcdfe6; border-radius: 4px;"
           />
         </el-form-item>
         <el-form-item
@@ -1996,6 +2009,8 @@
             v-model="templateForm.categoryId"
             placeholder="请选择模板类型"
             style="width: 100%"
+            @visible-change="handleCategorySelectVisible"
+            @change="handleCategoryChange"
           >
             <el-option
               v-for="type in templateTypeList"
@@ -2003,6 +2018,20 @@
               :label="type.name"
               :value="type.id"
             />
+            <el-option
+              v-if="templateTypeList.length === 0"
+              :value="null"
+              disabled
+            >
+              <span style="color: #909399">暂无分类</span>
+            </el-option>
+            <el-option
+              :value="'__add_category__'"
+              style="color: #409eff;"
+            >
+              <el-icon style="vertical-align: middle; margin-right: 4px;"><Plus /></el-icon>
+              <span>添加分类</span>
+            </el-option>
           </el-select>
         </el-form-item>
       </el-form>
@@ -2026,7 +2055,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick, inject, markRaw, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   CopyDocument,
   Delete,
@@ -2078,8 +2107,10 @@ import SurveyPreview from '@/components/SurveyPreview.vue'
 import SignPad from '@/components/SignPad.vue'
 import { getToken } from '@/utils/auth'
 import { getImageUrl } from '@/utils/image'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
 
 // 表单基本信息
 const formName = ref('未命名表单')
@@ -3267,15 +3298,79 @@ const templateFormRules = {
   categoryId: [{ required: true, message: '模板类型不能为空', trigger: 'change' }]
 }
 
-// 加载模板分类
+// 加载模板分类（只显示用户自己的分类，不包括系统分类）
 const loadTemplateTypes = async () => {
   try {
     const res = await templateApi.getTemplateTypeList()
     if (res.code === 200) {
-      templateTypeList.value = res.data || []
+      const allCategories = res.data || []
+      // 过滤掉系统分类（userId为null的），只保留用户自己的分类
+      const currentUserId = userStore.userInfo?.id
+      templateTypeList.value = allCategories.filter(category => 
+        category.userId !== null && category.userId === currentUserId
+      )
     }
   } catch (error) {
     // 加载模板分类失败，静默处理
+    templateTypeList.value = []
+  }
+}
+
+// 处理模板封面图上传
+const handleTemplateCoverUpload = (response) => {
+  if (response && response.code === 200 && response.data) {
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    // 转换为完整的后端URL
+    const fullImageUrl = getImageUrl(imageUrl)
+    templateForm.coverImg = fullImageUrl
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response?.message || '图片上传失败')
+  }
+}
+
+// 处理分类下拉框显示
+const handleCategorySelectVisible = (visible) => {
+  if (visible) {
+    loadTemplateTypes()
+  }
+}
+
+// 处理分类选择变化
+const handleCategoryChange = (value) => {
+  if (value === '__add_category__') {
+    // 重置选择
+    templateForm.categoryId = null
+    // 打开添加分类对话框
+    handleAddCategoryFromTemplate()
+  }
+}
+
+// 从保存模板对话框添加分类
+const handleAddCategoryFromTemplate = async () => {
+  try {
+    const { value: name } = await ElMessageBox.prompt('请输入分类名称', '添加分类', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /^.{1,50}$/,
+      inputErrorMessage: '分类名称长度应在1-50个字符之间',
+      customClass: 'add-category-dialog'
+    })
+    
+    if (name) {
+      const res = await templateApi.createCategory({ name, sort: 0 })
+      if (res.code === 200) {
+        ElMessage.success('分类创建成功')
+        // 重新加载分类列表
+        await loadTemplateTypes()
+      } else {
+        ElMessage.error(res.message || '创建失败')
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('创建失败')
+    }
   }
 }
 
@@ -3757,7 +3852,7 @@ onMounted(() => {
 }
 
 
-// ⭐ 拖拽占位符 - 显示插入位置
+// 拖拽占位符 - 显示插入位置
 .sortable-ghost {
   position: relative;
   display: block;
@@ -3796,7 +3891,7 @@ onMounted(() => {
   }
 }
 
-// ⭐ 被选中的元素
+// 被选中的元素
 .chosen-item {
   cursor: grabbing !important;
   opacity: 1;
@@ -3806,7 +3901,7 @@ onMounted(() => {
   }
 }
 
-// ⭐ 正在拖拽的元素
+// 在拖拽的元素
 .drag-item {
   cursor: grabbing !important;
   opacity: 0.85;
@@ -4161,5 +4256,13 @@ onMounted(() => {
   color: #fff;
   border-color: #f56c6c;
 }
+
+
 </style>
 
+
+<style>
+/* 添加分类对话框位置调整 */
+.add-category-dialog {
+  margin-top: -200px !important;
+}</style>
