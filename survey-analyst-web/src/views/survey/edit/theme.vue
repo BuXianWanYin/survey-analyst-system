@@ -1279,6 +1279,16 @@ onMounted(() => {
     height: 45px;
     font-size: 18px;
   }
+
+  /* 手机端预览框高度调整 */
+  .preview-phone {
+    height: 630px;
+    max-height: 630px;
+    width: 300px;
+  }
+
+
+  
 }
 
 @media (max-width: 480px) {

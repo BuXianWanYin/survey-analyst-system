@@ -32,57 +32,55 @@
               查询
             </el-button>
             </el-form-item>
-          </div>
-          <el-form-item>
-            <!-- 我的模板显示管理分类下拉框 -->
-            <el-dropdown
-              v-if="activeTab === 'my'"
-              trigger="click"
-              @command="handleCategoryCommand"
-              style="margin-left: 10px"
-            >
-              <el-button type="success" size="default" :icon="Setting">
-                管理分类
-                <el-icon class="el-icon--right"><arrow-down /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="add">
-                    <el-icon><Plus /></el-icon>
-              添加分类
-                  </el-dropdown-item>
-                  <el-divider />
-                  <!-- 分类列表：分类名称 编辑图标 删除图标 -->
-                  <template v-for="category in templateTypeList" :key="category.id">
-                    <el-dropdown-item
-                      v-if="category.userId === currentUserId || (isAdmin && !category.userId)"
-                      divided
-                    >
-                      <div class="category-dropdown-item" @click.stop>
-                        <span class="category-name">{{ category.name }}</span>
-                        <div class="category-actions">
-                          <el-icon 
-                            class="action-icon edit-icon" 
-                            @click="handleEditCategory(category)"
-                            :title="'编辑'"
-                          >
-                            <Edit />
-                          </el-icon>
-                          <el-icon 
-                            class="action-icon delete-icon" 
-                            @click="handleDeleteCategory(category)"
-                            :title="'删除'"
-                          >
-                            <Delete />
-                          </el-icon>
-                        </div>
-                      </div>
+            <el-form-item v-if="activeTab === 'my'" class="search-button-item">
+              <!-- 我的模板显示管理分类下拉框 -->
+              <el-dropdown
+                trigger="click"
+                @command="handleCategoryCommand"
+              >
+                <el-button type="primary" size="default" :icon="Setting">
+                  管理分类
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="add">
+                      <el-icon><Plus /></el-icon>
+                      新建分类
                     </el-dropdown-item>
-                  </template>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </el-form-item>
+                    <el-divider />
+                    <!-- 分类列表：分类名称 编辑图标 删除图标 -->
+                    <template v-for="category in templateTypeList" :key="category.id">
+                      <el-dropdown-item
+                        v-if="category.userId === currentUserId || (isAdmin && !category.userId)"
+                        divided
+                      >
+                        <div class="category-dropdown-item" @click.stop>
+                          <span class="category-name">{{ category.name }}</span>
+                          <div class="category-actions">
+                            <el-icon 
+                              class="action-icon edit-icon" 
+                              @click="handleEditCategory(category)"
+                              :title="'编辑'"
+                            >
+                              <Edit />
+                            </el-icon>
+                            <el-icon 
+                              class="action-icon delete-icon" 
+                              @click="handleDeleteCategory(category)"
+                              :title="'删除'"
+                            >
+                              <Delete />
+                            </el-icon>
+                          </div>
+                        </div>
+                      </el-dropdown-item>
+                    </template>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </el-form-item>
+          </div>
         </el-form>
       </div>
       <!-- 分类菜单 -->

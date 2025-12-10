@@ -7,7 +7,18 @@
         </template>
 
         <el-form :model="recoveryForm" label-width="180px" class="recovery-form">
-          <el-form-item label="最大填写数">
+          <el-form-item>
+            <template #label>
+              <span>最大填写数</span>
+              <el-tooltip
+                content="0表示不限制"
+                placement="top"
+              >
+                <el-icon class="hint-icon">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </template>
             <el-input-number
               v-model="recoveryForm.maxResponses"
               :min="0"
@@ -16,10 +27,20 @@
               placeholder="不限制"
               style="width: 300px"
             />
-            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
-          <el-form-item label="每个IP答题次数限制">
+          <el-form-item>
+            <template #label>
+              <span>每个IP答题次数限制</span>
+              <el-tooltip
+                content="0表示不限制"
+                placement="top"
+              >
+                <el-icon class="hint-icon">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </template>
             <el-input-number
               v-model="recoveryForm.ipWriteCountLimit"
               :min="0"
@@ -28,10 +49,20 @@
               placeholder="不限制"
               style="width: 300px"
             />
-            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
-          <el-form-item label="每个设备答题次数限制">
+          <el-form-item>
+            <template #label>
+              <span>每个设备答题次数限制</span>
+              <el-tooltip
+                content="0表示不限制"
+                placement="top"
+              >
+                <el-icon class="hint-icon">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </template>
             <el-input-number
               v-model="recoveryForm.deviceWriteCountLimit"
               :min="0"
@@ -40,10 +71,20 @@
               placeholder="不限制"
               style="width: 300px"
             />
-            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
-          <el-form-item label="每个用户答题次数限制">
+          <el-form-item>
+            <template #label>
+              <span>每个用户答题次数限制</span>
+              <el-tooltip
+                content="0表示不限制"
+                placement="top"
+              >
+                <el-icon class="hint-icon">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </template>
             <el-input-number
               v-model="recoveryForm.accountWriteCountLimit"
               :min="0"
@@ -52,7 +93,6 @@
               placeholder="不限制"
               style="width: 300px"
             />
-            <span class="hint-text">0表示不限制</span>
           </el-form-item>
         </el-form>
       </el-card>
@@ -82,7 +122,7 @@
           </div>
         </template>
 
-        <el-form :model="publishForm" label-width="120px">
+        <el-form :model="publishForm" :label-width="publishFormLabelWidth" class="publish-form">
           <el-form-item label="访问权限">
             <el-radio-group v-model="publishForm.accessType">
               <el-radio label="PUBLIC">公开访问</el-radio>
@@ -173,14 +213,25 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch, nextTick } from 'vue'
+import { ref, reactive, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Promotion, Link, Download, Close, DocumentCopy } from '@element-plus/icons-vue'
+import { Promotion, Link, Download, Close, DocumentCopy, QuestionFilled } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 
 const route = useRoute()
+
+// 检测是否为手机端
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 计算表单的label-width，手机端使用0
+const publishFormLabelWidth = computed(() => {
+  return isMobile.value ? '0px' : '120px'
+})
 
 const survey = ref({})
 const publishForm = reactive({
@@ -199,10 +250,11 @@ const recoveryForm = reactive({
 
 // 格式化函数：0显示为"不限制"
 const formatLimitValue = (value) => {
-  if (value === null || value === undefined || value === 0) {
+  if (value === null || value === undefined || value === 0 || value === '0') {
     return '不限制'
   }
-  return String(value)
+  const num = Number(value)
+  return isNaN(num) ? '不限制' : String(num)
 }
 
 // 解析函数："不限制"转换为0
@@ -465,7 +517,13 @@ const handleUnpublish = async () => {
 
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   loadSurveyData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
@@ -600,10 +658,16 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.recovery-form .hint-text {
-  margin-left: 10px;
+.recovery-form .hint-icon {
+  margin-left: 5px;
   color: #909399;
-  font-size: 13px;
+  font-size: 14px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.recovery-form .hint-icon:hover {
+  color: #409eff;
 }
 
 .recovery-form :deep(.el-form-item__label) {
@@ -649,12 +713,6 @@ onMounted(() => {
     width: 100% !important;
   }
 
-  .recovery-form .hint-text {
-    margin-left: 0 !important;
-    margin-top: 8px;
-    display: block;
-    width: 100%;
-  }
 
   .cards-row {
     flex-direction: column;
@@ -709,7 +767,72 @@ onMounted(() => {
     width: 100%;
   }
 
-  :deep(.el-form-item__label) {
+  /* 发布设置表单样式 - 确保手机端文字靠左 */
+  .publish-settings-card .publish-form :deep(.el-form-item) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .publish-settings-card .publish-form :deep(.el-form-item__label) {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    margin-bottom: 8px !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    line-height: 1.5 !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    word-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    display: block !important;
+  }
+
+  /* 确保标签内的所有元素都左对齐且不换行 */
+  .publish-settings-card .publish-form :deep(.el-form-item__label *),
+  .publish-settings-card .publish-form :deep(.el-form-item__label span),
+  .publish-settings-card .publish-form :deep(.el-form-item__label div) {
+    text-align: left !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    word-wrap: normal !important;
+    display: inline !important;
+  }
+
+  .publish-settings-card .publish-form :deep(.el-form-item__content) {
+    width: 100% !important;
+    margin-left: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  .publish-settings-card .publish-form :deep(.el-radio-group) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 8px;
+  }
+
+  .publish-settings-card .publish-form :deep(.el-radio) {
+    margin-right: 0 !important;
+    text-align: left !important;
+  }
+
+  .publish-settings-card .publish-form :deep(.el-radio__label) {
+    text-align: left !important;
+  }
+
+  /* 排除发布设置表单的全局样式 */
+  .publish-settings-card ~ * :deep(.el-form-item__label),
+  .recovery-limits-card :deep(.el-form-item__label) {
     width: 100px !important;
   }
 
@@ -730,7 +853,29 @@ onMounted(() => {
     height: 150px;
   }
 
-  :deep(.el-form-item__label) {
+  /* 发布设置表单在更小屏幕上的样式 */
+  .publish-settings-card .publish-form :deep(.el-form-item__label) {
+    width: 100% !important;
+    text-align: left !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    word-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* 确保标签内的所有元素都不换行 */
+  .publish-settings-card .publish-form :deep(.el-form-item__label *),
+  .publish-settings-card .publish-form :deep(.el-form-item__label span),
+  .publish-settings-card .publish-form :deep(.el-form-item__label div) {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    word-wrap: normal !important;
+  }
+
+  /* 其他表单的标签样式 */
+  .recovery-limits-card :deep(.el-form-item__label) {
     width: 80px !important;
     font-size: 14px;
   }
