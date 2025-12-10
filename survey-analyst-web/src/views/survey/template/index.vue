@@ -79,6 +79,17 @@
               </template>
             </el-dropdown>
           </el-form-item>
+          <!-- 视图切换按钮 -->
+          <el-form-item class="view-toggle-item">
+            <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
+              <el-radio-button :label="'card'">
+                <el-icon><Grid /></el-icon>
+              </el-radio-button>
+              <el-radio-button :label="'table'">
+                <el-icon><List /></el-icon>
+              </el-radio-button>
+            </el-radio-group>
+          </el-form-item>
         </el-form>
       </div>
       <!-- 分类菜单 -->
@@ -100,8 +111,8 @@
       </el-menu>
     </div>
 
-    <!-- 模板网格 -->
-    <div class="project-grid-container">
+    <!-- 卡片视图 -->
+    <div v-if="viewMode === 'card'" class="project-grid-container">
       <div class="project-grid-view">
         <div
           v-for="template in templateList"
@@ -118,21 +129,50 @@
             {{ template.name }}
           </p>
           <div class="template-actions">
-            <el-button icon="View" type="text" @click="toTemplatePreview(template.formKey)">
+            <el-button :icon="View" type="primary" size="small" @click="toTemplatePreview(template.formKey)">
               查看
             </el-button>
-            <!-- 只有我的模板才显示删除按钮，公共模板不显示 -->
-            <el-button 
-              v-if="activeTab === 'my' && template.isPublic !== 1" 
-              icon="Delete" 
-              type="text" 
-              @click="handleDelete(template)"
-            >
+            <!-- 只有我的模板才显示编辑和删除按钮 -->
+            <template v-if="activeTab === 'my' && template.isPublic !== 1">
+              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(template)">
+                编辑信息
+              </el-button>
+              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(template)">
+                编辑组件
+              </el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(template)">
               删除
             </el-button>
+            </template>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 表格视图 -->
+    <div v-else class="table-container">
+      <el-table v-loading="loading" :data="templateList" border style="width: 100%">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="模板名称" width="200" />
+        <el-table-column prop="description" label="描述" show-overflow-tooltip />
+        <el-table-column prop="categoryId" label="分类" width="120">
+          <template #default="{ row }">
+            {{ getCategoryName(row.categoryId) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" :width="activeTab === 'my' ? 320 : 100" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="toTemplatePreview(row.formKey)">查看</el-button>
+            <!-- 只有我的模板才显示编辑和删除按钮 -->
+            <template v-if="activeTab === 'my' && row.isPublic !== 1">
+              <el-button type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+              <el-button type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
+              <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <!-- 空状态 -->
@@ -161,17 +201,100 @@
     </el-dialog>
 
     <!-- 分页 -->
-    <div class="text-center">
+    <div class="text-center pagination-container">
       <el-pagination
-        v-if="total > 10"
         v-model:current-page="queryParams.current"
         v-model:page-size="queryParams.size"
         :total="total"
+        :page-sizes="[10, 20, 30, 50]"
         background
-        layout="total, prev, pager, next"
-        @current-change="queryTemplatePage"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
       />
     </div>
+
+    <!-- 编辑模板信息对话框（仅在我的模板显示） -->
+    <el-dialog
+      v-if="activeTab === 'my'"
+      v-model="editDialogVisible"
+      :title="editForm.id ? '编辑模板' : '新增模板'"
+      width="600px"
+    >
+      <el-form :model="editForm" label-width="100px">
+        <el-form-item label="模板名称" required>
+          <el-input v-model="editForm.name" placeholder="请输入模板名称" />
+        </el-form-item>
+        <el-form-item label="模板描述">
+          <el-input 
+            v-model="editForm.description" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入模板描述" 
+          />
+        </el-form-item>
+        <el-form-item label="模板分类" required>
+          <el-select v-model="editForm.categoryId" placeholder="请选择分类" style="width: 100%">
+            <el-option
+              v-for="category in filteredCategoryList"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="封面图">
+          <div class="template-cover-container">
+            <!-- 如果没有图片，显示上传按钮 -->
+            <el-upload
+              v-if="!editForm.coverImg"
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleTemplateCoverUpload"
+              accept="image/*"
+              :limit="1"
+              class="template-cover-upload"
+            >
+              <el-button type="primary">选择图片</el-button>
+            </el-upload>
+            <!-- 如果有图片，显示图片预览和操作按钮 -->
+            <div v-else class="template-cover-preview-wrapper">
+              <el-image
+                ref="coverImageRef"
+                :src="editForm.coverImg"
+                class="template-cover-preview"
+                fit="cover"
+                :preview-src-list="[editForm.coverImg]"
+                :initial-index="0"
+                preview-teleported
+                :hide-on-click-modal="true"
+              />
+              <div class="template-cover-actions">
+                <el-button
+                  type="primary"
+                  :icon="View"
+                  circle
+                  size="small"
+                  @click.stop="handlePreviewCoverImage"
+                />
+                <el-button
+                  type="danger"
+                  :icon="Delete"
+                  circle
+                  size="small"
+                  @click.stop="handleDeleteCoverImage"
+                />
+              </div>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveTemplate">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -179,9 +302,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, Plus, Edit, ArrowDown } from '@element-plus/icons-vue'
+import { Search, Delete, Plus, Edit, ArrowDown, Grid, List, View, Setting } from '@element-plus/icons-vue'
 import { templateApi } from '@/api'
 import { useUserStore } from '@/stores/user'
+import { getToken } from '@/utils/auth'
+import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -209,9 +334,10 @@ const filteredCategoryList = computed(() => {
 
 const loading = ref(false)
 const activeTab = ref('my') // 'my' 我的模板, 'public' 公共模板
+const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图（仅我的模板）
 const queryParams = ref({
   current: 1,
-  size: 12,
+  size: 10,
   name: '',
   type: null,
   isPublic: 0 // 0-我的模板, 1-公共模板
@@ -219,6 +345,19 @@ const queryParams = ref({
 const total = ref(0)
 const templateTypeList = ref([])
 const templateList = ref([])
+
+// 编辑模板信息
+const editDialogVisible = ref(false)
+const coverImageRef = ref(null)
+const editForm = ref({
+  id: null,
+  formKey: null,
+  name: '',
+  description: '',
+  categoryId: null,
+  coverImg: '',
+  status: 1
+})
 
 // 分类管理
 const categoryDialogVisible = ref(false)
@@ -283,6 +422,119 @@ const toTemplatePreview = (formKey) => {
     path: '/survey/template/preview',
     query: { key: formKey }
   })
+}
+
+// 编辑信息（基本信息：名称、描述、分类、封面图等）
+const handleEditInfo = (template) => {
+  editForm.value = {
+    id: template.id,
+    formKey: template.formKey,
+    name: template.name,
+    description: template.description || '',
+    categoryId: template.categoryId,
+    coverImg: template.coverImg || '',
+    status: template.status
+  }
+  editDialogVisible.value = true
+}
+
+// 编辑组件（直接编辑模板）
+const handleEditComponents = (template) => {
+  // 直接通过formKey跳转到编辑页面，编辑模板本身
+  router.push({
+    path: '/survey/edit/editor',
+    query: { 
+      formKey: template.formKey,
+      isTemplate: 'true',
+      templateId: template.id,
+      templateName: template.name,
+      templateDescription: template.description || ''
+    }
+  })
+}
+
+// 保存模板信息
+const handleSaveTemplate = async () => {
+  if (!editForm.value.name) {
+    ElMessage.warning('请输入模板名称')
+    return
+  }
+  if (!editForm.value.categoryId) {
+    ElMessage.warning('请选择模板分类')
+    return
+  }
+
+  try {
+    const res = await templateApi.updateTemplate(editForm.value)
+    if (res.code === 200) {
+      ElMessage.success('更新成功')
+      editDialogVisible.value = false
+      queryTemplatePage()
+    } else {
+      ElMessage.error(res.message || '更新失败')
+    }
+  } catch (error) {
+    ElMessage.error('更新失败')
+  }
+}
+
+// 获取分类名称
+const getCategoryName = (categoryId) => {
+  if (!categoryId) return '-'
+  const category = templateTypeList.value.find(c => c.id === categoryId)
+  return category ? category.name : '-'
+}
+
+// 分页大小改变
+const handleSizeChange = (size) => {
+  queryParams.value.size = size
+  queryParams.value.current = 1
+  queryTemplatePage()
+}
+
+// 分页页码改变
+const handlePageChange = (page) => {
+  queryParams.value.current = page
+  queryTemplatePage()
+}
+
+// 上传封面图
+const uploadUrl = computed(() => {
+  const baseUrl = import.meta.env.VITE_APP_BASE_API
+  return `${baseUrl}/file/upload`
+})
+
+const uploadHeaders = computed(() => {
+  return {
+    Authorization: `Bearer ${getToken()}`
+  }
+})
+
+const handleTemplateCoverUpload = (response) => {
+  if (response && response.code === 200 && response.data) {
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    editForm.value.coverImg = getImageUrl(imageUrl)
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response?.message || '图片上传失败')
+  }
+}
+
+// 预览封面图 - 触发 el-image 的原生预览功能
+const handlePreviewCoverImage = () => {
+  if (coverImageRef.value) {
+    // 触发图片的点击事件来打开预览
+    const imgElement = coverImageRef.value.$el?.querySelector('img')
+    if (imgElement) {
+      imgElement.click()
+    }
+  }
+}
+
+// 删除封面图
+const handleDeleteCoverImage = () => {
+  editForm.value.coverImg = ''
+  ElMessage.success('封面图已删除')
 }
 
 // 删除模板
@@ -444,9 +696,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .template-list-container {
-  margin: 0 auto;
-  padding: 50px 150px;
-  width: 100%;
+  margin: 20px;
+  padding: 24px;
+  width: calc(100% - 40px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 100px);
 
   .el-pagination {
     margin-top: 20px;
@@ -475,47 +731,85 @@ onMounted(() => {
 }
 
 .project-grid-view {
-  display: flex;
-  max-width: 1200px;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 1600px) {
+  .project-grid-view {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .project-grid-view {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .project-grid-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .project-grid-view {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 
 .preview-img {
-  width: 90%;
-  height: 130px;
-  margin-top: 8px;
+  width: calc(100% - 16px);
+  height: 200px;
+  margin: 8px auto;
+  display: block;
   border-radius: 10px;
   object-fit: cover;
 }
 
 .project-template-view {
-  width: 151px;
-  height: 196px;
+  width: 100%;
+  height: 320px;
   line-height: 20px;
   border-radius: 10px;
   text-align: center;
-  margin: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 8px rgba(0, 0, 0, 0.08);
   background: white;
   position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.project-template-view:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 12px rgba(0, 0, 0, 0.12);
 }
 
 .project-template-title {
   color: rgba(16, 16, 16, 100);
-  font-size: 14px;
-  margin: 0 3px;
-  line-height: 20px;
+  font-size: 15px;
+  font-weight: 500;
+  margin: 10px 8px 8px 8px;
+  line-height: 22px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-height: 22px;
 }
 
 .template-actions {
-  margin-top: 8px;
+  margin-top: 12px;
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .template-tabs {
@@ -569,5 +863,75 @@ onMounted(() => {
 
 .text-center {
   text-align: center;
+}
+
+.view-toggle-item {
+  margin-left: auto;
+}
+
+.view-toggle-group {
+  display: flex;
+  justify-content: center;
+}
+
+.table-container {
+  margin-top: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-container {
+  margin-top: 30px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.template-cover-container {
+  width: 100%;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+  position: relative;
+}
+
+.template-cover-upload {
+  width: 100%;
+}
+
+.template-cover-preview-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-cover-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.template-cover-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.template-cover-preview-wrapper:hover .template-cover-actions {
+  opacity: 1;
 }
 </style>

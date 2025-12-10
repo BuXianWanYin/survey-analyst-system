@@ -2004,7 +2004,7 @@
                   circle
                   size="small"
                   @click="handleDeleteCoverImage"
-                />
+          />
               </div>
             </div>
           </div>

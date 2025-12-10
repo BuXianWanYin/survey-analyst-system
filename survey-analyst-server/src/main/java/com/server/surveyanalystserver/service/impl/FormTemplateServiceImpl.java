@@ -60,18 +60,57 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         }
 
         // 查询表单项列表
-        List<FormItem> formItems = formItemService.getByFormKey(sourceFormKey);
+        List<FormItem> sourceFormItems = formItemService.getByFormKey(sourceFormKey);
+        
+        // 创建不包含时间字段的 FormItem 列表（避免 Jackson 序列化 LocalDateTime 的问题）
+        List<FormItem> formItems = null;
+        if (sourceFormItems != null && !sourceFormItems.isEmpty()) {
+            formItems = sourceFormItems.stream().map(item -> {
+                FormItem templateItem = new FormItem();
+                BeanUtils.copyProperties(item, templateItem);
+                // 清空不需要的字段（模板中不需要这些字段）
+                templateItem.setId(null);
+                templateItem.setFormKey(newFormKey); // 设置为模板的 formKey，这样可以从 form_item 表中查询
+                templateItem.setQuestionId(null);
+                templateItem.setCreateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+                templateItem.setUpdateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+                return templateItem;
+            }).collect(Collectors.toList());
+            
+            // 将表单项保存到 form_item 表中，使用模板的 formKey
+            formItemService.batchSave(newFormKey, formItems);
+        }
 
         // 查询主题
+        FormTheme sourceTheme = null;
         FormTheme formTheme = null;
         if (sourceConfig.getSurveyId() != null) {
-            formTheme = formThemeService.getBySurveyId(sourceConfig.getSurveyId());
+            sourceTheme = formThemeService.getBySurveyId(sourceConfig.getSurveyId());
+            if (sourceTheme != null) {
+                // 创建不包含时间字段的 FormTheme（避免 Jackson 序列化 LocalDateTime 的问题）
+                formTheme = new FormTheme();
+                BeanUtils.copyProperties(sourceTheme, formTheme);
+                formTheme.setId(null);
+                formTheme.setSurveyId(null); // 模板中的 surveyId 会在创建问卷时重新设置
+                formTheme.setCreateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+                formTheme.setUpdateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+            }
         }
 
         // 查询逻辑
+        FormLogic sourceLogic = null;
         FormLogic formLogic = null;
         if (sourceConfig.getSurveyId() != null) {
-            formLogic = formLogicService.getBySurveyId(sourceConfig.getSurveyId());
+            sourceLogic = formLogicService.getBySurveyId(sourceConfig.getSurveyId());
+            if (sourceLogic != null) {
+                // 创建不包含时间字段的 FormLogic（避免 Jackson 序列化 LocalDateTime 的问题）
+                formLogic = new FormLogic();
+                BeanUtils.copyProperties(sourceLogic, formLogic);
+                formLogic.setId(null);
+                formLogic.setSurveyId(null); // 模板中的 surveyId 会在创建问卷时重新设置
+                formLogic.setCreateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+                formLogic.setUpdateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
+            }
         }
 
         // 构建模板定义
@@ -130,14 +169,27 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         formConfig.setUpdateTime(LocalDateTime.now());
         formConfigService.saveFormConfig(formConfig);
 
+        // 获取表单项列表：优先从 scheme 中获取，如果为空则从 form_item 表中查询
+        List<FormItem> sourceFormItems = definition.getFormItems();
+        if (sourceFormItems == null || sourceFormItems.isEmpty()) {
+            // 如果 scheme 中的 formItems 为空，从 form_item 表中查询模板的表单项
+            sourceFormItems = formItemService.getByFormKey(templateFormKey);
+        }
+
         // 复制表单项
-        if (definition.getFormItems() != null && !definition.getFormItems().isEmpty()) {
-            List<FormItem> newFormItems = definition.getFormItems().stream().map(item -> {
+        if (sourceFormItems != null && !sourceFormItems.isEmpty()) {
+            List<FormItem> newFormItems = sourceFormItems.stream().map(item -> {
                 FormItem newItem = new FormItem();
+                // 使用 BeanUtils 复制所有字段
                 BeanUtils.copyProperties(item, newItem);
-                newItem.setId(null);
-                newItem.setFormKey(newFormKey);
+                // 覆盖需要特殊处理的字段
+                newItem.setId(null); // 清空ID，让数据库自动生成
+                newItem.setFormKey(newFormKey); // 设置新的 formKey
                 newItem.setQuestionId(null); // 清空 questionId，因为这是新创建的
+                // 确保 span 有默认值
+                if (newItem.getSpan() == null) {
+                    newItem.setSpan(24);
+                }
                 newItem.setCreateTime(LocalDateTime.now());
                 newItem.setUpdateTime(LocalDateTime.now());
                 return newItem;

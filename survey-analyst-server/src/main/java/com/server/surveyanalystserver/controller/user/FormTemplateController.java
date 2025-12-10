@@ -105,6 +105,47 @@ public class FormTemplateController {
         return Result.success("保存成功", created.getFormKey());
     }
 
+    @ApiOperation(value = "更新模板", notes = "更新我的模板信息（只能更新自己创建的模板）")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PostMapping("/update")
+    public Result<String> updateTemplate(@RequestBody FormTemplate template) {
+        FormTemplate existing = formTemplateService.getByFormKey(template.getFormKey());
+        if (existing == null) {
+            return Result.error("模板不存在");
+        }
+        
+        // 公共模板不允许更新
+        if (existing.getIsPublic() != null && existing.getIsPublic() == 1) {
+            return Result.error("公共模板不允许更新");
+        }
+        
+        // 检查权限：只能更新自己创建的模板
+        User currentUser = userService.getCurrentUser();
+        if (!existing.getUserId().equals(currentUser.getId()) && !currentUser.getRole().equals("ADMIN")) {
+            return Result.error("无权更新此模板");
+        }
+        
+        // 更新模板信息
+        if (StringUtils.hasText(template.getName())) {
+            existing.setName(template.getName());
+        }
+        if (StringUtils.hasText(template.getDescription())) {
+            existing.setDescription(template.getDescription());
+        }
+        if (template.getCategoryId() != null) {
+            existing.setCategoryId(template.getCategoryId());
+        }
+        if (StringUtils.hasText(template.getCoverImg())) {
+            existing.setCoverImg(template.getCoverImg());
+        }
+        if (template.getStatus() != null) {
+            existing.setStatus(template.getStatus());
+        }
+        
+        formTemplateService.getBaseMapper().updateById(existing);
+        return Result.success("更新成功", template.getFormKey());
+    }
+
     @ApiOperation(value = "删除模板", notes = "根据 formKey 删除模板（只能删除我的模板，不能删除公共模板）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/delete")

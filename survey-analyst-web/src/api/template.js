@@ -40,6 +40,15 @@ export const templateApi = {
   },
 
   /**
+   * 更新模板
+   * @param {Object} data 模板数据 { formKey, name, description, categoryId, coverImg, status }
+   * @returns {Promise} 更新结果
+   */
+  updateTemplate(data) {
+    return request.post('/form/template/update', data)
+  },
+
+  /**
    * 删除模板
    * @param {String} formKey 模板formKey
    * @returns {Promise} 删除结果
