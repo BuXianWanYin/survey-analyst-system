@@ -160,7 +160,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { surveyApi, formApi, responseApi } from '@/api'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
-import { getImageUrl } from '@/utils/image'
+import { getImageUrl, getRelativeImageUrl } from '@/utils/image'
 import { getToken } from '@/utils/auth'
 
 const route = useRoute()
@@ -783,7 +783,40 @@ const handleSubmit = async () => {
         const value = formModel[item.vModel]
         if (value !== null && value !== undefined && value !== '' &&
             !(Array.isArray(value) && value.length === 0)) {
-          answers[item.formItemId] = value
+          // 对于上传组件，需要将文件对象转换为URL字符串或URL数组
+          if (item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+            if (Array.isArray(value)) {
+              // 提取文件URL（优先使用rawUrl相对路径，否则从url中提取相对路径）
+              answers[item.formItemId] = value.map(file => {
+                if (typeof file === 'string') {
+                  // 如果已经是字符串，转换为相对路径
+                  return getRelativeImageUrl(file)
+                } else if (file && file.rawUrl) {
+                  // 使用保存的相对路径
+                  return file.rawUrl
+                } else if (file && file.url) {
+                  // 从完整URL中提取相对路径
+                  return getRelativeImageUrl(file.url)
+                } else {
+                  // 其他情况，尝试从response中获取
+                  return file?.response?.data || file
+                }
+              })
+            } else {
+              // 单个文件的情况
+              if (typeof value === 'string') {
+                answers[item.formItemId] = getRelativeImageUrl(value)
+              } else if (value && value.rawUrl) {
+                answers[item.formItemId] = value.rawUrl
+              } else if (value && value.url) {
+                answers[item.formItemId] = getRelativeImageUrl(value.url)
+              } else {
+                answers[item.formItemId] = value?.response?.data || value
+              }
+            }
+          } else {
+            answers[item.formItemId] = value
+          }
         }
       }
     })

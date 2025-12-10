@@ -174,10 +174,10 @@
             :limit="element.config?.limit || 1"
             :accept="element.config?.accept || '*/*'"
             :multiple="element.config?.multiple || false"
-            :on-success="handleFileUploadSuccess"
+            :on-success="(response, file, fileList) => handleFileUploadSuccess(response, file, fileList, element.vModel)"
             :on-error="handleFileUploadError"
             :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 1}个文件`)"
-            @change="handleUploadChange(element.vModel, $event)"
+            @change="(file, fileList) => handleUploadChange(element.vModel, file, fileList)"
           >
             <el-button 
               type="primary" 
@@ -206,13 +206,16 @@
           v-else-if="element.type === 'IMAGE_UPLOAD'"
           :file-list="getUploadFileList(element.vModel)"
           :disabled="element.disabled || previewMode"
-          action="#"
-          :auto-upload="false"
+          :action="uploadUrl"
+          :headers="uploadHeaders"
+          :auto-upload="true"
           :list-type="element.config?.listType || 'picture-card'"
           :limit="element.config?.limit || 9"
           :accept="element.config?.accept || 'image/*'"
+          :on-success="(response, file, fileList) => handleImageUploadSuccess(response, file, fileList, element.vModel)"
+          :on-error="(error, file, fileList) => handleImageUploadError(error, file, fileList, element.vModel)"
           :on-exceed="() => ElMessage.warning(`最多只能上传${element.config?.limit || 9}张图片`)"
-          @change="handleUploadChange(element.vModel, $event)"
+          @change="(file, fileList) => handleUploadChange(element.vModel, file, fileList)"
         >
           <el-icon v-if="!previewMode">
             <Plus />
@@ -469,6 +472,7 @@ import { Upload, Plus, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SignPad from '@/components/SignPad.vue'
 import { getToken } from '@/utils/auth'
+import { getImageUrl } from '@/utils/image'
 
 const props = defineProps({
   formItems: {
@@ -688,7 +692,7 @@ const sliderValues = ref({})
 
 // 获取上传组件的文件列表（确保是数组）
 const getUploadFileList = (vModel) => {
-  // 如果已经有缓存的值，使用缓存
+  // 优先使用缓存的值（实时更新）
   if (uploadFileLists.value[vModel] !== undefined) {
     return uploadFileLists.value[vModel]
   }
@@ -714,7 +718,27 @@ const getUploadFileList = (vModel) => {
     }
   }
   
-  // 只缓存，不修改 formModel（让父组件负责初始化）
+  // 确保文件列表中的每个文件都有正确的完整URL用于显示
+  fileList = fileList.map(file => {
+    // 如果文件对象有url属性，确保是完整URL
+    if (file && file.url) {
+      // 如果url不是完整URL，转换为完整URL
+      if (!file.url.startsWith('http://') && !file.url.startsWith('https://')) {
+        file.url = getImageUrl(file.url)
+      }
+    } else if (file && typeof file === 'string') {
+      // 如果文件是字符串（URL），转换为文件对象
+      const fullUrl = getImageUrl(file)
+      return {
+        url: fullUrl,
+        rawUrl: file,
+        name: file.split('/').pop() || 'file'
+      }
+    }
+    return file
+  })
+  
+  // 缓存文件列表
   uploadFileLists.value[vModel] = fileList
   
   return fileList
@@ -724,10 +748,13 @@ const getUploadFileList = (vModel) => {
 const handleUploadChange = (vModel, file, fileList) => {
   // Element Plus 的 upload 组件的 change 事件参数是 (file, fileList)
   const files = Array.isArray(fileList) ? fileList : []
-  uploadFileLists.value[vModel] = files
-  // 只有在 formModel 中已存在该字段时才更新
+  // 立即更新缓存，确保UI能实时显示
+  uploadFileLists.value[vModel] = [...files]
+  // 更新 formModel，确保响应式更新
   if (vModel in props.formModel) {
-    props.formModel[vModel] = files
+    props.formModel[vModel] = [...files]
+  } else {
+    props.formModel[vModel] = [...files]
   }
 }
 
@@ -780,13 +807,38 @@ const uploadHeaders = computed(() => {
 })
 
 // 文件上传成功处理
-const handleFileUploadSuccess = (response, file) => {
+const handleFileUploadSuccess = (response, file, fileList, vModel) => {
   if (response && response.code === 200 && response.data) {
     const fileUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
-    // 更新文件对象的url
+    // 将相对路径转换为完整URL，用于显示
+    const fullFileUrl = getImageUrl(fileUrl)
+    // 更新文件对象的url（使用完整URL用于显示）
     if (file) {
-      file.url = fileUrl
+      file.url = fullFileUrl
       file.response = response
+      // 保存原始相对路径到文件对象，用于提交时使用
+      file.rawUrl = fileUrl
+    }
+    // 更新文件列表，确保每个文件都有正确的url
+    if (fileList && Array.isArray(fileList)) {
+      const updatedFileList = fileList.map(f => {
+        // 如果文件已经有url，确保是完整URL
+        if (f.url && !f.url.startsWith('http://') && !f.url.startsWith('https://')) {
+          f.url = getImageUrl(f.url)
+        }
+        // 如果是新上传的文件，使用完整URL
+        if (f.uid === file?.uid && !f.url) {
+          f.url = fullFileUrl
+          f.rawUrl = fileUrl
+        }
+        return f
+      })
+      uploadFileLists.value[vModel] = [...updatedFileList]
+      if (vModel in props.formModel) {
+        props.formModel[vModel] = [...updatedFileList]
+      } else {
+        props.formModel[vModel] = [...updatedFileList]
+      }
     }
     ElMessage.success('文件上传成功')
   } else {
@@ -794,9 +846,63 @@ const handleFileUploadSuccess = (response, file) => {
   }
 }
 
+// 图片上传成功处理
+const handleImageUploadSuccess = (response, file, fileList, vModel) => {
+  if (response && response.code === 200 && response.data) {
+    const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
+    // 将相对路径转换为完整URL，用于显示
+    const fullImageUrl = getImageUrl(imageUrl)
+    // 更新文件对象的url（使用完整URL用于显示）
+    if (file) {
+      file.url = fullImageUrl
+      file.response = response
+      // 保存原始相对路径到文件对象，用于提交时使用
+      file.rawUrl = imageUrl
+    }
+    // 更新文件列表，确保每个文件都有正确的url
+    if (fileList && Array.isArray(fileList)) {
+      const updatedFileList = fileList.map(f => {
+        // 如果文件已经有url，确保是完整URL
+        if (f.url && !f.url.startsWith('http://') && !f.url.startsWith('https://')) {
+          f.url = getImageUrl(f.url)
+        }
+        // 如果是新上传的文件，使用完整URL
+        if (f.uid === file?.uid && !f.url) {
+          f.url = fullImageUrl
+          f.rawUrl = imageUrl
+        }
+        return f
+      })
+      uploadFileLists.value[vModel] = [...updatedFileList]
+      if (vModel in props.formModel) {
+        props.formModel[vModel] = [...updatedFileList]
+      } else {
+        props.formModel[vModel] = [...updatedFileList]
+      }
+    }
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response?.message || '图片上传失败')
+  }
+}
+
 // 文件上传失败处理
 const handleFileUploadError = () => {
   ElMessage.error('文件上传失败，请重试')
+}
+
+// 图片上传失败处理
+const handleImageUploadError = (error, file, fileList, vModel) => {
+  ElMessage.error('图片上传失败，请重试')
+  // 即使上传失败，也要更新文件列表以显示本地预览
+  if (fileList && Array.isArray(fileList)) {
+    uploadFileLists.value[vModel] = [...fileList]
+    if (vModel in props.formModel) {
+      props.formModel[vModel] = [...fileList]
+    } else {
+      props.formModel[vModel] = [...fileList]
+    }
+  }
 }
 
 // 获取文件上传提示文本
@@ -1422,7 +1528,8 @@ const validateInput = (element) => {
 .image-select-container {
   width: 100%;
   
-  .image-select-radio-group {
+  .image-select-radio-group,
+  .image-select-checkbox-group {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -1458,7 +1565,76 @@ const validateInput = (element) => {
         z-index: 10;
       }
       
+      :deep(.el-radio__input.is-checked .el-radio__inner) {
+        background-color: #409eff;
+        border-color: #409eff;
+      }
+      
+      :deep(.el-radio__input.is-checked.is-disabled .el-radio__inner) {
+        background-color: #409eff;
+        border-color: #409eff;
+        opacity: 1;
+      }
+      
+      :deep(.el-radio__inner) {
+        width: 18px;
+        height: 18px;
+      }
+      
+      :deep(.el-radio__inner::after) {
+        width: 6px;
+        height: 6px;
+        background-color: #ffffff;
+      }
+      
+      :deep(.el-radio__input.is-disabled.is-checked .el-radio__inner::after) {
+        background-color: #ffffff;
+      }
+      
       :deep(.el-radio__label) {
+        padding-left: 0;
+        width: 100%;
+      }
+    }
+    
+    .image-select-checkbox {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      position: relative;
+      
+      :deep(.el-checkbox__input) {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        z-index: 10;
+      }
+      
+      :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+        background-color: #409eff;
+        border-color: #409eff;
+      }
+      
+      :deep(.el-checkbox__input.is-checked.is-disabled .el-checkbox__inner) {
+        background-color: #409eff;
+        border-color: #409eff;
+        opacity: 1;
+      }
+      
+      :deep(.el-checkbox__inner) {
+        width: 18px;
+        height: 18px;
+      }
+      
+      :deep(.el-checkbox__inner::after) {
+        border-color: #ffffff;
+      }
+      
+      :deep(.el-checkbox__input.is-disabled.is-checked .el-checkbox__inner::after) {
+        border-color: #ffffff;
+      }
+      
+      :deep(.el-checkbox__label) {
         padding-left: 0;
         width: 100%;
       }

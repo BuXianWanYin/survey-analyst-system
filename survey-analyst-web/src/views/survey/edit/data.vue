@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>数据管理</span>
           <div class="header-actions">
-            <el-button :icon="Download" type="primary" @click="handleExport">导出数据</el-button>
+            <el-button :icon="Download" type="primary" @click="handleExport">导出Excel</el-button>
             <el-button :icon="Refresh" @click="handleRefresh">刷新</el-button>
           </div>
         </div>
@@ -17,30 +17,33 @@
         border
         stripe
         style="width: 100%"
+        :expand-row-keys="expandedRows"
+        row-key="id"
+        @expand-change="handleExpandChange"
       >
-        <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="createTime" label="提交时间" width="180">
+        <el-table-column type="expand">
           <template #default="{ row }">
-            {{ formatDate(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="serialNumber" label="序号" width="80" />
-        <el-table-column label="填写内容" min-width="300">
-          <template #default="{ row }">
-            <div class="data-content">
-              <div
-                v-for="(value, key) in (row.data || row.originalData || {})"
-                :key="key"
-                class="data-item"
-              >
-                <span class="data-label">{{ getFieldLabel(key) }}：</span>
-                <span class="data-value">{{ formatDataValue(value) }}</span>
+            <div class="expanded-content">
+              <div class="expanded-form-container">
+                <SurveyFormRender
+                  :form-items="formItems"
+                  :form-model="getRowFormModel(row)"
+                  :preview-mode="true"
+                  :theme-config="themeConfig"
+                  :show-number="themeConfig.showNumber || false"
+                />
               </div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column type="index" label="序号" min-width="60" />
+        <el-table-column prop="id" label="ID" min-width="80" />
+        <el-table-column prop="createTime" label="提交时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="150" fixed="right">
           <template #default="{ row }">
             <el-button :icon="View" type="text" @click="handleView(row)">查看</el-button>
             <el-button :icon="Delete" type="text" danger @click="handleDelete(row)">删除</el-button>
@@ -64,16 +67,17 @@
     <el-dialog
       v-model="viewDialogVisible"
       title="数据详情"
-      width="600px"
+      width="900px"
     >
       <div v-if="currentData" class="data-detail">
-        <div
-          v-for="(value, key) in (currentData.data || currentData.originalData || {})"
-          :key="key"
-          class="detail-item"
-        >
-          <div class="detail-label">{{ getFieldLabel(key) }}</div>
-          <div class="detail-value">{{ formatDataValue(value) }}</div>
+        <div class="detail-form-container">
+          <SurveyFormRender
+            :form-items="formItems"
+            :form-model="getRowFormModel(currentData)"
+            :preview-mode="true"
+            :theme-config="themeConfig"
+            :show-number="themeConfig.showNumber || false"
+          />
         </div>
         <div class="detail-item">
           <div class="detail-label">提交时间</div>
@@ -97,12 +101,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Refresh, View, Delete } from '@element-plus/icons-vue'
+import { getImageUrl } from '@/utils/image'
 import { responseApi, formApi } from '@/api'
 import dayjs from 'dayjs'
+import SurveyFormRender from '@/components/SurveyFormRender.vue'
 
 const route = useRoute()
 
@@ -116,6 +122,15 @@ const total = ref(0)
 const viewDialogVisible = ref(false)
 const currentData = ref(null)
 const formItems = ref([])
+const expandedRows = ref([])
+const themeConfig = reactive({
+  themeColor: '#409EFF',
+  backgroundColor: '#ffffff',
+  showNumber: false
+})
+
+// 存储每行的表单模型
+const rowFormModels = reactive({})
 
 // 加载表单配置和表单项
 const loadFormConfig = async () => {
@@ -130,7 +145,7 @@ const loadFormConfig = async () => {
     if (configRes.code === 200 && configRes.data) {
       formKey.value = configRes.data.formKey
       
-      // 加载表单项
+      // 加载表单项（包括所有类型，不过滤）
       if (formKey.value) {
         const itemsRes = await formApi.getFormItems(formKey.value)
         if (itemsRes.code === 200 && itemsRes.data) {
@@ -141,9 +156,39 @@ const loadFormConfig = async () => {
             return {
               formItemId: item.formItemId,
               label: item.label,
-              type: item.type
+              type: item.type,
+              required: item.required === 1,
+              placeholder: scheme.placeholder || item.placeholder || '',
+              disabled: scheme.disabled || false,
+              readonly: scheme.readonly || false,
+              hideType: item.isHideType || false,
+              defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
+              config: scheme.config || {},
+              regList: item.regList ? (typeof item.regList === 'string' ? JSON.parse(item.regList) : item.regList) : [],
+              vModel: scheme.vModel || item.formItemId,
+              scheme: scheme || {},
+              sort: item.sort != null ? item.sort : 0
             }
+          }).sort((a, b) => {
+            const sortA = a.sort != null ? a.sort : 0
+            const sortB = b.sort != null ? b.sort : 0
+            return sortA - sortB
           })
+        }
+      }
+      
+      // 加载外观配置
+      if (surveyId.value) {
+        try {
+          const themeRes = await formApi.getFormTheme(surveyId.value)
+          if (themeRes.code === 200 && themeRes.data) {
+            const data = themeRes.data
+            if (data.themeColor) themeConfig.themeColor = data.themeColor
+            if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
+            if (data.showNumber !== undefined) themeConfig.showNumber = data.showNumber
+          }
+        } catch (error) {
+          // 使用默认值
         }
       }
     }
@@ -199,6 +244,137 @@ const formatDataValue = (value) => {
     return JSON.stringify(value)
   }
   return String(value)
+}
+
+// 格式化数据值（带选项显示）
+const formatDataValueWithOptions = (formItemId, value) => {
+  if (value === null || value === undefined) {
+    return '-'
+  }
+  
+  const item = formItems.value.find(i => i.formItemId === formItemId)
+  if (!item) {
+    return formatDataValue(value)
+  }
+  
+  // 如果是单选、多选、下拉等有选项的组件
+  if (['RADIO', 'CHECKBOX', 'SELECT', 'IMAGE_SELECT'].includes(item.type)) {
+    const options = item.config?.options || []
+    if (Array.isArray(value)) {
+      // 多选情况
+      const selectedLabels = value.map(v => {
+        const option = options.find(opt => opt.value === v)
+        return option ? option.label : v
+      })
+      return selectedLabels.join('、')
+    } else {
+      // 单选情况
+      const option = options.find(opt => opt.value === value)
+      return option ? option.label : value
+    }
+  }
+  
+  // 如果是级联选择
+  if (item.type === 'CASCADER') {
+    const options = item.config?.options || []
+    if (Array.isArray(value) && value.length > 0) {
+      // 级联选择返回的是数组，需要找到对应的标签
+      let labels = []
+      let currentOptions = options
+      for (const val of value) {
+        const option = currentOptions.find(opt => opt.value === val)
+        if (option) {
+          labels.push(option.label)
+          currentOptions = option.children || []
+        } else {
+          labels.push(val)
+        }
+      }
+      return labels.join(' / ')
+    }
+  }
+  
+  // 如果是评分
+  if (item.type === 'RATE') {
+    return `${value} 分`
+  }
+  
+  // 如果是滑块
+  if (item.type === 'SLIDER') {
+    return String(value)
+  }
+  
+  // 其他情况使用默认格式化
+  return formatDataValue(value)
+}
+
+// 判断是否为签名字段
+const isSignatureField = (formItemId, value) => {
+  const item = formItems.value.find(i => i.formItemId === formItemId)
+  if (item && item.type === 'SIGN_PAD') {
+    // 检查值是否为base64图片
+    if (typeof value === 'string' && value.startsWith('data:image')) {
+      return true
+    }
+  }
+  return false
+}
+
+// 判断是否为文件字段
+const isFileField = (formItemId, value) => {
+  const item = formItems.value.find(i => i.formItemId === formItemId)
+  if (item && item.type === 'UPLOAD') {
+    return true
+  }
+  return false
+}
+
+// 判断是否为图片字段
+const isImageField = (formItemId, value) => {
+  const item = formItems.value.find(i => i.formItemId === formItemId)
+  if (item && item.type === 'IMAGE_UPLOAD') {
+    return true
+  }
+  return false
+}
+
+// 获取行的表单模型
+const getRowFormModel = (row) => {
+  const rowId = row.id
+  if (!rowFormModels[rowId]) {
+    // 初始化表单模型
+    const formModel = {}
+    const rowData = row.data || row.originalData || {}
+    
+    formItems.value.forEach(item => {
+      if (!item.vModel) return
+      
+      const value = rowData[item.formItemId]
+      
+      // 根据组件类型处理值
+      if (item.type === 'CHECKBOX' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+        formModel[item.vModel] = Array.isArray(value) ? value : (value ? [value] : [])
+      } else if (item.type === 'IMAGE_SELECT' && item.config?.multiple) {
+        formModel[item.vModel] = Array.isArray(value) ? value : (value ? [value] : [])
+      } else if (item.type === 'NUMBER' || item.type === 'SLIDER' || item.type === 'RATE') {
+        formModel[item.vModel] = value !== null && value !== undefined ? Number(value) : (item.type === 'SLIDER' ? (item.config?.min || 0) : (item.type === 'RATE' ? 0 : undefined))
+      } else if (item.type === 'SIGN_PAD') {
+        formModel[item.vModel] = value || ''
+      } else {
+        formModel[item.vModel] = value !== null && value !== undefined ? value : ''
+      }
+    })
+    
+    rowFormModels[rowId] = formModel
+  }
+  
+  return rowFormModels[rowId]
+}
+
+// 处理展开/收缩
+const handleExpandChange = (row, expandedRows) => {
+  // expandedRows 是当前展开的所有行的数组
+  // 这里可以用于跟踪展开状态
 }
 
 // 格式化日期
@@ -311,18 +487,22 @@ onMounted(() => {
   gap: 10px;
 }
 
-.data-content {
-  .data-item {
-    margin-bottom: 5px;
+.expanded-content {
+  padding: 0;
+  background: #f5f7fa;
+  
+  .expanded-form-container {
+    padding: 40px;
+    background: #ffffff;
+    max-width: 800px;
+    margin: 0 auto;
     
-    .data-label {
-      font-weight: 500;
-      color: #606266;
-      margin-right: 5px;
+    :deep(.survey-form-render) {
+      width: 100%;
     }
     
-    .data-value {
-      color: #303133;
+    :deep(.form-item-wrapper) {
+      margin-bottom: 20px;
     }
   }
 }
@@ -330,25 +510,34 @@ onMounted(() => {
 .pagination {
   margin-top: 20px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    :deep(.el-pagination) {
+      justify-content: center;
+    }
+    
+    :deep(.el-pagination__sizes),
+    :deep(.el-pagination__total),
+    :deep(.el-pagination__jump) {
+      margin: 8px 4px;
+    }
+    
+    :deep(.el-pagination__pager) {
+      margin: 8px 0;
+    }
+  }
 }
 
 .data-detail {
-  .detail-item {
-    margin-bottom: 20px;
-    
-    .detail-label {
-      font-weight: 500;
-      color: #606266;
-      margin-bottom: 5px;
+  .detail-form-container {
+    :deep(.survey-form-render) {
+      width: 100%;
     }
     
-    .detail-value {
-      color: #303133;
-      padding: 10px;
-      background: #f5f7fa;
-      border-radius: 4px;
-      word-break: break-all;
+    :deep(.form-item-wrapper) {
+      margin-bottom: 20px;
     }
   }
 }
