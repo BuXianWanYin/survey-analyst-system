@@ -108,7 +108,7 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                     
                     // 如果是 Base64 格式，直接处理（不能分割）
                     if (imageValueStr.startsWith("data:image/")) {
-                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageValueStr, 0);
+                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageValueStr, 0, 1);
                         continue;
                     }
                     
@@ -133,6 +133,23 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                         }
                     }
                     
+                    // 先统计实际要处理的图片数量
+                    int totalImages = 0;
+                    for (String imageUrl : imageUrls) {
+                        if (!imageUrl.isEmpty()) {
+                            if (imageUrl.contains(" ") && !imageUrl.startsWith("data:image")) {
+                                String[] urls = imageUrl.split("\\s+");
+                                for (String url : urls) {
+                                    if (!url.trim().isEmpty()) {
+                                        totalImages++;
+                                    }
+                                }
+                            } else {
+                                totalImages++;
+                            }
+                        }
+                    }
+                    
                     // 处理每个图片URL
                     int imageIndex = 0;
                     for (String imageUrl : imageUrls) {
@@ -146,12 +163,12 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                             for (String url : urls) {
                                 url = url.trim();
                                 if (url.isEmpty()) continue;
-                                processImage(workbook, drawing, row, sheet, colIndex, rowIndex, url, imageIndex++);
+                                processImage(workbook, drawing, row, sheet, colIndex, rowIndex, url, imageIndex++, totalImages);
                             }
                             continue;
                         }
                         
-                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageUrl, imageIndex++);
+                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageUrl, imageIndex++, totalImages);
                     }
                 } catch (Exception e) {
                     // 图片处理失败，继续处理下一列
@@ -170,10 +187,10 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
      * 处理单张图片
      */
     private void processImage(Workbook workbook, Drawing<?> drawing, Row row, Sheet sheet,
-                             int colIndex, int rowIndex, String imageUrl, int imageIndex) {
+                             int colIndex, int rowIndex, String imageUrl, int imageIndex, int totalImages) {
         try {
-            System.out.println("开始处理图片: row=" + rowIndex + ", col=" + colIndex + ", url=" + 
-                (imageUrl.length() > 50 ? imageUrl.substring(0, 50) + "..." : imageUrl));
+            System.out.println("开始处理图片: row=" + rowIndex + ", col=" + colIndex + ", index=" + imageIndex + 
+                "/" + totalImages + ", url=" + (imageUrl.length() > 50 ? imageUrl.substring(0, 50) + "..." : imageUrl));
             
             // 读取图片
             byte[] imageBytes = readImageBytes(imageUrl);
@@ -205,37 +222,70 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             
             // 创建图片
             int pictureIdx = workbook.addPicture(imageBytes, pictureType);
-            ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
             
-            // 设置图片锚点（相对于单元格）
+            // 获取列宽和行高（以像素为单位）
+            int colWidth = sheet.getColumnWidth(colIndex);
+            if (colWidth < 3000) {
+                colWidth = 3000; // 设置最小列宽（约30个字符）
+                sheet.setColumnWidth(colIndex, colWidth);
+            }
+            
+            // 列宽转换：Excel列宽单位是1/256字符宽度，转换为像素大约乘以0.75
+            double cellWidthPx = colWidth * 0.75;
+            
+            // 行高（以点为单位，1点=1/72英寸）
+            double rowHeightPoints = row.getHeightInPoints();
+            if (rowHeightPoints < 30) {
+                rowHeightPoints = 30; // 最小行高
+            }
+            // 如果有多张图片，增加行高
+            if (totalImages > 1) {
+                rowHeightPoints = Math.max(rowHeightPoints, totalImages * 80.0); // 每张图片约80点高度
+            } else {
+                rowHeightPoints = Math.max(rowHeightPoints, 80.0); // 单张图片80点高度
+            }
+            row.setHeightInPoints((float) rowHeightPoints);
+            
+            // 行高转换为像素：1点 = 1.33像素
+            double cellHeightPx = rowHeightPoints * 1.33;
+            
+            // 如果有多张图片，计算每张图片的高度和垂直偏移
+            double imageHeight = cellHeightPx / totalImages; // 每张图片分配的高度
+            double verticalOffset = imageIndex * imageHeight; // 当前图片的垂直偏移
+            
+            // 创建锚点，确保图片在正确的单元格内
+            ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+            
+            // 始终保持在指定列
             anchor.setCol1(colIndex);
-            anchor.setRow1(rowIndex);
             anchor.setCol2(colIndex + 1);
+            anchor.setRow1(rowIndex);
             anchor.setRow2(rowIndex + 1);
             
-            // 调整图片位置（避免重叠）- 如果有多张图片，横向排列
-            if (imageIndex > 0) {
-                anchor.setCol1(colIndex + imageIndex);
-                anchor.setCol2(colIndex + imageIndex + 1);
-            }
+            // 使用 dx 和 dy 来精确控制图片位置（单位：EMU，1像素 ≈ 9525 EMU）
+            // dx1, dy1: 左上角偏移；dx2, dy2: 右下角偏移
+            // 注意：Excel 的单元格坐标和像素转换需要精确计算
+            int dx1 = 2 * 9525; // 左边距（约2像素）
+            int dy1 = (int) (verticalOffset * 9525) + 2 * 9525; // 垂直偏移（多张图片时纵向排列）+ 上边距
+            int dx2 = (int) (cellWidthPx * 9525) - 2 * 9525; // 右边界 - 右边距
+            int dy2 = (int) ((verticalOffset + imageHeight) * 9525) - 2 * 9525; // 下边界 - 下边距
+            
+            anchor.setDx1(dx1);
+            anchor.setDy1(dy1);
+            anchor.setDx2(dx2);
+            anchor.setDy2(dy2);
 
             // 插入图片
             Picture picture = drawing.createPicture(anchor, pictureIdx);
-            picture.resize(); // 自动调整图片大小适应单元格
             
-            System.out.println("成功插入图片到 row=" + rowIndex + ", col=" + colIndex);
+            // 调用 resize() 让图片自动适应锚点定义的区域（保持宽高比）
+            picture.resize();
             
-            // 设置行高以适应图片
-            if (row.getHeightInPoints() < 60) {
-                row.setHeightInPoints(60);
-            }
-            
-            // 设置列宽（可选，让图片更清晰）
-            int colWidth = sheet.getColumnWidth(colIndex);
-            if (colWidth < 3000) { // 大约30个字符宽度
-                sheet.setColumnWidth(colIndex, 3000);
-            }
+            System.out.println("成功插入图片到 row=" + rowIndex + ", col=" + colIndex + 
+                ", imageIndex=" + imageIndex + "/" + totalImages +
+                ", 位置: dx1=" + dx1 + ", dy1=" + dy1 + ", dx2=" + dx2 + ", dy2=" + dy2 +
+                ", 单元格大小: " + cellWidthPx + "x" + imageHeight + " 像素");
         } catch (Exception e) {
             System.err.println("插入图片异常: " + e.getMessage());
             e.printStackTrace();

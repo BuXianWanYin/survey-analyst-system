@@ -6,6 +6,7 @@ import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.service.FileService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormSettingService;
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +46,9 @@ public class FormDataController {
     
     @Autowired(required = false)
     private UserService userService;
+    
+    @Autowired
+    private FileService fileService;
     
     @ApiOperation(value = "填写前校验", notes = "在开始填写问卷前进行校验（检查各种限制）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -90,40 +96,21 @@ public class FormDataController {
         @SuppressWarnings("unchecked")
         Map<String, Object> originalData = (Map<String, Object>) params.get("originalData");
         
-        // 获取开始填写时间
+        // 处理 base64 图片数据，转换为文件并保存
+        if (originalData != null) {
+            originalData = processBase64Images(originalData);
+        }
+        
+        // 获取开始填写时间（前端已格式化为 yyyy-MM-dd HH:mm:ss 格式）
         LocalDateTime startTime = null;
         Object startTimeObj = params.get("startTime");
         if (startTimeObj != null) {
             if (startTimeObj instanceof String) {
                 String startTimeStr = (String) startTimeObj;
                 try {
-                    // 处理 ISO 8601 格式（包含毫秒和时区，如：2025-12-11T06:31:25.572Z 或 2025-12-11T06:31:25.572+08:00）
-                    if (startTimeStr.contains("T")) {
-                        // 移除时区信息（Z 或 +08:00 等）
-                        if (startTimeStr.contains("Z")) {
-                            // UTC 时区，移除 Z
-                            startTimeStr = startTimeStr.replace("Z", "");
-                        } else if (startTimeStr.contains("+") || startTimeStr.contains("-")) {
-                            // 有时区偏移，移除时区部分（保留最后一个 + 或 - 之前的内容）
-                            int timezoneIndex = Math.max(startTimeStr.lastIndexOf("+"), startTimeStr.lastIndexOf("-"));
-                            if (timezoneIndex > 10) { // 确保不是日期部分的 - 符号
-                                startTimeStr = startTimeStr.substring(0, timezoneIndex);
-                            }
-                        }
-                        
-                        // 移除毫秒部分（如果有）
-                        if (startTimeStr.contains(".")) {
-                            int dotIndex = startTimeStr.indexOf(".");
-                            startTimeStr = startTimeStr.substring(0, dotIndex);
-                        }
-                        
-                        // 解析为 LocalDateTime
-                        startTime = LocalDateTime.parse(startTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    } else {
-                        // 尝试自定义格式（如：2025-12-11 06:31:25）
-                        startTime = LocalDateTime.parse(startTimeStr, 
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    }
+                    // 前端已格式化为 yyyy-MM-dd HH:mm:ss 格式，直接解析
+                    startTime = LocalDateTime.parse(startTimeStr, 
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                 } catch (Exception e) {
                     // 解析失败，记录日志但不影响主流程
                     System.err.println("解析开始时间失败: " + startTimeStr + ", 错误: " + e.getMessage());
@@ -218,6 +205,105 @@ public class FormDataController {
     public Result<Void> deleteFormData(@PathVariable Long id) {
         formDataService.deleteFormData(id);
         return Result.success("删除成功");
+    }
+    
+    /**
+     * 处理 base64 图片数据，转换为文件并保存
+     * @param originalData 原始数据
+     * @return 处理后的数据（base64 已替换为文件路径）
+     */
+    private Map<String, Object> processBase64Images(Map<String, Object> originalData) {
+        if (originalData == null) {
+            return null;
+        }
+        
+        Map<String, Object> processedData = new HashMap<>(originalData);
+        
+        for (Map.Entry<String, Object> entry : processedData.entrySet()) {
+            Object value = entry.getValue();
+            
+            if (value instanceof String) {
+                // 检查是否是 base64 图片数据
+                String strValue = (String) value;
+                if (strValue.startsWith("data:image/")) {
+                    try {
+                        // 提取图片格式（png, jpeg, jpg 等）
+                        String mimeType = strValue.substring(5, strValue.indexOf(";"));
+                        String extension = getExtensionFromMimeType(mimeType);
+                        
+                        // 保存 base64 图片为文件
+                        String fileUrl = fileService.saveBase64Image(strValue, extension);
+                        
+                        // 用文件路径替换 base64 数据
+                        entry.setValue(fileUrl);
+                    } catch (Exception e) {
+                        // 如果保存失败，记录日志但不影响主流程
+                        System.err.println("保存base64图片失败: " + e.getMessage());
+                        // 保留原始 base64 数据，或者设置为 null
+                        // entry.setValue(null);
+                    }
+                }
+            } else if (value instanceof List) {
+                // 处理 List 中的 base64 数据
+                @SuppressWarnings("unchecked")
+                List<Object> list = (List<Object>) value;
+                List<Object> processedList = new ArrayList<>();
+                
+                for (Object item : list) {
+                    if (item instanceof String) {
+                        String strItem = (String) item;
+                        if (strItem.startsWith("data:image/")) {
+                            try {
+                                // 提取图片格式
+                                String mimeType = strItem.substring(5, strItem.indexOf(";"));
+                                String extension = getExtensionFromMimeType(mimeType);
+                                
+                                // 保存 base64 图片为文件
+                                String fileUrl = fileService.saveBase64Image(strItem, extension);
+                                processedList.add(fileUrl);
+                            } catch (Exception e) {
+                                System.err.println("保存base64图片失败: " + e.getMessage());
+                                processedList.add(item); // 保留原始数据
+                            }
+                        } else {
+                            processedList.add(item);
+                        }
+                    } else {
+                        processedList.add(item);
+                    }
+                }
+                entry.setValue(processedList);
+            }
+        }
+        
+        return processedData;
+    }
+    
+    /**
+     * 根据 MIME 类型获取文件扩展名
+     * @param mimeType MIME 类型（如 image/png, image/jpeg）
+     * @return 文件扩展名（如 .png, .jpg）
+     */
+    private String getExtensionFromMimeType(String mimeType) {
+        if (mimeType == null) {
+            return ".png";
+        }
+        
+        switch (mimeType.toLowerCase()) {
+            case "image/png":
+                return ".png";
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/bmp":
+                return ".bmp";
+            default:
+                return ".png"; // 默认使用 png
+        }
     }
 }
 

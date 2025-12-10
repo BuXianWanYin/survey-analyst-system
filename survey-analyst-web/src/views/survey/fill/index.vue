@@ -156,6 +156,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { formatDateTime, getCurrentDateTime } from '@/utils/date'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { surveyApi, formApi, responseApi } from '@/api'
@@ -245,8 +246,8 @@ const continueLoadFormData = async () => {
           canFill.value = false
           return
         }
-        // 校验通过，记录开始填写时间
-        fillStartTime.value = new Date().toISOString()
+        // 校验通过，记录开始填写时间（格式化为 yyyy-MM-dd HH:mm:ss）
+        fillStartTime.value = getCurrentDateTime()
       } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || '校验失败，无法填写'
         canFill.value = false
@@ -556,8 +557,8 @@ const loadSurveyData = async () => {
         const validateRes = await formApi.validateBeforeFill(formKey.value, deviceId)
         if (validateRes.code === 200) {
           canFill.value = true
-          // 校验通过，记录开始填写时间
-          fillStartTime.value = new Date().toISOString()
+          // 校验通过，记录开始填写时间（格式化为 yyyy-MM-dd HH:mm:ss）
+          fillStartTime.value = getCurrentDateTime()
         } else {
           errorMessage.value = validateRes.message || '校验失败，无法填写'
           canFill.value = false

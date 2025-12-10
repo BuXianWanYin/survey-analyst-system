@@ -437,7 +437,9 @@ public class OperationLogAspect {
             for (Object arg : args) {
                 if (arg != null && !(arg instanceof javax.servlet.http.HttpServletRequest) 
                     && !(arg instanceof javax.servlet.http.HttpServletResponse)) {
-                    params.add(arg);
+                    // 处理包含 base64 图片数据的 Map
+                    Object processedArg = processLargeData(arg);
+                    params.add(processedArg);
                 }
             }
             
@@ -445,10 +447,65 @@ public class OperationLogAspect {
                 return null;
             }
             
-            return objectMapper.writeValueAsString(params);
+            String json = objectMapper.writeValueAsString(params);
+            // 限制总长度，防止超过数据库字段限制（text 类型最大 65535 字节）
+            int maxLength = 50000; // 预留一些空间
+            if (json != null && json.length() > maxLength) {
+                json = json.substring(0, maxLength) + "...[数据已截断]";
+            }
+            
+            return json;
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    /**
+     * 处理包含大数据的参数（如 base64 图片）
+     */
+    private Object processLargeData(Object arg) {
+        if (arg instanceof java.util.Map) {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> map = (java.util.Map<String, Object>) arg;
+            java.util.Map<String, Object> processedMap = new java.util.HashMap<>(map);
+            
+            // 遍历 Map，查找并替换 base64 图片数据
+            for (java.util.Map.Entry<String, Object> entry : processedMap.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof String) {
+                    String strValue = (String) value;
+                    // 检查是否是 base64 图片数据
+                    if (strValue.startsWith("data:image") || strValue.startsWith("data:application")) {
+                        entry.setValue("[图片/文件数据已省略，长度: " + strValue.length() + " 字符]");
+                    } else if (strValue.length() > 1000) {
+                        // 其他长字符串也截断
+                        entry.setValue(strValue.substring(0, 1000) + "...[数据已截断，原长度: " + strValue.length() + " 字符]");
+                    }
+                } else if (value instanceof java.util.List) {
+                    // 处理 List 中的 base64 数据
+                    @SuppressWarnings("unchecked")
+                    java.util.List<Object> list = (java.util.List<Object>) value;
+                    java.util.List<Object> processedList = new java.util.ArrayList<>();
+                    for (Object item : list) {
+                        if (item instanceof String) {
+                            String strItem = (String) item;
+                            if (strItem.startsWith("data:image") || strItem.startsWith("data:application")) {
+                                processedList.add("[图片/文件数据已省略，长度: " + strItem.length() + " 字符]");
+                            } else if (strItem.length() > 1000) {
+                                processedList.add(strItem.substring(0, 1000) + "...[数据已截断，原长度: " + strItem.length() + " 字符]");
+                            } else {
+                                processedList.add(item);
+                            }
+                        } else {
+                            processedList.add(item);
+                        }
+                    }
+                    entry.setValue(processedList);
+                }
+            }
+            return processedMap;
+        }
+        return arg;
     }
 
     private String getIpAddress(HttpServletRequest request) {

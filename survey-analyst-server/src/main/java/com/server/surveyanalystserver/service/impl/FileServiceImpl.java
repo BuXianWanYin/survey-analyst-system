@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.UUID;
 
 /**
@@ -126,6 +127,55 @@ public class FileServiceImpl implements FileService {
             return null;
         } catch (Exception e) {
             return null;
+        }
+    }
+    
+    @Override
+    public String saveBase64Image(String base64Data, String fileExtension) {
+        if (base64Data == null || base64Data.isEmpty()) {
+            throw new RuntimeException("base64数据不能为空");
+        }
+        
+        try {
+            // 移除 base64 数据前缀（如 data:image/png;base64,）
+            String base64Content = base64Data;
+            if (base64Data.contains(",")) {
+                base64Content = base64Data.substring(base64Data.indexOf(",") + 1);
+            }
+            
+            // 解码 base64 数据
+            byte[] imageBytes = Base64.getDecoder().decode(base64Content);
+            
+            // 验证文件大小
+            long maxSize = fileConfig.getMaxSize();
+            if (imageBytes.length > maxSize) {
+                long fileSizeMB = imageBytes.length / (1024 * 1024);
+                long maxSizeMB = maxSize / (1024 * 1024);
+                throw new RuntimeException(String.format("文件大小超过限制：当前文件 %dMB，最大允许 %dMB", fileSizeMB, maxSizeMB));
+            }
+            
+            // 生成新的文件名
+            String newFileName = UUID.randomUUID().toString() + fileExtension;
+            
+            // 按日期创建目录
+            String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            String uploadPath = fileConfig.getPath() + "/" + dateDir;
+            
+            // 创建目录
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+            
+            // 保存文件
+            Path filePath = Paths.get(uploadPath, newFileName);
+            Files.write(filePath, imageBytes);
+            
+            // 生成文件访问URL
+            String fileUrl = "/upload/" + dateDir + "/" + newFileName;
+            return fileUrl;
+        } catch (Exception e) {
+            throw new RuntimeException("保存base64图片失败", e);
         }
     }
 }
