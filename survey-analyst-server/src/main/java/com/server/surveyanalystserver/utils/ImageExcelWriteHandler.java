@@ -10,7 +10,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +23,8 @@ import java.util.Set;
 @Component
 public class ImageExcelWriteHandler implements WorkbookWriteHandler {
 
+    // 上传文件目录（相对于项目根目录）
+    // 注意：这个路径应该与 FileConfig 中的 path 配置一致
     private static final String UPLOAD_DIR = "upload/";
     private final Set<String> imageColumns = new HashSet<>();
     private final Map<Integer, Map<String, Object>> rowDataMap = new java.util.concurrent.ConcurrentHashMap<>();
@@ -45,6 +49,10 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
     @Override
     public void afterWorkbookDispose(WriteWorkbookHolder writeWorkbookHolder) {
         Workbook workbook = writeWorkbookHolder.getWorkbook();
+        
+        System.out.println("=== 开始处理图片嵌入 ===");
+        System.out.println("图片列数: " + imageColumns.size() + ", 行数据数: " + rowDataMap.size());
+        System.out.println("图片列: " + imageColumns);
         
         // 处理每个sheet
         for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
@@ -83,60 +91,154 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             for (String columnName : imageColumns) {
                 Integer colIndex = columnIndexMap.get(columnName);
                 if (colIndex == null) {
+                    System.err.println("图片列未找到: " + columnName + ", 可用列: " + columnIndexMap.keySet());
                     continue;
                 }
 
                 Object imageValue = rowData.get(columnName);
                 if (imageValue == null || imageValue.toString().isEmpty()) {
+                    System.err.println("图片列数据为空: " + columnName + ", rowData keys: " + rowData.keySet());
                     continue;
                 }
 
                 try {
+                    String imageValueStr = imageValue.toString();
+                    System.out.println("处理图片列: " + columnName + ", 值: " + 
+                        (imageValueStr.length() > 100 ? imageValueStr.substring(0, 100) + "..." : imageValueStr));
+                    
+                    // 如果是 Base64 格式，直接处理（不能分割）
+                    if (imageValueStr.startsWith("data:image/")) {
+                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageValueStr, 0);
+                        continue;
+                    }
+                    
                     // 解析图片URL（可能是多个图片用分号分隔）
-                    String[] imageUrls = imageValue.toString().split(";");
+                    // 注意：Base64格式的数据不应该被分号分割
+                    List<String> imageUrls = new ArrayList<>();
+                    
+                    // 如果包含Base64数据，需要特殊处理
+                    if (imageValueStr.contains("base64,")) {
+                        // 使用正则表达式或手动分割，避免分割Base64数据
+                        // 简单方法：先检查是否有多个Base64图片（不太可能），或者混合Base64和URL
+                        // 对于Base64，整个字符串作为一个图片处理（因为Base64数据很长，通常不会用分号分隔多个）
+                        imageUrls.add(imageValueStr);
+                    } else {
+                        // 普通URL，可以用分号分割
+                        String[] simpleUrls = imageValueStr.split(";");
+                        for (String url : simpleUrls) {
+                            url = url.trim();
+                            if (!url.isEmpty()) {
+                                imageUrls.add(url);
+                            }
+                        }
+                    }
+                    
+                    // 处理每个图片URL
                     int imageIndex = 0;
                     for (String imageUrl : imageUrls) {
-                        imageUrl = imageUrl.trim();
                         if (imageUrl.isEmpty()) {
                             continue;
                         }
-
-                        // 读取图片
-                        byte[] imageBytes = readImageBytes(imageUrl);
-                        if (imageBytes == null || imageBytes.length == 0) {
+                        
+                        // 如果URL包含空格分隔的多个URL，进一步分割（但不是Base64）
+                        if (imageUrl.contains(" ") && !imageUrl.startsWith("data:image")) {
+                            String[] urls = imageUrl.split("\\s+");
+                            for (String url : urls) {
+                                url = url.trim();
+                                if (url.isEmpty()) continue;
+                                processImage(workbook, drawing, row, sheet, colIndex, rowIndex, url, imageIndex++);
+                            }
                             continue;
                         }
-
-                        // 创建图片
-                        int pictureIdx = workbook.addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG);
-                        ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
-                        anchor.setCol1(colIndex);
-                        anchor.setRow1(rowIndex);
-                        anchor.setCol2(colIndex + 1);
-                        anchor.setRow2(rowIndex + 1);
                         
-                        // 调整图片位置（避免重叠）
-                        if (imageIndex > 0) {
-                            anchor.setCol1(colIndex + imageIndex);
-                            anchor.setCol2(colIndex + imageIndex + 1);
-                        }
-
-                        drawing.createPicture(anchor, pictureIdx);
-                        
-                        // 设置行高以适应图片
-                        row.setHeightInPoints(60);
-                        
-                        imageIndex++;
+                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageUrl, imageIndex++);
                     }
                 } catch (Exception e) {
                     // 图片处理失败，继续处理下一列
+                    System.err.println("处理图片失败: " + columnName + ", 错误: " + e.getMessage());
                     e.printStackTrace();
                 }
             }
         }
+        
+        // 清理数据
+        rowDataMap.clear();
+        }
+    }
+    
+    /**
+     * 处理单张图片
+     */
+    private void processImage(Workbook workbook, Drawing<?> drawing, Row row, Sheet sheet,
+                             int colIndex, int rowIndex, String imageUrl, int imageIndex) {
+        try {
+            System.out.println("开始处理图片: row=" + rowIndex + ", col=" + colIndex + ", url=" + 
+                (imageUrl.length() > 50 ? imageUrl.substring(0, 50) + "..." : imageUrl));
+            
+            // 读取图片
+            byte[] imageBytes = readImageBytes(imageUrl);
+            if (imageBytes == null || imageBytes.length == 0) {
+                System.err.println("读取图片失败或图片为空: " + imageUrl);
+                return;
+            }
+            
+            System.out.println("成功读取图片，大小: " + imageBytes.length + " bytes");
 
-            // 清理数据
-            rowDataMap.clear();
+            // 检测图片类型
+            int pictureType = Workbook.PICTURE_TYPE_PNG; // 默认PNG
+            if (imageUrl.startsWith("data:image/")) {
+                // Base64 图片，根据 MIME 类型判断
+                if (imageUrl.startsWith("data:image/jpeg") || imageUrl.startsWith("data:image/jpg")) {
+                    pictureType = Workbook.PICTURE_TYPE_JPEG;
+                } else {
+                    pictureType = Workbook.PICTURE_TYPE_PNG;
+                }
+            } else {
+                // 文件 URL，根据扩展名判断
+                String urlLower = imageUrl.toLowerCase();
+                if (urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg")) {
+                    pictureType = Workbook.PICTURE_TYPE_JPEG;
+                } else {
+                    pictureType = Workbook.PICTURE_TYPE_PNG;
+                }
+            }
+            
+            // 创建图片
+            int pictureIdx = workbook.addPicture(imageBytes, pictureType);
+            ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
+            
+            // 设置图片锚点（相对于单元格）
+            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+            anchor.setCol1(colIndex);
+            anchor.setRow1(rowIndex);
+            anchor.setCol2(colIndex + 1);
+            anchor.setRow2(rowIndex + 1);
+            
+            // 调整图片位置（避免重叠）- 如果有多张图片，横向排列
+            if (imageIndex > 0) {
+                anchor.setCol1(colIndex + imageIndex);
+                anchor.setCol2(colIndex + imageIndex + 1);
+            }
+
+            // 插入图片
+            Picture picture = drawing.createPicture(anchor, pictureIdx);
+            picture.resize(); // 自动调整图片大小适应单元格
+            
+            System.out.println("成功插入图片到 row=" + rowIndex + ", col=" + colIndex);
+            
+            // 设置行高以适应图片
+            if (row.getHeightInPoints() < 60) {
+                row.setHeightInPoints(60);
+            }
+            
+            // 设置列宽（可选，让图片更清晰）
+            int colWidth = sheet.getColumnWidth(colIndex);
+            if (colWidth < 3000) { // 大约30个字符宽度
+                sheet.setColumnWidth(colIndex, 3000);
+            }
+        } catch (Exception e) {
+            System.err.println("插入图片异常: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -144,40 +246,77 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
      * 读取图片字节
      */
     private byte[] readImageBytes(String imageUrl) {
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            return null;
+        }
+        
         try {
             // 如果是Base64格式（data:image/...;base64,...），直接解码
-            if (imageUrl != null && imageUrl.startsWith("data:image/")) {
+            if (imageUrl.startsWith("data:image/")) {
                 int base64Index = imageUrl.indexOf("base64,");
                 if (base64Index > 0) {
                     String base64Data = imageUrl.substring(base64Index + 7); // 跳过 "base64,"
-                    return java.util.Base64.getDecoder().decode(base64Data);
+                    try {
+                        byte[] decoded = java.util.Base64.getDecoder().decode(base64Data);
+                        System.out.println("Base64解码成功，大小: " + decoded.length + " bytes");
+                        return decoded;
+                    } catch (Exception e) {
+                        System.err.println("Base64解码失败: " + e.getMessage() + ", base64Data长度: " + base64Data.length());
+                        return null;
+                    }
+                } else {
+                    System.err.println("Base64格式错误，未找到base64,标记: " + imageUrl.substring(0, Math.min(100, imageUrl.length())));
                 }
             }
             
             // 如果是相对路径（以/upload/开头），转换为本地文件路径
             if (imageUrl.startsWith("/upload/")) {
-                String relativePath = imageUrl.substring(1); // 去掉开头的/
+                // 去掉开头的/upload/，直接拼接 upload/ 目录
+                String relativePath = imageUrl.substring(8); // 去掉 "/upload/"
                 File imageFile = new File(UPLOAD_DIR + relativePath);
+                System.out.println("尝试读取文件: " + imageFile.getAbsolutePath() + ", 存在: " + imageFile.exists());
                 if (imageFile.exists() && imageFile.isFile()) {
                     try (FileInputStream fis = new FileInputStream(imageFile)) {
+                        System.out.println("成功读取文件: " + imageFile.getAbsolutePath());
                         return IOUtils.toByteArray(fis);
+                    }
+                } else {
+                    System.err.println("文件不存在: " + imageFile.getAbsolutePath());
+                    // 尝试其他可能的路径
+                    File altFile = new File(relativePath);
+                    if (altFile.exists() && altFile.isFile()) {
+                        System.out.println("使用替代路径读取文件: " + altFile.getAbsolutePath());
+                        try (FileInputStream fis = new FileInputStream(altFile)) {
+                            return IOUtils.toByteArray(fis);
+                        }
                     }
                 }
             } else if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
                 // 如果是HTTP URL，从网络读取
                 try (InputStream is = new URL(imageUrl).openStream()) {
                     return IOUtils.toByteArray(is);
+                } catch (Exception e) {
+                    System.err.println("网络读取图片失败: " + imageUrl + ", 错误: " + e.getMessage());
                 }
             } else {
-                // 尝试作为相对路径处理
+                // 尝试作为相对路径处理（直接是文件名）
                 File imageFile = new File(UPLOAD_DIR + imageUrl);
                 if (imageFile.exists() && imageFile.isFile()) {
                     try (FileInputStream fis = new FileInputStream(imageFile)) {
                         return IOUtils.toByteArray(fis);
                     }
+                } else {
+                    // 尝试作为绝对路径处理
+                    File absFile = new File(imageUrl);
+                    if (absFile.exists() && absFile.isFile()) {
+                        try (FileInputStream fis = new FileInputStream(absFile)) {
+                            return IOUtils.toByteArray(fis);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
+            System.err.println("读取图片失败: " + imageUrl + ", 错误: " + e.getMessage());
             e.printStackTrace();
         }
         return null;

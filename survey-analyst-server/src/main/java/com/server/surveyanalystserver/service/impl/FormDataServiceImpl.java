@@ -14,6 +14,7 @@ import com.server.surveyanalystserver.mapper.SurveyMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormSettingService;
+import com.server.surveyanalystserver.utils.UserAgentUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -198,7 +199,7 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String os, Map<String, Object> uaInfo) {
+    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String userAgent) {
         // 在保存前再次校验（双重校验，确保数据一致性）
         validateBeforeFill(formKey, ipAddress, deviceId, userId);
         
@@ -221,6 +222,10 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         response.setSubmitTime(submitTime);
         response.setStatus("COMPLETED");
         
+        // 设置设备类型（优先使用User-Agent判断，更准确）
+        String deviceType = UserAgentUtils.getDeviceType(userAgent);
+        response.setDeviceType(deviceType);
+        
         // 计算填写时长（秒）
         if (startTime != null) {
             long durationSeconds = Duration.between(startTime, submitTime).getSeconds();
@@ -237,8 +242,6 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         formData.setSubmitRequestIp(ipAddress);
         formData.setStartTime(startTime);
         formData.setSubmitBrowser(browser);
-        formData.setSubmitOs(os);
-        formData.setSubmitUa(uaInfo);
         
         // 计算填写时长（秒）
         if (startTime != null) {

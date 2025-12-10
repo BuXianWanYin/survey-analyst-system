@@ -56,8 +56,14 @@ public class UserAgentUtils {
         String ua = userAgent.toLowerCase();
         
         if (ua.contains("windows")) {
+            // Windows 11 在 User-Agent 中通常显示为 "Windows NT 10.0"，与 Windows 10 相同
+            // 由于无法准确区分，统一显示为 Windows 10/11
+            if (ua.contains("windows 11")) {
+                return "Windows 11";
+            }
             if (ua.contains("windows nt 10.0") || ua.contains("windows 10")) {
-                return "Windows 10";
+                // Windows 10 和 Windows 11 的 User-Agent 都是 NT 10.0，无法区分，统一显示
+                return "Windows 10/11";
             } else if (ua.contains("windows nt 6.3") || ua.contains("windows 8.1")) {
                 return "Windows 8.1";
             } else if (ua.contains("windows nt 6.2") || ua.contains("windows 8")) {
@@ -86,6 +92,28 @@ public class UserAgentUtils {
     }
     
     /**
+     * 解析 User-Agent 获取设备类型
+     * @param userAgent User-Agent 字符串
+     * @return 设备类型：PC 或 MOBILE
+     */
+    public static String getDeviceType(String userAgent) {
+        if (userAgent == null || userAgent.isEmpty()) {
+            return "PC";
+        }
+        
+        String ua = userAgent.toLowerCase();
+        
+        // 检查移动设备
+        if (ua.contains("mobile") || ua.contains("android") || 
+            ua.contains("iphone") || ua.contains("ipad") || ua.contains("ipod") ||
+            ua.contains("blackberry") || ua.contains("windows phone")) {
+            return "MOBILE";
+        }
+        
+        return "PC";
+    }
+    
+    /**
      * 解析 User-Agent 获取完整的 UA 信息（JSON格式）
      * @param userAgent User-Agent 字符串
      * @return UA 信息 Map
@@ -95,6 +123,7 @@ public class UserAgentUtils {
         uaInfo.put("userAgent", userAgent != null ? userAgent : "");
         uaInfo.put("browser", getBrowser(userAgent));
         uaInfo.put("os", getOS(userAgent));
+        uaInfo.put("deviceType", getDeviceType(userAgent));
         return uaInfo;
     }
 }

@@ -216,18 +216,15 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
                     
                     // 解析User-Agent信息
                     String browser = null;
-                    String os = null;
-                    Map<String, Object> uaInfo = null;
+                    String userAgent = null;
                     if (request != null) {
-                        String userAgent = request.getHeader("User-Agent");
+                        userAgent = request.getHeader("User-Agent");
                         if (userAgent != null && !userAgent.isEmpty()) {
                             browser = UserAgentUtils.getBrowser(userAgent);
-                            os = UserAgentUtils.getOS(userAgent);
-                            uaInfo = UserAgentUtils.getUaInfo(userAgent);
                         }
                     }
                     
-                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId, response.getStartTime(), browser, os, uaInfo);
+                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId, response.getStartTime(), browser, userAgent);
                 }
             }
         } catch (Exception e) {
@@ -300,10 +297,10 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null || formConfig.getFormKey() == null) {
             // 如果没有 formConfig，回退到统计 response 表
-            LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Response::getSurveyId, surveyId);
+        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Response::getSurveyId, surveyId);
             wrapper.ne(Response::getStatus, "DRAFT");
-            return this.count(wrapper);
+        return this.count(wrapper);
         }
         
         // 统计 form_data 表的数据

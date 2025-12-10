@@ -555,7 +555,9 @@ const loadSurveyData = async () => {
       try {
         const validateRes = await formApi.validateBeforeFill(formKey.value, deviceId)
         if (validateRes.code === 200) {
-      canFill.value = true
+          canFill.value = true
+          // 校验通过，记录开始填写时间
+          fillStartTime.value = new Date().toISOString()
         } else {
           errorMessage.value = validateRes.message || '校验失败，无法填写'
           canFill.value = false

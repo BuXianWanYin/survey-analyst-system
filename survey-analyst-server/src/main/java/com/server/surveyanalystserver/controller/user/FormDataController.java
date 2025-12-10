@@ -2,11 +2,11 @@ package com.server.surveyanalystserver.controller.user;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
+import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
-import com.server.surveyanalystserver.service.FormDataService;
-import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.user.UserService;
@@ -63,7 +63,7 @@ public class FormDataController {
         Long userId = null;
         if (userService != null) {
             // 从SecurityContext获取当前登录用户
-            com.server.surveyanalystserver.entity.User currentUser = userService.getCurrentUser();
+            User currentUser = userService.getCurrentUser();
             if (currentUser != null) {
                 userId = currentUser.getId();
             } else {
@@ -95,17 +95,39 @@ public class FormDataController {
         Object startTimeObj = params.get("startTime");
         if (startTimeObj != null) {
             if (startTimeObj instanceof String) {
+                String startTimeStr = (String) startTimeObj;
                 try {
-                    startTime = LocalDateTime.parse((String) startTimeObj, 
-                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-                } catch (Exception e) {
-                    try {
-                        startTime = LocalDateTime.parse((String) startTimeObj,
-                                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    } catch (Exception ex) {
-                        // 解析失败，使用当前时间
-                        startTime = LocalDateTime.now();
+                    // 处理 ISO 8601 格式（包含毫秒和时区，如：2025-12-11T06:31:25.572Z 或 2025-12-11T06:31:25.572+08:00）
+                    if (startTimeStr.contains("T")) {
+                        // 移除时区信息（Z 或 +08:00 等）
+                        if (startTimeStr.contains("Z")) {
+                            // UTC 时区，移除 Z
+                            startTimeStr = startTimeStr.replace("Z", "");
+                        } else if (startTimeStr.contains("+") || startTimeStr.contains("-")) {
+                            // 有时区偏移，移除时区部分（保留最后一个 + 或 - 之前的内容）
+                            int timezoneIndex = Math.max(startTimeStr.lastIndexOf("+"), startTimeStr.lastIndexOf("-"));
+                            if (timezoneIndex > 10) { // 确保不是日期部分的 - 符号
+                                startTimeStr = startTimeStr.substring(0, timezoneIndex);
+                            }
+                        }
+                        
+                        // 移除毫秒部分（如果有）
+                        if (startTimeStr.contains(".")) {
+                            int dotIndex = startTimeStr.indexOf(".");
+                            startTimeStr = startTimeStr.substring(0, dotIndex);
+                        }
+                        
+                        // 解析为 LocalDateTime
+                        startTime = LocalDateTime.parse(startTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    } else {
+                        // 尝试自定义格式（如：2025-12-11 06:31:25）
+                        startTime = LocalDateTime.parse(startTimeStr, 
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     }
+                } catch (Exception e) {
+                    // 解析失败，记录日志但不影响主流程
+                    System.err.println("解析开始时间失败: " + startTimeStr + ", 错误: " + e.getMessage());
+                    // 如果解析失败，startTime 保持为 null，后续代码会处理
                 }
             }
         }
@@ -116,10 +138,8 @@ public class FormDataController {
         // 获取 User-Agent
         String userAgent = request.getHeader("User-Agent");
         
-        // 解析浏览器和操作系统信息
+        // 解析浏览器信息
         String browser = UserAgentUtils.getBrowser(userAgent);
-        String os = UserAgentUtils.getOS(userAgent);
-        Map<String, Object> uaInfo = UserAgentUtils.getUaInfo(userAgent);
         
         // 获取设备ID（从请求参数中获取，如果前端传递了deviceId）
         String deviceId = (String) params.get("deviceId");
@@ -128,7 +148,7 @@ public class FormDataController {
         Long userId = null;
         if (userService != null) {
             // 从SecurityContext获取当前登录用户
-            com.server.surveyanalystserver.entity.User currentUser = userService.getCurrentUser();
+            User currentUser = userService.getCurrentUser();
             if (currentUser != null) {
                 userId = currentUser.getId();
             } else {
@@ -139,7 +159,7 @@ public class FormDataController {
         }
         
         // 保存表单数据（会进行限制验证）
-        FormData saved = formDataService.saveFormData(formKey, originalData, ipAddress, deviceId, userId, startTime, browser, os, uaInfo);
+        FormData saved = formDataService.saveFormData(formKey, originalData, ipAddress, deviceId, userId, startTime, browser, userAgent);
         
         // 获取提交设置信息，返回给前端
         Map<String, Object> result = new HashMap<>();

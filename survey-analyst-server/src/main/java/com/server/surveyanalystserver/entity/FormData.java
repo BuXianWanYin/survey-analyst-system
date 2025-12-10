@@ -36,14 +36,6 @@ public class FormData {
     @ApiModelProperty(value = "填写结果原始数据（JSON格式）")
     private Map<String, Object> originalData;
     
-    @TableField(value = "submit_ua", typeHandler = JacksonTypeHandler.class)
-    @ApiModelProperty(value = "提交UA（JSON格式）")
-    private Map<String, Object> submitUa;
-    
-    @TableField("submit_os")
-    @ApiModelProperty(value = "提交系统")
-    private String submitOs;
-    
     @TableField("submit_browser")
     @ApiModelProperty(value = "提交浏览器")
     private String submitBrowser;

@@ -3,7 +3,7 @@ package com.server.surveyanalystserver.service.impl;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-// import com.server.surveyanalystserver.utils.ImageExcelWriteHandler; // 暂时禁用
+import com.server.surveyanalystserver.utils.ImageExcelWriteHandler;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -118,19 +118,40 @@ public class ExportServiceImpl implements ExportService {
                     .sorted(Comparator.comparing(FormItem::getSort, Comparator.nullsLast(Long::compareTo)))
                     .collect(Collectors.toList());
 
-            // 识别图片列（IMAGE_UPLOAD和SIGN_PAD类型的字段）
+            // 识别图片列（IMAGE_UPLOAD、SIGN_PAD类型的字段，以及UPLOAD类型中的图片文件）
             Set<String> imageColumns = new HashSet<>();
             for (FormItem item : inputFormItems) {
                 if ("IMAGE_UPLOAD".equals(item.getType()) || "SIGN_PAD".equals(item.getType())) {
                     imageColumns.add(item.getLabel());
+                } else if ("UPLOAD".equals(item.getType())) {
+                    // UPLOAD类型也需要检查，如果包含图片文件则加入图片列
+                    imageColumns.add(item.getLabel());
                 }
+            }
+
+            // 构建固定的列名列表（确保所有行都有相同的列）
+            List<String> columnNames = new ArrayList<>();
+            columnNames.add("序号");
+            columnNames.add("ID");
+            columnNames.add("提交时间");
+            columnNames.add("所用时间(秒)");
+            columnNames.add("来自IP");
+            columnNames.add("用户ID");
+            // 添加所有表单项的标签作为列名
+            for (FormItem item : inputFormItems) {
+                columnNames.add(item.getLabel());
             }
 
             // 构建导出数据
             List<Map<String, Object>> exportData = new ArrayList<>();
             int index = 1;
             for (FormData formData : formDataList) {
-                Map<String, Object> row = new HashMap<>();
+                Map<String, Object> row = new LinkedHashMap<>(); // 使用LinkedHashMap保持顺序
+                
+                // 初始化所有列为空值，确保所有行都有相同的列
+                for (String columnName : columnNames) {
+                    row.put(columnName, "");
+                }
                 
                 // 序号列
                 row.put("序号", index++);
@@ -157,7 +178,7 @@ public class ExportServiceImpl implements ExportService {
                 
                 // 用户ID列（FormData没有userId，尝试从Response中查找）
                 Long userId = null;
-                if (formData.getCreateTime() != null) {
+                if (formData.getCreateTime() != null && formData.getSubmitRequestIp() != null) {
                     // 尝试通过提交时间和IP匹配Response来获取userId
                     LambdaQueryWrapper<Response> respWrapper = new LambdaQueryWrapper<>();
                     respWrapper.eq(Response::getSurveyId, surveyId)
@@ -171,7 +192,7 @@ public class ExportServiceImpl implements ExportService {
                         userId = matchedResponse.getUserId();
                     }
                 }
-                row.put("用户ID", userId != null ? userId : "");
+                row.put("用户ID", userId != null ? userId.toString() : "");
 
                 // 动态渲染问卷的选项名称列
                 Map<String, Object> originalData = formData.getOriginalData();
@@ -182,6 +203,113 @@ public class ExportServiceImpl implements ExportService {
                         
                         if (value == null) {
                             row.put(label, "");
+                            continue;
+                        }
+                        
+                        // 对于图片列，直接保存原始值（用于图片处理器）
+                        if ("IMAGE_UPLOAD".equals(item.getType()) || "SIGN_PAD".equals(item.getType())) {
+                            // 图片列保存原始值，让ImageExcelWriteHandler处理
+                            // 如果是List，转换为分号分隔的URL字符串
+                            if (value instanceof List) {
+                                List<?> files = (List<?>) value;
+                                String imageUrls = files.stream()
+                                        .map(f -> {
+                                            if (f instanceof Map) {
+                                                @SuppressWarnings("unchecked")
+                                                Map<String, Object> fileMap = (Map<String, Object>) f;
+                                                String url = (String) fileMap.getOrDefault("url", fileMap.getOrDefault("rawUrl", ""));
+                                                return url != null && !url.isEmpty() ? url : "";
+                                            } else if (f instanceof String) {
+                                                return (String) f;
+                                            }
+                                            return String.valueOf(f);
+                                        })
+                                        .filter(s -> !s.isEmpty())
+                                        .collect(Collectors.joining(";"));
+                                row.put(label, imageUrls);
+                            } else if (value instanceof String) {
+                                // 直接是字符串（可能是Base64或URL）
+                                row.put(label, (String) value);
+                            } else {
+                                row.put(label, String.valueOf(value));
+                            }
+                            continue;
+                        }
+                        
+                        // 对于UPLOAD类型，需要判断是否是图片文件
+                        if ("UPLOAD".equals(item.getType())) {
+                            // 判断是否是图片文件，如果是图片则保存URL用于嵌入，否则显示完整URL
+                            if (value instanceof List) {
+                                List<?> files = (List<?>) value;
+                                StringBuilder imageUrls = new StringBuilder();
+                                StringBuilder fileUrls = new StringBuilder();
+                                
+                                for (Object f : files) {
+                                    String url = "";
+                                    String name = "";
+                                    boolean isImage = false;
+                                    
+                                    if (f instanceof Map) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, Object> fileMap = (Map<String, Object>) f;
+                                        url = (String) fileMap.getOrDefault("url", fileMap.getOrDefault("rawUrl", ""));
+                                        name = (String) fileMap.getOrDefault("name", "");
+                                        
+                                        // 判断是否是图片文件
+                                        if (url != null && !url.isEmpty()) {
+                                            String urlLower = url.toLowerCase();
+                                            isImage = urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg") || 
+                                                     urlLower.endsWith(".png") || urlLower.endsWith(".gif") ||
+                                                     urlLower.endsWith(".bmp") || urlLower.endsWith(".webp");
+                                        }
+                                    } else if (f instanceof String) {
+                                        url = (String) f;
+                                        String urlLower = url.toLowerCase();
+                                        isImage = urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg") || 
+                                                 urlLower.endsWith(".png") || urlLower.endsWith(".gif") ||
+                                                 urlLower.endsWith(".bmp") || urlLower.endsWith(".webp");
+                                    }
+                                    
+                                    if (url != null && !url.isEmpty()) {
+                                        if (isImage) {
+                                            // 图片文件，保存URL用于嵌入
+                                            if (imageUrls.length() > 0) imageUrls.append(";");
+                                            imageUrls.append(url);
+                                        } else {
+                                            // 非图片文件，构建完整URL显示
+                                            if (fileUrls.length() > 0) fileUrls.append("; ");
+                                            String fullUrl = buildFullUrl(url);
+                                            if (name != null && !name.isEmpty()) {
+                                                fileUrls.append(name).append("(").append(fullUrl).append(")");
+                                            } else {
+                                                fileUrls.append(fullUrl);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // 如果包含图片，保存到图片列；如果包含非图片文件，格式化显示
+                                if (imageUrls.length() > 0) {
+                                    row.put(label, imageUrls.toString());
+                                } else if (fileUrls.length() > 0) {
+                                    row.put(label, fileUrls.toString());
+                                } else {
+                                    row.put(label, "");
+                                }
+                            } else if (value instanceof String) {
+                                String url = (String) value;
+                                String urlLower = url.toLowerCase();
+                                boolean isImage = urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg") || 
+                                                urlLower.endsWith(".png") || urlLower.endsWith(".gif") ||
+                                                urlLower.endsWith(".bmp") || urlLower.endsWith(".webp");
+                                if (isImage) {
+                                    row.put(label, url); // 图片，用于嵌入
+                                } else {
+                                    row.put(label, buildFullUrl(url)); // 非图片，显示完整URL
+                                }
+                            } else {
+                                row.put(label, String.valueOf(value));
+                            }
                             continue;
                         }
                         
@@ -210,26 +338,65 @@ public class ExportServiceImpl implements ExportService {
                         
                         // 根据组件类型格式化值
                         String displayValue = formatFormItemValue(item.getType(), value, config);
-                        row.put(label, displayValue);
-                    }
-                } else {
-                    // 如果没有数据，所有题目列都为空
-                    for (FormItem item : inputFormItems) {
-                        row.put(item.getLabel(), "");
+                        row.put(label, displayValue != null ? displayValue : "");
                     }
                 }
 
                 exportData.add(row);
             }
 
-            // 使用EasyExcel导出（直接使用OutputStream，确保不缓冲）
-            // 暂时注释掉图片写入处理器，先确保基本导出功能正常
-            // TODO: 图片写入功能需要重新实现，使用更稳定的方式
-            EasyExcel.write(outputStream, Map.class)
+            // 如果没有数据，至少创建一个空行包含表头
+            if (exportData.isEmpty()) {
+                Map<String, Object> emptyRow = new LinkedHashMap<>();
+                for (String columnName : columnNames) {
+                    emptyRow.put(columnName, "");
+                }
+                exportData.add(emptyRow);
+            }
+
+            // 使用EasyExcel导出，构建表头
+            // 将列名列表转换为 List<List<String>> 格式（EasyExcel需要的表头格式）
+            List<List<String>> head = new ArrayList<>();
+            for (String columnName : columnNames) {
+                List<String> headColumn = new ArrayList<>();
+                headColumn.add(columnName);
+                head.add(headColumn);
+            }
+            
+            // 创建图片写入处理器
+            ImageExcelWriteHandler imageWriteHandler = new ImageExcelWriteHandler();
+            imageWriteHandler.setImageColumns(imageColumns);
+            
+            // 将每行的Map数据传递给图片处理器
+            for (int i = 0; i < exportData.size(); i++) {
+                imageWriteHandler.setRowData(i, exportData.get(i));
+            }
+
+            // 将数据转换为 List<List<Object>> 格式
+            // 对于图片列，写入单元格的文本为空或占位符（图片处理器会嵌入图片）
+            List<List<Object>> dataList = new ArrayList<>();
+            for (Map<String, Object> row : exportData) {
+                List<Object> rowData = new ArrayList<>();
+                for (String columnName : columnNames) {
+                    Object value = row.get(columnName);
+                    // 对于图片列，单元格显示占位符文本，实际图片由处理器嵌入
+                    if (imageColumns.contains(columnName)) {
+                        // 图片列在单元格中显示"[图片]"占位符，实际图片由ImageExcelWriteHandler嵌入
+                        rowData.add("[图片]");
+                    } else {
+                        rowData.add(value != null ? value : "");
+                    }
+                }
+                dataList.add(rowData);
+            }
+
+            // 使用EasyExcel导出（明确指定表头和数据）
+            EasyExcel.write(outputStream)
+                    .head(head)
                     .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
-                    // .registerWriteHandler(imageWriteHandler) // 暂时禁用图片写入
+                    .registerWriteHandler(imageWriteHandler) // 启用图片写入
                     .sheet("问卷数据")
-                    .doWrite(exportData);
+                    .doWrite(dataList);
             
             // 确保数据刷新到输出流
             outputStream.flush();
@@ -239,6 +406,27 @@ public class ExportServiceImpl implements ExportService {
         }
     }
 
+    /**
+     * 构建完整URL（用于非图片文件的显示）
+     */
+    private String buildFullUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return "";
+        }
+        // 如果已经是完整URL，直接返回
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
+        // 如果是相对路径，拼接服务器地址
+        // 默认使用 localhost:8080，实际部署时可以从配置文件读取
+        String baseUrl = "http://localhost:8080";
+        if (url.startsWith("/")) {
+            return baseUrl + url;
+        } else {
+            return baseUrl + "/" + url;
+        }
+    }
+    
     /**
      * 格式化表单项值
      */
@@ -311,7 +499,8 @@ public class ExportServiceImpl implements ExportService {
                 return String.valueOf(value);
                 
             case "UPLOAD":
-                // 文件上传，返回文件URL列表
+                // 文件上传，如果是图片则嵌入，否则显示完整URL
+                // 这个分支只会在非图片列时执行（图片列已经在上面处理了）
                 if (value instanceof List) {
                     List<?> files = (List<?>) value;
                     return files.stream()
@@ -322,24 +511,32 @@ public class ExportServiceImpl implements ExportService {
                                     String name = (String) fileMap.getOrDefault("name", "");
                                     String url = (String) fileMap.getOrDefault("url", fileMap.getOrDefault("rawUrl", ""));
                                     if (url != null && !url.isEmpty()) {
-                                        return name + "(" + url + ")";
+                                        String fullUrl = buildFullUrl(url);
+                                        if (name != null && !name.isEmpty()) {
+                                            return name + "(" + fullUrl + ")";
+                                        }
+                                        return fullUrl;
                                     }
                                     return name;
                                 } else if (f instanceof String) {
-                                    return (String) f;
+                                    return buildFullUrl((String) f);
                                 }
                                 return String.valueOf(f);
                             })
                             .filter(s -> !s.isEmpty())
                             .collect(Collectors.joining("; "));
                 } else if (value instanceof String) {
-                    return (String) value;
+                    return buildFullUrl((String) value);
                 } else if (value instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> fileMap = (Map<String, Object>) value;
                     String name = (String) fileMap.getOrDefault("name", "文件");
                     String url = (String) fileMap.getOrDefault("url", fileMap.getOrDefault("rawUrl", ""));
-                    return url != null && !url.isEmpty() ? name + "(" + url + ")" : name;
+                    if (url != null && !url.isEmpty()) {
+                        String fullUrl = buildFullUrl(url);
+                        return name + "(" + fullUrl + ")";
+                    }
+                    return name;
                 }
                 return String.valueOf(value);
                 

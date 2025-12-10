@@ -20,11 +20,10 @@ public interface FormDataService extends IService<FormData> {
      * @param userId 用户ID
      * @param startTime 开始时间
      * @param browser 浏览器
-     * @param os 操作系统
-     * @param uaInfo UA信息
+     * @param userAgent User-Agent字符串（用于识别设备类型）
      * @return 保存的表单数据
      */
-    FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String os, Map<String, Object> uaInfo);
+    FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String userAgent);
     
     /**
      * 填写前校验（检查各种限制）
