@@ -866,11 +866,12 @@ onMounted(() => {
 }
 
 .preview-img {
-  width: 95%;
+  width: calc(100% - 16px);
   height: 200px;
-  margin-top: 8px;
+  margin: 8px auto;
   border-radius: 10px;
   object-fit: cover;
+  display: block;
 }
 
 .project-template-view {

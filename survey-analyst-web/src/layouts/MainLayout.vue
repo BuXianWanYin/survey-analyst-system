@@ -51,18 +51,30 @@
               </el-menu-item>
             </template>
             <template v-if="userStore.userInfo?.role === 'ADMIN'">
-              <el-sub-menu index="/system">
-                <template #title>
-                  <el-icon><Setting /></el-icon>
-                  <span>系统管理</span>
-                </template>
-                <el-menu-item index="/system/dashboard">数据概览</el-menu-item>
-                <el-menu-item index="/system/user">用户管理</el-menu-item>
-                <el-menu-item index="/system/survey">问卷管理</el-menu-item>
-                <el-menu-item index="/system/template">公共模板管理</el-menu-item>
-                <el-menu-item index="/system/data">数据管理</el-menu-item>
-                <el-menu-item index="/system/log">系统日志</el-menu-item>
-              </el-sub-menu>
+              <el-menu-item index="/system/dashboard">
+                <el-icon><DataAnalysis /></el-icon>
+                <span>数据概览</span>
+              </el-menu-item>
+              <el-menu-item index="/system/user">
+                <el-icon><UserFilled /></el-icon>
+                <span>用户管理</span>
+              </el-menu-item>
+              <el-menu-item index="/system/survey">
+                <el-icon><Document /></el-icon>
+                <span>问卷管理</span>
+              </el-menu-item>
+              <el-menu-item index="/system/template">
+                <el-icon><DocumentCopy /></el-icon>
+                <span>公共模板管理</span>
+              </el-menu-item>
+              <el-menu-item index="/system/data">
+                <el-icon><Files /></el-icon>
+                <span>数据管理</span>
+              </el-menu-item>
+              <el-menu-item index="/system/log">
+                <el-icon><Monitor /></el-icon>
+                <span>系统日志</span>
+              </el-menu-item>
             </template>
           </el-menu>
         </el-aside>
@@ -79,7 +91,19 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, User, ArrowDown, Setting, Fold, Expand, Grid, DataAnalysis, List } from '@element-plus/icons-vue'
+import { 
+  Document, 
+  User, 
+  ArrowDown, 
+  Setting, 
+  Fold, 
+  Expand, 
+  DataAnalysis, 
+  UserFilled,
+  Files,
+  DocumentCopy,
+  Monitor
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useWindowSize } from '@vueuse/core'
 
