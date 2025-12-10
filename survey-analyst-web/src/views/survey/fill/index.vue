@@ -182,6 +182,7 @@ const passwordDialogVisible = ref(false)
 const inputPassword = ref('')
 const responseCount = ref(0)
 const verifyingPassword = ref(false)
+const fillStartTime = ref(null) // 记录开始填写时间
 
 // 密码验证相关函数
 const handleVerifyPassword = async () => {
@@ -244,6 +245,8 @@ const continueLoadFormData = async () => {
           canFill.value = false
           return
         }
+        // 校验通过，记录开始填写时间
+        fillStartTime.value = new Date().toISOString()
       } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || '校验失败，无法填写'
         canFill.value = false
@@ -828,8 +831,8 @@ const handleSubmit = async () => {
       localStorage.setItem('deviceId', deviceId)
     }
 
-    // 使用表单数据提交接口
-    const formDataRes = await formApi.submitFormData(formKey.value, answers, deviceId)
+    // 使用表单数据提交接口（传递开始填写时间）
+    const formDataRes = await formApi.submitFormData(formKey.value, answers, deviceId, fillStartTime.value)
     if (formDataRes && formDataRes.code === 200) {
       const data = formDataRes.data || {}
       const submitSettings = data.submitSettings || {}

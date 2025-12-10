@@ -537,7 +537,7 @@ onMounted(() => {
     }
     
     :deep(.form-item-wrapper) {
-      margin-bottom: 20px;
+    margin-bottom: 20px;
     }
   }
 }

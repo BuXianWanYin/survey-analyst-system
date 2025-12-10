@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.surveyanalystserver.entity.FormData;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -17,9 +18,13 @@ public interface FormDataService extends IService<FormData> {
      * @param ipAddress IP地址
      * @param deviceId 设备ID
      * @param userId 用户ID
+     * @param startTime 开始时间
+     * @param browser 浏览器
+     * @param os 操作系统
+     * @param uaInfo UA信息
      * @return 保存的表单数据
      */
-    FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId);
+    FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String os, Map<String, Object> uaInfo);
     
     /**
      * 填写前校验（检查各种限制）

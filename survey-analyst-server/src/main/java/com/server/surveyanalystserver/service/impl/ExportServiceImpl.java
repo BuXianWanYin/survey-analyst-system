@@ -3,10 +3,12 @@ package com.server.surveyanalystserver.service.impl;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// import com.server.surveyanalystserver.utils.ImageExcelWriteHandler; // 暂时禁用
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
@@ -77,12 +79,24 @@ public class ExportServiceImpl implements ExportService {
 
             String formKey = formConfig.getFormKey();
 
-            // 设置响应头
+            // 设置响应头（Excel是二进制文件）
             String fileName = URLEncoder.encode(survey.getTitle() + "_数据导出", "UTF-8")
                     .replaceAll("\\+", "%20");
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setCharacterEncoding("utf-8");
+            
+            // 重置响应，清除可能已设置的header和缓冲区
+            response.reset();
+            response.resetBuffer(); // 重置缓冲区，确保没有数据被写入
+            
+            // 设置Content-Type（二进制文件，明确不设置字符编码）
+            // 使用setHeader而不是setContentType，避免触发字符编码过滤器
+            response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            
+            // 获取输出流（必须在设置header之后获取）
+            OutputStream outputStream = response.getOutputStream();
 
             // 获取所有表单数据
             LambdaQueryWrapper<FormData> formDataWrapper = new LambdaQueryWrapper<>();
@@ -104,6 +118,14 @@ public class ExportServiceImpl implements ExportService {
                     .sorted(Comparator.comparing(FormItem::getSort, Comparator.nullsLast(Long::compareTo)))
                     .collect(Collectors.toList());
 
+            // 识别图片列（IMAGE_UPLOAD和SIGN_PAD类型的字段）
+            Set<String> imageColumns = new HashSet<>();
+            for (FormItem item : inputFormItems) {
+                if ("IMAGE_UPLOAD".equals(item.getType()) || "SIGN_PAD".equals(item.getType())) {
+                    imageColumns.add(item.getLabel());
+                }
+            }
+
             // 构建导出数据
             List<Map<String, Object>> exportData = new ArrayList<>();
             int index = 1;
@@ -120,9 +142,12 @@ public class ExportServiceImpl implements ExportService {
                 row.put("提交时间", formData.getCreateTime() != null ? 
                         formData.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
                 
-                // 所用时间列（completeTime是毫秒，转换为秒）
+                // 所用时间列（优先使用completeTime，如果没有则通过startTime和createTime计算）
                 if (formData.getCompleteTime() != null) {
                     row.put("所用时间(秒)", formData.getCompleteTime() / 1000.0);
+                } else if (formData.getStartTime() != null && formData.getCreateTime() != null) {
+                    long durationSeconds = java.time.Duration.between(formData.getStartTime(), formData.getCreateTime()).getSeconds();
+                    row.put("所用时间(秒)", durationSeconds);
                 } else {
                     row.put("所用时间(秒)", "");
                 }
@@ -197,11 +222,17 @@ public class ExportServiceImpl implements ExportService {
                 exportData.add(row);
             }
 
-            // 使用EasyExcel导出
-            EasyExcel.write(response.getOutputStream(), Map.class)
+            // 使用EasyExcel导出（直接使用OutputStream，确保不缓冲）
+            // 暂时注释掉图片写入处理器，先确保基本导出功能正常
+            // TODO: 图片写入功能需要重新实现，使用更稳定的方式
+            EasyExcel.write(outputStream, Map.class)
                     .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                    // .registerWriteHandler(imageWriteHandler) // 暂时禁用图片写入
                     .sheet("问卷数据")
                     .doWrite(exportData);
+            
+            // 确保数据刷新到输出流
+            outputStream.flush();
 
         } catch (Exception e) {
             throw new RuntimeException("导出失败: " + e.getMessage(), e);
@@ -388,9 +419,15 @@ public class ExportServiceImpl implements ExportService {
             // 设置响应头
             String fileName = URLEncoder.encode(survey.getTitle() + "_统计数据", "UTF-8")
                     .replaceAll("\\+", "%20");
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setCharacterEncoding("utf-8");
+            response.reset();
+            response.resetBuffer(); // 重置缓冲区，确保没有数据被写入
+            response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            
+            OutputStream outputStream = response.getOutputStream();
 
             // 获取问卷统计
             Map<String, Object> surveyStats = statisticsService.getSurveyStatistics(surveyId);
@@ -439,10 +476,13 @@ public class ExportServiceImpl implements ExportService {
             }
 
             // 使用EasyExcel导出
-            EasyExcel.write(response.getOutputStream(), Map.class)
+            EasyExcel.write(outputStream, Map.class)
                     .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
                     .sheet("统计数据")
                     .doWrite(exportData);
+            
+            // 确保数据刷新到输出流
+            outputStream.flush();
 
         } catch (IOException e) {
             throw new RuntimeException("导出失败", e);
@@ -460,9 +500,13 @@ public class ExportServiceImpl implements ExportService {
             // 设置响应头
             String fileName = URLEncoder.encode(survey.getTitle() + "_分析报告", "UTF-8")
                     .replaceAll("\\+", "%20");
-            response.setContentType("application/pdf");
-            response.setCharacterEncoding("utf-8");
+            response.reset();
+            response.resetBuffer(); // 重置缓冲区，确保没有数据被写入
+            response.setHeader("Content-Type", "application/pdf");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".pdf");
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
 
             // 获取统计数据
             Map<String, Object> surveyStats = statisticsService.getSurveyStatistics(surveyId);
@@ -568,8 +612,8 @@ public class ExportServiceImpl implements ExportService {
     /**
      * 创建PDF表格单元格
      */
-    private com.itextpdf.layout.element.Cell createCell(String text, boolean isHeader) {
-        com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+    private Cell createCell(String text, boolean isHeader) {
+        com.itextpdf.layout.element.Cell cell = new Cell()
                 .add(new Paragraph(text))
                 .setPadding(5);
         

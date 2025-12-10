@@ -80,5 +80,9 @@ public class Survey implements Serializable {
     @TableLogic
     @ApiModelProperty(value = "删除标志：0-未删除，1-已删除")
     private Integer deleteFlag;
+
+    @TableField(exist = false)
+    @ApiModelProperty(value = "答卷数量（非数据库字段）")
+    private Long responseCount;
 }
 

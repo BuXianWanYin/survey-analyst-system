@@ -5,10 +5,13 @@ import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.service.FormDataService;
+import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.user.UserService;
 import com.server.surveyanalystserver.utils.IpUtils;
+import com.server.surveyanalystserver.utils.UserAgentUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,8 +90,36 @@ public class FormDataController {
         @SuppressWarnings("unchecked")
         Map<String, Object> originalData = (Map<String, Object>) params.get("originalData");
         
+        // 获取开始填写时间
+        LocalDateTime startTime = null;
+        Object startTimeObj = params.get("startTime");
+        if (startTimeObj != null) {
+            if (startTimeObj instanceof String) {
+                try {
+                    startTime = LocalDateTime.parse((String) startTimeObj, 
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+                } catch (Exception e) {
+                    try {
+                        startTime = LocalDateTime.parse((String) startTimeObj,
+                                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    } catch (Exception ex) {
+                        // 解析失败，使用当前时间
+                        startTime = LocalDateTime.now();
+                    }
+                }
+            }
+        }
+        
         // 获取IP地址
         String ipAddress = IpUtils.getIpAddress(request);
+        
+        // 获取 User-Agent
+        String userAgent = request.getHeader("User-Agent");
+        
+        // 解析浏览器和操作系统信息
+        String browser = UserAgentUtils.getBrowser(userAgent);
+        String os = UserAgentUtils.getOS(userAgent);
+        Map<String, Object> uaInfo = UserAgentUtils.getUaInfo(userAgent);
         
         // 获取设备ID（从请求参数中获取，如果前端传递了deviceId）
         String deviceId = (String) params.get("deviceId");
@@ -106,14 +139,14 @@ public class FormDataController {
         }
         
         // 保存表单数据（会进行限制验证）
-        FormData saved = formDataService.saveFormData(formKey, originalData, ipAddress, deviceId, userId);
+        FormData saved = formDataService.saveFormData(formKey, originalData, ipAddress, deviceId, userId, startTime, browser, os, uaInfo);
         
         // 获取提交设置信息，返回给前端
         Map<String, Object> result = new HashMap<>();
         result.put("formData", saved);
         
         // 获取表单配置，用于获取surveyId
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getByFormKey(formKey);
+        FormConfig formConfig = formConfigService.getByFormKey(formKey);
         if (formConfig != null) {
             FormSetting formSetting = formSettingService.getBySurveyId(formConfig.getSurveyId());
             if (formSetting != null && formSetting.getSettings() != null) {

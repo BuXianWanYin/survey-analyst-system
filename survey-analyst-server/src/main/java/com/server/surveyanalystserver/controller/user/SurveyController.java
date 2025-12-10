@@ -31,6 +31,9 @@ public class SurveyController {
     @Autowired
     private com.server.surveyanalystserver.service.FormTemplateService formTemplateService;
 
+    @Autowired
+    private com.server.surveyanalystserver.service.ResponseService responseService;
+
     @ApiOperation(value = "创建问卷", notes = "创建新问卷")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -66,6 +69,13 @@ public class SurveyController {
         User currentUser = userService.getCurrentUser();
         Page<Survey> page = new Page<>(pageNum, pageSize);
         Page<Survey> result = surveyService.getSurveyList(page, currentUser.getId());
+        
+        // 为每个问卷设置答卷数量
+        result.getRecords().forEach(survey -> {
+            long responseCount = responseService.getResponseCount(survey.getId());
+            survey.setResponseCount(responseCount);
+        });
+        
         return Result.success("查询成功", result);
     }
 

@@ -52,12 +52,12 @@ public class FormData {
     @ApiModelProperty(value = "请求IP")
     private String submitRequestIp;
     
-    @TableField("submit_address")
-    @ApiModelProperty(value = "提交地址")
-    private String submitAddress;
+    @TableField("start_time")
+    @ApiModelProperty(value = "开始填写时间")
+    private LocalDateTime startTime;
     
     @TableField("complete_time")
-    @ApiModelProperty(value = "完成时间（毫秒）")
+    @ApiModelProperty(value = "完成时间（秒）")
     private Integer completeTime;
     
     @TableField("create_time")

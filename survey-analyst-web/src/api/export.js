@@ -3,6 +3,21 @@ import { saveAs } from 'file-saver'
 import { getToken } from '@/utils/auth'
 
 /**
+ * 构建导出URL，避免路径重复
+ */
+function buildExportUrl(path) {
+  const baseURL = import.meta.env.VITE_APP_BASE_API || ''
+  // 规范化baseURL：移除末尾的斜杠
+  const normalizedBase = baseURL.replace(/\/+$/, '')
+  // 检查baseURL是否以/api结尾（避免路径重复）
+  if (normalizedBase.endsWith('/api')) {
+    return `${normalizedBase}/export${path}`
+  } else {
+    return `${normalizedBase}/api/export${path}`
+  }
+}
+
+/**
  * 导出相关 API
  */
 export const exportApi = {
@@ -13,9 +28,9 @@ export const exportApi = {
    */
   async exportSurveyData(surveyId) {
     try {
-      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
+      const exportUrl = buildExportUrl(`/survey/${surveyId}/data`)
       const response = await axios({
-        url: `${baseURL}/api/export/survey/${surveyId}/data`,
+        url: exportUrl,
         method: 'get',
         responseType: 'blob',
         headers: {
@@ -41,9 +56,9 @@ export const exportApi = {
    */
   async exportStatistics(surveyId) {
     try {
-      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
+      const exportUrl = buildExportUrl(`/survey/${surveyId}/statistics`)
       const response = await axios({
-        url: `${baseURL}/api/export/survey/${surveyId}/statistics`,
+        url: exportUrl,
         method: 'get',
         responseType: 'blob',
         headers: {
@@ -69,9 +84,9 @@ export const exportApi = {
    */
   async exportAnalysisReport(surveyId) {
     try {
-      const baseURL = import.meta.env.VITE_APP_BASE_API || ''
+      const exportUrl = buildExportUrl(`/survey/${surveyId}/report`)
       const response = await axios({
-        url: `${baseURL}/api/export/survey/${surveyId}/report`,
+        url: exportUrl,
         method: 'get',
         responseType: 'blob',
         headers: {

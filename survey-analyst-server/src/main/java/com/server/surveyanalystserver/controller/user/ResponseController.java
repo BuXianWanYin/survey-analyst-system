@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
@@ -24,7 +25,7 @@ public class ResponseController {
 
     @ApiOperation(value = "提交填写记录", notes = "提交问卷填写记录")
     @PostMapping
-    public Result<Response> submitResponse(@RequestBody Map<String, Object> params) {
+    public Result<Response> submitResponse(@RequestBody Map<String, Object> params, HttpServletRequest request) {
         Response response = new Response();
         response.setSurveyId(Long.valueOf(params.get("surveyId").toString()));
         response.setIpAddress(params.get("ipAddress") != null ? params.get("ipAddress").toString() : null);
@@ -33,7 +34,7 @@ public class ResponseController {
         @SuppressWarnings("unchecked")
         Map<Long, Object> answers = (Map<Long, Object>) params.get("answers");
         
-        Response submittedResponse = responseService.submitResponse(response, answers);
+        Response submittedResponse = responseService.submitResponse(response, answers, request);
         return Result.success("提交成功", submittedResponse);
     }
 

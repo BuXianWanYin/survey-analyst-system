@@ -16,6 +16,4 @@ server:
   servlet:
     context-path: /
     encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
+      enabled: false  # 禁用Spring Boot的自动字符编码过滤器，使用自定义过滤器处理字符编码（排除导出接口）

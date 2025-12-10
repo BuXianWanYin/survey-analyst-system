@@ -118,6 +118,9 @@
             <span class="status-dot" :class="getStatusClass(survey.status)"></span>
             <span>{{ getStatusText(survey.status) }}</span>
           </div>
+          <div class="survey-response-count">
+            答卷数量: {{ survey.responseCount ?? 0 }}
+          </div>
           <div class="survey-time">
             创建时间: {{ formatDate(survey.createTime) }}
           </div>
@@ -144,6 +147,11 @@
           <template #default="{ row }">
             <span class="status-dot" :class="getStatusClass(row.status)"></span>
             <span>{{ getStatusText(row.status) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="答卷数量" width="120" align="center">
+          <template #default="{ row }">
+            {{ row.responseCount ?? 0 }}
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" align="center">
@@ -825,6 +833,13 @@ onMounted(() => {
 
 .status-dot.status-ended {
   background: #F56C6C;
+}
+
+.survey-response-count {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 
 .survey-time {

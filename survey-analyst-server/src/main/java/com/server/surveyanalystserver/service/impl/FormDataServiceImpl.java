@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -197,15 +198,53 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId) {
+    public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String os, Map<String, Object> uaInfo) {
         // 在保存前再次校验（双重校验，确保数据一致性）
         validateBeforeFill(formKey, ipAddress, deviceId, userId);
         
-        // 保存表单数据
+        // 获取表单配置，用于获取surveyId
+        FormConfig formConfig = formConfigService.getByFormKey(formKey);
+        if (formConfig == null) {
+            throw new RuntimeException("表单配置不存在");
+        }
+        Long surveyId = formConfig.getSurveyId();
+        
+        // 计算提交时间
+        LocalDateTime submitTime = LocalDateTime.now();
+        
+        // 先保存到 response 表
+        Response response = new Response();
+        response.setSurveyId(surveyId);
+        response.setUserId(userId);
+        response.setIpAddress(ipAddress);
+        response.setStartTime(startTime);
+        response.setSubmitTime(submitTime);
+        response.setStatus("COMPLETED");
+        
+        // 计算填写时长（秒）
+        if (startTime != null) {
+            long durationSeconds = Duration.between(startTime, submitTime).getSeconds();
+            response.setDuration((int) durationSeconds);
+        }
+        
+        // 保存到 response 表
+        responseMapper.insert(response);
+        
+        // 保存表单数据到 form_data 表
         FormData formData = new FormData();
         formData.setFormKey(formKey);
         formData.setOriginalData(originalData);
         formData.setSubmitRequestIp(ipAddress);
+        formData.setStartTime(startTime);
+        formData.setSubmitBrowser(browser);
+        formData.setSubmitOs(os);
+        formData.setSubmitUa(uaInfo);
+        
+        // 计算填写时长（秒）
+        if (startTime != null) {
+            long durationSeconds = Duration.between(startTime, submitTime).getSeconds();
+            formData.setCompleteTime((int) durationSeconds);
+        }
         
         // 计算序号
         LambdaQueryWrapper<FormData> wrapper = new LambdaQueryWrapper<>();

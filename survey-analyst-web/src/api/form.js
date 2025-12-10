@@ -162,13 +162,16 @@ export const formApi = {
    * @param {String} deviceId 设备ID（可选）
    * @returns {Promise} 提交结果
    */
-  submitFormData(formKey, answers, deviceId) {
+  submitFormData(formKey, answers, deviceId, startTime) {
     const params = {
       formKey,
       originalData: answers
     }
     if (deviceId) {
       params.deviceId = deviceId
+    }
+    if (startTime) {
+      params.startTime = startTime
     }
     return request.post('/form/data', params)
   }

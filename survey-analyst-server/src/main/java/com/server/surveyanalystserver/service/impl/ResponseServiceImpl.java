@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.Answer;
 import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.utils.UserAgentUtils;
 import com.server.surveyanalystserver.entity.dto.ResponseVO;
 import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
@@ -25,9 +27,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 填写记录Service实现类
@@ -62,7 +69,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Response submitResponse(Response response, Map<Long, Object> answers) {
+    public Response submitResponse(Response response, Map<Long, Object> answers, HttpServletRequest request) {
         // 验证问卷状态和访问权限
         Survey survey = surveyService.getById(response.getSurveyId());
         if (survey == null) {
@@ -170,7 +177,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         response.setStatus("COMPLETED");
         response.setSubmitTime(LocalDateTime.now());
         if (response.getStartTime() != null) {
-            long duration = java.time.Duration.between(response.getStartTime(), response.getSubmitTime()).getSeconds();
+            long duration = Duration.between(response.getStartTime(), response.getSubmitTime()).getSeconds();
             response.setDuration((int) duration);
         }
         this.save(response);
@@ -183,7 +190,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
             if (formConfig != null && formConfig.getFormKey() != null) {
                 // 将 answers 转换为 form_data 格式（formItemId -> value）
-                Map<String, Object> originalData = new java.util.HashMap<>();
+                Map<String, Object> originalData = new HashMap<>();
                 for (Map.Entry<Long, Object> entry : answers.entrySet()) {
                     Long questionId = entry.getKey();
                     Object answerValue = entry.getValue();
@@ -206,7 +213,21 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
                     String deviceId = null;
                     // 用户ID从response中获取
                     Long userId = response.getUserId();
-                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId);
+                    
+                    // 解析User-Agent信息
+                    String browser = null;
+                    String os = null;
+                    Map<String, Object> uaInfo = null;
+                    if (request != null) {
+                        String userAgent = request.getHeader("User-Agent");
+                        if (userAgent != null && !userAgent.isEmpty()) {
+                            browser = UserAgentUtils.getBrowser(userAgent);
+                            os = UserAgentUtils.getOS(userAgent);
+                            uaInfo = UserAgentUtils.getUaInfo(userAgent);
+                        }
+                    }
+                    
+                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId, response.getStartTime(), browser, os, uaInfo);
                 }
             }
         } catch (Exception e) {
@@ -274,10 +295,21 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
 
     @Override
     public long getResponseCount(Long surveyId) {
-        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Response::getSurveyId, surveyId);
-        wrapper.eq(Response::getStatus, "COMPLETED");
-        return this.count(wrapper);
+        // 通过 surveyId 获取 formKey，然后统计 form_data 表的数据
+        // 这样与数据管理页面显示的数据保持一致
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        if (formConfig == null || formConfig.getFormKey() == null) {
+            // 如果没有 formConfig，回退到统计 response 表
+            LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Response::getSurveyId, surveyId);
+            wrapper.ne(Response::getStatus, "DRAFT");
+            return this.count(wrapper);
+        }
+        
+        // 统计 form_data 表的数据
+        LambdaQueryWrapper<FormData> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormData::getFormKey, formConfig.getFormKey());
+        return formDataService.count(wrapper);
     }
 
     @Override
@@ -343,30 +375,30 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             }
             
             return vo;
-        }).collect(java.util.stream.Collectors.toList());
+        }).collect(Collectors.toList());
         
         // 应用筛选条件（问卷名称、发布用户名称、填写用户名称）
         if (surveyTitle != null && !surveyTitle.isEmpty()) {
             voList = voList.stream()
                 .filter(vo -> vo.getSurveyTitle() != null && vo.getSurveyTitle().contains(surveyTitle))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         }
         if (publisherName != null && !publisherName.isEmpty()) {
             voList = voList.stream()
                 .filter(vo -> vo.getPublisherName() != null && vo.getPublisherName().contains(publisherName))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         }
         if (userName != null && !userName.isEmpty()) {
             voList = voList.stream()
                 .filter(vo -> vo.getUserName() != null && vo.getUserName().contains(userName))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         }
         
         // 手动分页
         int total = voList.size();
         int start = (int) ((page.getCurrent() - 1) * page.getSize());
         int end = Math.min(start + (int) page.getSize(), total);
-        List<ResponseVO> pagedList = start < total ? voList.subList(start, end) : new java.util.ArrayList<>();
+        List<ResponseVO> pagedList = start < total ? voList.subList(start, end) : new ArrayList<>();
         
         Page<ResponseVO> voPage = new Page<>(page.getCurrent(), page.getSize(), total);
         voPage.setRecords(pagedList);
