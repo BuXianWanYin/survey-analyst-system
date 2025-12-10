@@ -379,10 +379,10 @@ public class ExportServiceImpl implements ExportService {
                 List<Object> rowData = new ArrayList<>();
                 for (String columnName : columnNames) {
                     Object value = row.get(columnName);
-                    // 对于图片列，单元格显示占位符文本，实际图片由处理器嵌入
+                    // 对于图片列，单元格文本为空（图片由处理器嵌入，不需要占位符）
                     if (imageColumns.contains(columnName)) {
-                        // 图片列在单元格中显示"[图片]"占位符，实际图片由ImageExcelWriteHandler嵌入
-                        rowData.add("[图片]");
+                        // 图片列单元格文本设置为空，实际图片由ImageExcelWriteHandler嵌入
+                        rowData.add("");
                     } else {
                         rowData.add(value != null ? value : "");
                     }

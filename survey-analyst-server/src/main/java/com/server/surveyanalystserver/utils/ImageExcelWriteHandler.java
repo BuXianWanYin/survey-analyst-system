@@ -6,10 +6,12 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.util.IOUtils;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import javax.imageio.ImageIO;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -198,69 +200,123 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             // 创建图片
             int pictureIdx = workbook.addPicture(imageBytes, pictureType);
             
-            // 获取列宽和行高（以像素为单位）
+            // 设置列宽（确保列足够宽以显示图片）
             int colWidth = sheet.getColumnWidth(colIndex);
-            if (colWidth < 3000) {
-                colWidth = 3000; // 设置最小列宽（约30个字符）
+            if (colWidth < 4000) {
+                colWidth = 4000; // 设置列宽（约40个字符）
                 sheet.setColumnWidth(colIndex, colWidth);
             }
             
-            // 列宽转换：Excel列宽单位是1/256字符宽度，转换为像素大约乘以0.75
-            double cellWidthPx = colWidth * 0.75;
-            
-            // 行高（以点为单位，1点=1/72英寸）
+            // 设置行高（确保行足够高以显示图片）
             double rowHeightPoints = row.getHeightInPoints();
-            if (rowHeightPoints < 30) {
-                rowHeightPoints = 30; // 最小行高
+            if (rowHeightPoints < 60) {
+                rowHeightPoints = 60; // 最小行高60点
             }
             // 如果有多张图片，增加行高
             if (totalImages > 1) {
-                rowHeightPoints = Math.max(rowHeightPoints, totalImages * 80.0); // 每张图片约80点高度
+                rowHeightPoints = Math.max(rowHeightPoints, totalImages * 60.0); // 每张图片60点高度
             } else {
-                rowHeightPoints = Math.max(rowHeightPoints, 80.0); // 单张图片80点高度
+                rowHeightPoints = Math.max(rowHeightPoints, 60.0); // 单张图片60点高度
             }
             row.setHeightInPoints((float) rowHeightPoints);
             
-            // 行高转换为像素：1点 = 1.33像素
-            double cellHeightPx = rowHeightPoints * 1.33;
-            
-            // 如果有多张图片，计算每张图片的高度和垂直偏移
-            double imageHeight = cellHeightPx / totalImages; // 每张图片分配的高度
-            double verticalOffset = imageIndex * imageHeight; // 当前图片的垂直偏移
-            
-            // 创建锚点，确保图片在正确的单元格内
+            // 创建锚点，参考标准做法：col2=col1+1, row2=row1+1 让图片填充单元格
+            // dx1, dy1, dx2, dy2 都设置为0，表示从单元格左上角到右下角
             ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
-            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             
-            // 始终保持在指定列
-            anchor.setCol1(colIndex);
-            anchor.setCol2(colIndex + 1);
-            anchor.setRow1(rowIndex);
-            anchor.setRow2(rowIndex + 1);
-            
-            // 使用 dx 和 dy 来精确控制图片位置（单位：EMU，1像素 ≈ 9525 EMU）
-            // dx1, dy1: 左上角偏移；dx2, dy2: 右下角偏移
-            // 注意：Excel 的单元格坐标和像素转换需要精确计算
-            int dx1 = 2 * 9525; // 左边距（约2像素）
-            int dy1 = (int) (verticalOffset * 9525) + 2 * 9525; // 垂直偏移（多张图片时纵向排列）+ 上边距
-            int dx2 = (int) (cellWidthPx * 9525) - 2 * 9525; // 右边界 - 右边距
-            int dy2 = (int) ((verticalOffset + imageHeight) * 9525) - 2 * 9525; // 下边界 - 下边距
-            
-            anchor.setDx1(dx1);
-            anchor.setDy1(dy1);
-            anchor.setDx2(dx2);
-            anchor.setDy2(dy2);
+            if (totalImages > 1) {
+                // 多张图片：在单元格内垂直排列
+                // 计算每张图片应该占用的高度（单位：EMU，1点 = 12700 EMU）
+                double totalHeightEmu = rowHeightPoints * 12700;
+                double imageHeightEmu = totalHeightEmu / totalImages;
+                double topOffsetEmu = imageIndex * imageHeightEmu;
+                
+                // 设置锚点：使用 dx/dy 来指定图片在单元格内的垂直位置
+                // col1, row1: 左上角单元格
+                // col2, row2: 右下角单元格（设置为同一单元格，用 dx/dy 控制位置）
+                anchor.setCol1(colIndex);
+                anchor.setRow1(rowIndex);
+                anchor.setCol2(colIndex);  // 同一列
+                anchor.setRow2(rowIndex);  // 同一行
+                
+                // dx1, dy1: 左上角相对于单元格左上角的偏移
+                // dx2, dy2: 右下角相对于单元格左上角的偏移
+                anchor.setDx1(0);  // 左边对齐
+                anchor.setDy1((int) topOffsetEmu);  // 垂直偏移
+                anchor.setDx2(0);  // 右边对齐（需要根据列宽计算）
+                anchor.setDy2((int) (topOffsetEmu + imageHeightEmu));  // 底部位置
+                
+                // 需要计算列宽的 EMU 值来设置 dx2
+                // 列宽单位：1/256 字符宽度，1个字符宽度 ≈ 9525 EMU
+                int cellWidthEmu = (int) (colWidth * 9525 / 256.0);
+                anchor.setDx2(cellWidthEmu);
+            } else {
+                // 单张图片：填充整个单元格
+                // 关键：col2 = col1 + 1, row2 = row1 + 1，dx/dy = 0
+                // 这样图片会填充整个单元格，resize() 会自动调整
+                anchor.setCol1(colIndex);
+                anchor.setRow1(rowIndex);
+                anchor.setCol2(colIndex + 1);  // 下一列（图片填充到单元格边界）
+                anchor.setRow2(rowIndex + 1);  // 下一行（图片填充到单元格边界）
+                
+                // dx/dy 都设置为 0，让图片从单元格左上角开始，填充到右下角
+                anchor.setDx1(0);
+                anchor.setDy1(0);
+                anchor.setDx2(0);
+                anchor.setDy2(0);
+            }
 
             // 插入图片
             Picture picture = drawing.createPicture(anchor, pictureIdx);
             
-            // 调用 resize() 让图片自动适应锚点定义的区域（保持宽高比）
-            picture.resize();
+            // 控制图片大小：使用 resize(double scale) 方法控制缩放比例
+            // 参数说明：
+            // - resize() 或 resize(1.0): 完全填充锚点区域（可能变形）
+            // - resize(0.9): 填充90%的区域（保持宽高比）
+            // 我们需要让图片适应单元格，保持宽高比，不超出单元格
+            // 先尝试获取图片原始尺寸来计算合适的缩放比例
+            
+            try {
+                // 获取图片原始尺寸
+                BufferedImage img = ImageIO.read(new java.io.ByteArrayInputStream(imageBytes));
+                if (img == null) {
+                    throw new Exception("无法读取图片");
+                }
+                int imgWidth = img.getWidth();
+                int imgHeight = img.getHeight();
+                
+                // 计算单元格尺寸（像素）
+                // 列宽：1字符 ≈ 7像素，列宽单位是 1/256 字符
+                double cellWidthPx = (colWidth / 256.0) * 7.0;
+                // 行高：1点 ≈ 1.33像素
+                double cellHeightPx = rowHeightPoints * 1.33;
+                
+                // 如果是多张图片，每张图片的高度需要除以总数
+                if (totalImages > 1) {
+                    cellHeightPx = cellHeightPx / totalImages;
+                }
+                
+                // 计算缩放比例（保持宽高比，取较小的比例以确保图片完全在单元格内）
+                double scaleX = cellWidthPx / imgWidth;
+                double scaleY = cellHeightPx / imgHeight;
+                double scale = Math.min(scaleX, scaleY);  // 取较小值，确保图片不会超出单元格
+                
+                // 应用缩放（乘以0.95留一点边距）
+                picture.resize(scale * 0.95);
+                
+                System.out.println("图片缩放: 原始尺寸=" + imgWidth + "x" + imgHeight + 
+                    ", 单元格尺寸=" + cellWidthPx + "x" + cellHeightPx + 
+                    ", 缩放比例=" + (scale * 0.95));
+            } catch (Exception e) {
+                // 如果无法读取图片尺寸，使用默认的 resize() 方法
+                System.err.println("无法读取图片尺寸，使用默认缩放: " + e.getMessage());
+                // resize() 会填充锚点区域，但可能保持宽高比
+                picture.resize(1.0);
+            }
             
             System.out.println("成功插入图片到 row=" + rowIndex + ", col=" + colIndex + 
                 ", imageIndex=" + imageIndex + "/" + totalImages +
-                ", 位置: dx1=" + dx1 + ", dy1=" + dy1 + ", dx2=" + dx2 + ", dy2=" + dy2 +
-                ", 单元格大小: " + cellWidthPx + "x" + imageHeight + " 像素");
+                ", colWidth=" + colWidth + ", rowHeight=" + rowHeightPoints);
         } catch (Exception e) {
             System.err.println("插入图片异常: " + e.getMessage());
             e.printStackTrace();
