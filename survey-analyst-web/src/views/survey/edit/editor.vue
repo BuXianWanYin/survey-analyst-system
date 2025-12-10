@@ -1966,23 +1966,48 @@
           label="封面图"
           prop="coverImg"
         >
-          <el-upload
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :show-file-list="false"
-            :on-success="handleTemplateCoverUpload"
-            accept="image/*"
-            class="template-cover-upload"
-          >
-            <el-button type="primary">选择图片</el-button>
-          </el-upload>
-          <el-image
-            v-if="templateForm.coverImg"
-            :src="templateForm.coverImg"
-            class="template-cover-preview"
-            fit="cover"
-            style="width: 200px; height: 120px; margin-top: 10px; border: 1px solid #dcdfe6; border-radius: 4px;"
-          />
+          <div class="template-cover-container">
+            <!-- 如果没有图片，显示上传按钮 -->
+            <el-upload
+              v-if="!templateForm.coverImg"
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleTemplateCoverUpload"
+              accept="image/*"
+              :limit="1"
+              class="template-cover-upload"
+            >
+              <el-button type="primary">选择图片</el-button>
+            </el-upload>
+            <!-- 如果有图片，显示图片预览和操作按钮 -->
+            <div v-else class="template-cover-preview-wrapper">
+              <el-image
+                :src="templateForm.coverImg"
+                class="template-cover-preview"
+                fit="cover"
+                :preview-src-list="[templateForm.coverImg]"
+                :initial-index="0"
+                preview-teleported
+              />
+              <div class="template-cover-actions">
+                <el-button
+                  type="primary"
+                  :icon="View"
+                  circle
+                  size="small"
+                  @click="handlePreviewCoverImage"
+                />
+                <el-button
+                  type="danger"
+                  :icon="Delete"
+                  circle
+                  size="small"
+                  @click="handleDeleteCoverImage"
+                />
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item
           label="模板名称"
@@ -3287,6 +3312,7 @@ const previewVisible = ref(false)
 const saveTemplateDialogVisible = ref(false)
 const templateFormRef = ref(null)
 const templateTypeList = ref([])
+const coverImageRef = ref(null)
 const templateForm = reactive({
   coverImg: '',
   name: '',
@@ -3327,6 +3353,23 @@ const handleTemplateCoverUpload = (response) => {
   } else {
     ElMessage.error(response?.message || '图片上传失败')
   }
+}
+
+// 预览封面图 - 触发 el-image 的原生预览功能
+const handlePreviewCoverImage = () => {
+  if (coverImageRef.value) {
+    // 触发图片的点击事件来打开预览
+    const imgElement = coverImageRef.value.$el?.querySelector('img')
+    if (imgElement) {
+      imgElement.click()
+    }
+  }
+}
+
+// 删除封面图
+const handleDeleteCoverImage = () => {
+  templateForm.coverImg = ''
+  ElMessage.success('已删除封面图')
 }
 
 // 处理分类下拉框显示
@@ -4257,7 +4300,39 @@ onMounted(() => {
   border-color: #f56c6c;
 }
 
+.template-cover-container {
+  width: 100%;
+}
 
+.template-cover-preview-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 200px;
+  height: 120px;
+}
+
+.template-cover-preview {
+  width: 200px;
+  height: 120px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.template-cover-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.template-cover-preview-wrapper:hover .template-cover-actions {
+  opacity: 1;
+}
 </style>
 
 

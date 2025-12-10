@@ -242,23 +242,50 @@
           </el-select>
         </el-form-item>
         <el-form-item label="封面图">
-          <el-upload
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :show-file-list="false"
-            :on-success="handleTemplateCoverUpload"
-            accept="image/*"
-            class="template-cover-upload"
-          >
-            <el-button type="primary">选择图片</el-button>
-          </el-upload>
-          <el-image
-            v-if="editForm.coverImg"
-            :src="editForm.coverImg"
-            class="template-cover-preview"
-            fit="cover"
-            style="width: 200px; height: 120px; margin-top: 10px; border: 1px solid #dcdfe6; border-radius: 4px;"
-          />
+          <div class="template-cover-container">
+            <!-- 如果没有图片，显示上传按钮 -->
+            <el-upload
+              v-if="!editForm.coverImg"
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleTemplateCoverUpload"
+              accept="image/*"
+              :limit="1"
+              class="template-cover-upload"
+            >
+              <el-button type="primary">选择图片</el-button>
+            </el-upload>
+            <!-- 如果有图片，显示图片预览和操作按钮 -->
+            <div v-else class="template-cover-preview-wrapper">
+              <el-image
+                ref="coverImageRef"
+                :src="editForm.coverImg"
+                class="template-cover-preview"
+                fit="cover"
+                :preview-src-list="[editForm.coverImg]"
+                :initial-index="0"
+                preview-teleported
+                :hide-on-click-modal="true"
+              />
+              <div class="template-cover-actions">
+                <el-button
+                  type="primary"
+                  :icon="View"
+                  circle
+                  size="small"
+                  @click.stop="handlePreviewCoverImage"
+                />
+                <el-button
+                  type="danger"
+                  :icon="Delete"
+                  circle
+                  size="small"
+                  @click.stop="handleDeleteCoverImage"
+                />
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="editForm.status" :active-value="1" :inactive-value="0" />
@@ -315,6 +342,7 @@ const templateList = ref([])
 const editDialogVisible = ref(false)
 const addTemplateDialogVisible = ref(false)
 const categoryDialogVisible = ref(false)
+const coverImageRef = ref(null)
 const editingCategory = ref(null)
 const categoryForm = ref({
   id: null,
@@ -362,6 +390,23 @@ const handleTemplateCoverUpload = (response) => {
   } else {
     ElMessage.error(response?.message || '图片上传失败')
   }
+}
+
+// 预览封面图 - 触发 el-image 的原生预览功能
+const handlePreviewCoverImage = () => {
+  if (coverImageRef.value) {
+    // 触发图片的点击事件来打开预览
+    const imgElement = coverImageRef.value.$el?.querySelector('img')
+    if (imgElement) {
+      imgElement.click()
+    }
+  }
+}
+
+// 删除封面图
+const handleDeleteCoverImage = () => {
+  editForm.value.coverImg = ''
+  ElMessage.success('已删除封面图')
 }
 
 // 加载模板分类
@@ -872,5 +917,39 @@ onMounted(() => {
 
 .delete-icon:hover {
   color: #f78989;
+}
+
+.template-cover-container {
+  width: 100%;
+}
+
+.template-cover-preview-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 200px;
+  height: 120px;
+}
+
+.template-cover-preview {
+  width: 200px;
+  height: 120px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.template-cover-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.template-cover-preview-wrapper:hover .template-cover-actions {
+  opacity: 1;
 }
 </style>
