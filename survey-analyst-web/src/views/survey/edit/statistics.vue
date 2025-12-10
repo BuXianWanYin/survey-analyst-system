@@ -804,6 +804,23 @@ onMounted(() => {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.statistics-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.statistics-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.statistics-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
 }
 
 .card-header {

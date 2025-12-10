@@ -45,16 +45,16 @@
         <el-table-column label="操作" min-width="200" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button :icon="Edit" type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-              <el-button
-                :icon="row.status === 1 ? Lock : Unlock"
-                :type="row.status === 1 ? 'warning' : 'success'"
-                size="small"
-                @click="handleToggleStatus(row)"
-              >
-                {{ row.status === 1 ? '禁用' : '启用' }}
-              </el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="Edit" type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              :icon="row.status === 1 ? Lock : Unlock"
+              :type="row.status === 1 ? 'warning' : 'success'"
+              size="small"
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -65,7 +65,8 @@
         v-model:page-size="pageSize"
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
+        :layout="paginationLayout"
+        :pager-count="width < 768 ? 5 : 7"
         class="pagination"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -144,7 +145,6 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Edit, Lock, Unlock, Delete, Close, Check } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
-import dayjs from 'dayjs'
 import { useWindowSize } from '@vueuse/core'
 
 const { width } = useWindowSize()
@@ -164,6 +164,17 @@ const statusFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 响应式分页布局
+const paginationLayout = computed(() => {
+  if (width.value < 768) {
+    // 手机端：简洁布局
+    return 'prev, pager, next'
+  } else {
+    // 电脑端：完整布局
+    return 'total, sizes, prev, pager, next, jumper'
+  }
+})
 
 const addDialogVisible = ref(false)
 const addFormRef = ref(null)
@@ -371,7 +382,8 @@ onMounted(() => {
 .search-input {
   width: 300px;
   min-width: 150px;
-  flex: 1;
+  max-width: 300px;
+  flex: 0 0 auto;
 }
 
 .status-select {
@@ -410,6 +422,30 @@ onMounted(() => {
 @media (max-width: 768px) {
   .user-management {
     padding: 15px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .user-management::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .user-management::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .user-management::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .user-management::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
   }
 
   .page-title {
@@ -428,10 +464,12 @@ onMounted(() => {
 
   .search-input {
     width: 100%;
+    flex: 1;
   }
 
   .status-select {
     width: 100%;
+    flex: 1;
   }
 
   .search-button {

@@ -20,17 +20,17 @@
         <el-form :inline="true" class="filter-form">
           <div class="search-row">
             <el-form-item label="" class="search-form-item">
-              <el-input
-                v-model="queryParams.name"
+            <el-input
+              v-model="queryParams.name"
                 class="search-input"
-                placeholder="请输入模板名称"
-                @keyup.enter="queryTemplatePage"
-              />
-            </el-form-item>
+              placeholder="请输入模板名称"
+              @keyup.enter="queryTemplatePage"
+            />
+          </el-form-item>
             <el-form-item class="search-button-item">
-              <el-button class="search-template-btn" type="primary" @click="queryTemplatePage" :icon="Search">
-                查询
-              </el-button>
+            <el-button class="search-template-btn" type="primary" @click="queryTemplatePage" :icon="Search">
+              查询
+            </el-button>
             </el-form-item>
           </div>
           <el-form-item>
@@ -201,7 +201,8 @@
         :total="total"
         :page-sizes="[10, 20, 30, 50]"
         background
-        layout="total, sizes, prev, pager, next, jumper"
+        :layout="paginationLayout"
+        :pager-count="width < 768 ? 5 : 7"
         @size-change="handleSizeChange"
         @current-change="handlePageChange"
       />
@@ -296,6 +297,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete, Plus, Edit, ArrowDown, Grid, List, View, Setting, Close, Check } from '@element-plus/icons-vue'
+import { useWindowSize } from '@vueuse/core'
 import { templateApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { getToken } from '@/utils/auth'
@@ -303,6 +305,7 @@ import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { width } = useWindowSize()
 
 // 判断是否为管理员
 const isAdmin = computed(() => {
@@ -312,6 +315,17 @@ const isAdmin = computed(() => {
 // 获取当前用户ID
 const currentUserId = computed(() => {
   return userStore.userInfo?.id
+})
+
+// 响应式分页布局
+const paginationLayout = computed(() => {
+  if (width.value < 768) {
+    // 手机端：简洁布局
+    return 'prev, pager, next'
+  } else {
+    // 电脑端：完整布局
+    return 'total, sizes, prev, pager, next, jumper'
+  }
 })
 
 // 过滤后的分类列表：我的模板只显示用户自己的分类，公共模板显示所有分类
@@ -702,6 +716,38 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 768px) {
+  .template-list-container {
+    margin: 10px;
+    padding: 15px;
+    width: calc(100% - 20px);
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .template-list-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
 .create-header-container {
   display: flex;
   flex-direction: column;
@@ -726,18 +772,40 @@ onMounted(() => {
 }
 
 .search-form-item {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 300px;
+  max-width: 300px;
   min-width: 200px;
   margin-right: 0 !important;
-}
+  }
 
 .search-button-item {
   margin-right: 0 !important;
   flex-shrink: 0;
 }
 
+/* 手机端：确保搜索框和按钮在同一行 */
+@media (max-width: 768px) {
+  .search-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .search-form-item {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+  }
+
+  .search-button-item {
+    flex-shrink: 0;
+  }
+}
+
 .search-input {
   width: 100%;
+  max-width: 300px;
 }
 
 .project-grid-container {
@@ -834,6 +902,30 @@ onMounted(() => {
   white-space: nowrap;
   font-size: 12px;
   padding: 5px 10px;
+}
+
+/* 手机端：确保按钮不换行 */
+@media (max-width: 768px) {
+  .template-actions {
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 0 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .template-actions::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .template-actions .el-button {
+    flex: 0 0 auto;
+    font-size: 11px;
+    padding: 4px 8px;
+    min-width: auto;
+  }
 }
 
 .template-tabs {
@@ -964,5 +1056,37 @@ onMounted(() => {
 
 .template-cover-preview-wrapper:hover .template-cover-actions {
   opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .template-list-container {
+    margin: 10px;
+    padding: 15px;
+    width: calc(100% - 20px);
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .template-list-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
 }
 </style>

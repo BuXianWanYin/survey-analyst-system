@@ -7,27 +7,29 @@
     <el-form ref="formRef" :model="form" :rules="rules">
       <div class="setting-item">
         <p class="label">发邮件提醒我</p>
-        <el-select
-          v-model="form.selectedEmail"
-          placeholder="请选择邮箱"
-          style="width: 400px"
-          @change="handleEmailChange"
-        >
-          <el-option
-            v-for="email in emailList"
-            :key="email"
-            :label="email"
-            :value="email"
-          />
-        </el-select>
-        <el-button
-          :icon="Plus"
-          type="primary"
-          style="margin-left: 10px"
-          @click="showAddEmailDialog = true"
-        >
-          添加邮箱
-        </el-button>
+        <div class="email-select-wrapper">
+          <el-select
+            v-model="form.selectedEmail"
+            placeholder="请选择邮箱"
+            class="email-select"
+            @change="handleEmailChange"
+          >
+            <el-option
+              v-for="email in emailList"
+              :key="email"
+              :label="email"
+              :value="email"
+            />
+          </el-select>
+          <el-button
+            :icon="Plus"
+            type="primary"
+            class="add-email-btn"
+            @click="showAddEmailDialog = true"
+          >
+            添加邮箱
+          </el-button>
+        </div>
       </div>
       
       <div class="email-list" v-if="emailList.length > 0">
@@ -58,7 +60,8 @@
     <el-dialog
       v-model="showAddEmailDialog"
       title="添加邮箱"
-      width="500px"
+      :width="dialogWidth"
+      class="add-email-dialog"
       @close="resetEmailForm"
     >
       <el-form
@@ -83,7 +86,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, Check, Close } from '@element-plus/icons-vue'
@@ -103,6 +107,10 @@ const form = ref({
 const emailForm = ref({
   email: ''
 })
+
+// 响应式弹窗宽度
+const { width } = useWindowSize()
+const dialogWidth = computed(() => width.value < 768 ? '90%' : '500px')
 
 const emailRules = {
   email: [
@@ -230,7 +238,29 @@ onMounted(() => {
   .label {
     width: 200px;
     margin: 0;
+    font-size: 14px;
+    line-height: 32px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
+}
+
+.email-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.email-select {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+:deep(.el-button) {
+  font-size: 14px;
 }
 
 .email-list {
@@ -248,12 +278,88 @@ onMounted(() => {
     
     span {
       flex: 1;
+      font-size: 13px;
     }
   }
 }
 
 .submit-btn {
   margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+  .notify-setting-view {
+    padding: 15px 10px;
+  }
+
+  .setting-title {
+    font-size: 13px;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    
+    .label {
+      width: 100%;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+  }
+
+  .email-select-wrapper {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .email-select {
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .add-email-btn {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :deep(.add-email-dialog) {
+    .el-dialog {
+      margin: 5vh auto !important;
+      max-width: 90% !important;
+    }
+
+    .el-dialog__body {
+      padding: 15px !important;
+    }
+
+    .el-form-item {
+      margin-bottom: 15px;
+    }
+
+    .el-form-item__label {
+      font-size: 13px;
+      padding-bottom: 5px;
+    }
+
+    .el-input__inner {
+      font-size: 14px;
+    }
+
+    .el-dialog__footer {
+      padding: 10px 15px !important;
+    }
+
+    .el-button {
+      font-size: 13px;
+      padding: 8px 15px;
+    }
+  }
 }
 </style>
 

@@ -1,9 +1,39 @@
 <template>
   <div class="form-edit-container">
+    <!-- 移动端浮动按钮 -->
+    <div v-if="isMobile" class="mobile-toggle-buttons">
+      <el-button
+        :icon="Grid"
+        circle
+        type="primary"
+        class="toggle-btn toggle-btn-left"
+        @click="toggleLeftDrawer"
+      />
+      <el-button
+        :icon="Setting"
+        circle
+        type="primary"
+        class="toggle-btn toggle-btn-right"
+        @click="toggleRightDrawer"
+      />
+    </div>
+
+    <!-- 移动端遮罩层 -->
+    <transition name="fade">
+      <div
+        v-if="isMobile && (showLeftDrawer || showRightDrawer)"
+        class="mobile-overlay"
+        @click="closeAllDrawers"
+      />
+    </transition>
+
     <!-- 主体：三栏布局 -->
     <div class="main-container">
       <!-- 左侧：组件库 -->
-      <div class="left-board">
+      <div
+        class="left-board"
+        :class="{ 'mobile-hidden': isMobile && !showLeftDrawer }"
+      >
         <div class="left-scrollbar">
           <div class="components-list">
             <VueDraggable
@@ -12,6 +42,7 @@
               :clone="cloneComponent"
               :sort="false"
               item-key="type"
+              @start="handleComponentDragStart"
             >
               <div
                 v-for="component in componentListCopy"
@@ -31,7 +62,10 @@
       </div>
 
       <!-- 中间：设计区域 -->
-      <div class="center-board">
+      <div
+        class="center-board"
+        @click="handleCenterBoardClick"
+      >
         <div class="center-scrollbar">
           <div class="center-board-row">
             <el-form
@@ -85,12 +119,14 @@
                 <VueDraggable
                   v-model="drawingList"
                   handle=".drag-handle"
-                  :animation="340"
+                  :animation="0"
                   ghost-class="sortable-ghost"
                   chosen-class="chosen-item"
                   drag-class="drag-item"
                   :group="{ name: 'form-items', pull: false, put: true }"
                   :sort="true"
+                  :force-fallback="false"
+                  :fallback-on-body="true"
                   class="draggable-list"
                   @end="handleDragEnd"
                   @add="handleAdd"
@@ -434,7 +470,10 @@
       </div>
 
       <!-- 右侧：属性配置面板 -->
-      <div class="right-board">
+      <div
+        class="right-board"
+        :class="{ 'mobile-hidden': isMobile && !showRightDrawer }"
+      >
         <el-card class="property-panel">
           <template #header>
             <div
@@ -2081,12 +2120,15 @@
 import { ref, reactive, computed, onMounted, nextTick, inject, markRaw, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useWindowSize } from '@vueuse/core'
 import {
   CopyDocument,
   Delete,
   Rank,
   Plus,
-  QuestionFilled
+  QuestionFilled,
+  Grid,
+  Setting
 } from '@element-plus/icons-vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import {
@@ -2200,6 +2242,62 @@ const componentListWithMarkRaw = componentList.map(item => ({
 // 组件库副本（用于VueDraggable）- 使用 shallowRef 避免深度响应式
 const componentListCopy = shallowRef([...componentListWithMarkRaw])
 
+// 响应式设计
+const { width } = useWindowSize()
+const isMobile = computed(() => width.value < 992)
+const showLeftDrawer = ref(false)
+const showRightDrawer = ref(false)
+
+const closeAllDrawers = () => {
+  showLeftDrawer.value = false
+  showRightDrawer.value = false
+}
+
+// 切换左侧抽屉
+const toggleLeftDrawer = () => {
+  showLeftDrawer.value = !showLeftDrawer.value
+  // 如果打开左侧抽屉，关闭右侧抽屉
+  if (showLeftDrawer.value) {
+    showRightDrawer.value = false
+  }
+}
+
+// 切换右侧抽屉
+const toggleRightDrawer = () => {
+  showRightDrawer.value = !showRightDrawer.value
+  // 如果打开右侧抽屉，关闭左侧抽屉
+  if (showRightDrawer.value) {
+    showLeftDrawer.value = false
+  }
+}
+
+// 处理中间区域点击事件（点击其他地方关闭面板）
+const handleCenterBoardClick = (event) => {
+  // 只有在移动端才需要关闭面板
+  if (!isMobile.value) return
+  
+  // 如果点击的不是面板内部，则关闭面板
+  const target = event.target
+  
+  // 检查点击的元素是否在浮动按钮内
+  const toggleButtons = document.querySelector('.mobile-toggle-buttons')
+  if (toggleButtons && toggleButtons.contains(target)) {
+    return // 点击浮动按钮，不关闭面板
+  }
+  
+  // 检查点击的元素是否在抽屉内
+  const leftBoard = document.querySelector('.left-board')
+  const rightBoard = document.querySelector('.right-board')
+  
+  const isClickInLeftBoard = leftBoard && leftBoard.contains(target)
+  const isClickInRightBoard = rightBoard && rightBoard.contains(target)
+  
+  // 如果点击的不是抽屉内部，关闭所有抽屉
+  if (!isClickInLeftBoard && !isClickInRightBoard) {
+    closeAllDrawers()
+  }
+}
+
 // 文件上传类型选项
 const fileTypeOptions = [
   { label: '所有文件', value: '*/*' },
@@ -2287,6 +2385,15 @@ const getComponentLabel = (type) => {
 
 
 
+// 处理组件库拖拽开始事件
+const handleComponentDragStart = () => {
+  // 移动端开始拖拽组件时，关闭左侧组件面板，打开右侧面板
+  if (isMobile.value) {
+    showLeftDrawer.value = false
+    // 拖拽完成后会自动打开右侧面板（在handleAdd中）
+  }
+}
+
 // 克隆组件（从组件库拖拽时调用）
 const cloneComponent = (original) => {
   // 创建新的表单项
@@ -2313,6 +2420,12 @@ const handleAdd = (evt) => {
   // 选中新添加的组件
   if (newItem.formItemId) {
     activeId.value = newItem.formItemId
+  }
+  
+  // 移动端自动打开右侧属性面板，关闭左侧面板
+  if (isMobile.value) {
+    showRightDrawer.value = true
+    showLeftDrawer.value = false
   }
   
   // 保存到后端
@@ -2571,6 +2684,11 @@ const createFormItem = (type) => {
 // 点击组件
 const handleItemClick = (element) => {
   activeId.value = element.formItemId
+  // 移动端自动打开右侧属性面板，关闭左侧面板
+  if (isMobile.value) {
+    showRightDrawer.value = true
+    showLeftDrawer.value = false
+  }
 }
 
 // 复制组件
@@ -3748,6 +3866,10 @@ onMounted(() => {
   border: 1px dashed transparent;
   border-radius: 4px;
   display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
   
   &:hover {
     border-color: #409EFF;
@@ -3949,7 +4071,6 @@ onMounted(() => {
   cursor: grabbing !important;
   opacity: 0.85;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  transform: rotate(3deg);
 }
 
 .drawing-list-wrapper {
@@ -4027,6 +4148,12 @@ onMounted(() => {
   padding-bottom: 40px;
 }
 
+@media (max-width: 992px) {
+  .property-scrollbar :deep(.el-scrollbar__view) {
+    padding-bottom: 120px; /* 为浮动按钮留出空间 */
+  }
+}
+
 .property-scrollbar :deep(.el-scrollbar__bar) {
   right: 0;
 }
@@ -4062,6 +4189,42 @@ onMounted(() => {
   
   .el-input {
     flex: 1;
+  }
+}
+
+@media (max-width: 992px) {
+  .option-item {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .reg-rule-item {
+    margin-bottom: 8px;
+    padding: 10px;
+  }
+
+  .cascader-option-item {
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .carousel-option-item {
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .property-form :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+
+  .property-form :deep(.el-form-item__label) {
+    padding-bottom: 4px;
+    line-height: 24px;
+    font-size: 14px;
+  }
+
+  .property-form :deep(.el-form-item__content) {
+    line-height: 24px;
   }
 }
 
@@ -4334,6 +4497,49 @@ onMounted(() => {
   opacity: 1;
 }
 
+/* 移动端浮动按钮 */
+.mobile-toggle-buttons {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  border-radius: 12px !important;
+}
+
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .right-board {
@@ -4346,33 +4552,59 @@ onMounted(() => {
 }
 
 @media (max-width: 992px) {
+  .form-edit-container {
+    position: relative;
+  }
+
   .main-container {
-    flex-direction: column;
+    flex-direction: row;
+  }
+
+  .left-board,
+  .right-board {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    height: 100vh;
+    overflow-y: auto;
+    background: #fff;
   }
 
   .left-board {
-    width: 100%;
-    height: 200px;
-    border-right: none;
-    border-bottom: 1px solid #ebeef5;
-    overflow-y: auto;
+    left: 0;
+    transform: translateX(-100%); /* 默认隐藏 */
+  }
+
+  .left-board.mobile-hidden {
+    transform: translateX(-100%) !important; /* 确保隐藏 */
+  }
+
+  .left-board:not(.mobile-hidden) {
+    transform: translateX(0) !important; /* 显示 */
   }
 
   .right-board {
-    width: 100%;
-    height: 300px;
-    border-left: none;
-    border-top: 1px solid #ebeef5;
-    position: fixed;
-    bottom: 0;
-    left: 0;
     right: 0;
-    z-index: 1000;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%); /* 默认隐藏 */
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .right-board.mobile-hidden {
+    transform: translateX(100%) !important; /* 确保隐藏 */
+  }
+
+  .right-board:not(.mobile-hidden) {
+    transform: translateX(0) !important; /* 显示 */
   }
 
   .center-board {
-    margin-bottom: 300px;
+    width: 100%;
+    margin: 0;
   }
 
   .center-board-row {
@@ -4383,6 +4615,14 @@ onMounted(() => {
   .center-scrollbar {
     padding: 15px;
   }
+
+  .form-name-text {
+    font-size: 20px;
+  }
+
+  .form-name-input {
+    font-size: 20px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -4391,16 +4631,10 @@ onMounted(() => {
     min-height: 100vh;
   }
 
-  .left-board {
-    height: 150px;
-  }
-
+  .left-board,
   .right-board {
-    height: 250px;
-  }
-
-  .center-board {
-    margin-bottom: 250px;
+    width: 85%;
+    max-width: 350px;
   }
 
   .center-board-row {
@@ -4408,11 +4642,15 @@ onMounted(() => {
   }
 
   .form-name-text {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .form-name-input {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  .form-description-text {
+    font-size: 13px;
   }
 
   .center-scrollbar {
@@ -4426,31 +4664,41 @@ onMounted(() => {
   .component-label {
     font-size: 12px;
   }
+
+  .mobile-toggle-buttons {
+    right: 15px;
+    bottom: 60px;
+    gap: 10px;
+  }
+
+  .toggle-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
 }
 
 @media (max-width: 480px) {
-  .left-board {
-    height: 120px;
-  }
-
+  .left-board,
   .right-board {
-    height: 200px;
-  }
-
-  .center-board {
-    margin-bottom: 200px;
-  }
-
-  .form-name-text {
-    font-size: 18px;
-  }
-
-  .form-name-input {
-    font-size: 18px;
+    width: 90%;
+    max-width: 320px;
   }
 
   .center-board-row {
     padding: 8px;
+  }
+
+  .form-name-text {
+    font-size: 16px;
+  }
+
+  .form-name-input {
+    font-size: 16px;
+  }
+
+  .form-description-text {
+    font-size: 12px;
   }
 
   .drawing-item-drag,
@@ -4471,6 +4719,18 @@ onMounted(() => {
 
   .drawing-item-delete {
     right: 18px;
+  }
+
+  .mobile-toggle-buttons {
+    right: 10px;
+    bottom: 50px;
+    gap: 8px;
+  }
+
+  .toggle-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 }
 </style>

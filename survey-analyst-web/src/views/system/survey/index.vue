@@ -101,17 +101,17 @@
         <el-table-column label="操作" min-width="250" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
-              <el-button
-                v-if="row.status === 'PUBLISHED'"
-                :icon="VideoPause"
-                type="warning"
-                size="small"
+            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button
+              v-if="row.status === 'PUBLISHED'"
+              :icon="VideoPause"
+              type="warning"
+              size="small"
                 @click="handleUpdateStatus(row, 'ENDED')"
-              >
+            >
                 停止发布
-              </el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -122,7 +122,8 @@
         v-model:page-size="pageSize"
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
+        :layout="paginationLayout"
+        :pager-count="width < 768 ? 5 : 7"
         class="pagination"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -132,13 +133,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useWindowSize } from '@vueuse/core'
 import { Grid, List, User, Clock, Lock, Search, View, VideoPause, Delete } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const router = useRouter()
+const { width } = useWindowSize()
 
 const loading = ref(false)
 const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图
@@ -148,6 +151,17 @@ const statusFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 响应式分页布局
+const paginationLayout = computed(() => {
+  if (width.value < 768) {
+    // 手机端：简洁布局
+    return 'prev, pager, next'
+  } else {
+    // 电脑端：完整布局
+    return 'total, sizes, prev, pager, next, jumper'
+  }
+})
 
 const loadSurveyList = async () => {
   loading.value = true
@@ -282,7 +296,8 @@ onMounted(() => {
 .search-input {
   width: 300px;
   min-width: 150px;
-  flex: 1;
+  max-width: 300px;
+  flex: 0 0 auto;
 }
 
 .status-select {
@@ -436,6 +451,37 @@ onMounted(() => {
 
 .pagination :deep(.el-pagination) {
   flex-wrap: nowrap;
+}
+
+/* 响应式设计 - 手机端滚动条 */
+@media (max-width: 768px) {
+  .survey-management {
+    padding: 15px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .survey-management::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .survey-management::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .survey-management::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .survey-management::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
 }
 
 /* 响应式设计 */

@@ -467,10 +467,16 @@ onMounted(() => {
   height: 100%;
   padding: 20px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .scrollbar-container {
   height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
 }
 
 .logic-content {
@@ -482,6 +488,9 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .text-desc {
@@ -489,6 +498,9 @@ onMounted(() => {
   color: #909399;
   margin-bottom: 20px;
   line-height: 1.6;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .show-logic-container {
@@ -517,14 +529,28 @@ onMounted(() => {
 .logic-item {
   position: relative;
   margin-bottom: 20px;
+  padding-right: 35px; /* 为删除按钮留出空间 */
   
   .logic-item-delete {
     position: absolute;
     right: 0;
-    top: -10px;
+    top: 0;
     color: #f56c6c;
     cursor: pointer;
     font-size: 18px;
+    z-index: 10; /* 确保删除图标在最上层 */
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    transition: all 0.3s;
+  }
+  
+  .logic-item-delete:hover {
+    background: #fff;
+    transform: scale(1.1);
   }
 }
 
@@ -534,12 +560,74 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   margin-bottom: 15px;
+  flex-wrap: wrap;
+  position: relative;
 }
 
 .condition-label,
 .trigger-label {
   width: 80px;
   text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .logic-container {
+    padding: 15px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .scrollbar-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .scrollbar-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .logic-title {
+    font-size: 16px;
+  }
+
+  .text-desc {
+    font-size: 13px;
+  }
+
+  .condition-label,
+  .trigger-label {
+    width: 60px;
+    font-size: 13px;
+  }
+
+  .condition-row,
+  .trigger-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .logic-item {
+    padding-right: 40px; /* 移动端增加右侧空间 */
+  }
+
+  .logic-item-delete {
+    font-size: 20px;
+    padding: 8px;
+  }
 }
 
 .trigger-desc {

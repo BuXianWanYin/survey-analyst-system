@@ -6,10 +6,20 @@
         <div class="header-content">
           <el-button
             text
+            class="back-button"
             @click="router.back()"
           >
             <el-icon><ArrowLeft /></el-icon>
-            返回
+            <span class="back-text">返回</span>
+          </el-button>
+          <!-- 移动端菜单按钮 -->
+          <el-button
+            v-if="isMobile"
+            text
+            class="menu-toggle-button"
+            @click="showMenuDrawer = true"
+          >
+            <el-icon><Menu /></el-icon>
           </el-button>
           <div class="header-title">
             <span>{{ surveyTitle || '未命名问卷' }}</span>
@@ -45,8 +55,11 @@
 
     <!-- 主体：左侧菜单 + 右侧内容 -->
     <div class="main-container">
-      <!-- 左侧：导航菜单 -->
-      <div class="left-menu-container">
+      <!-- 左侧：导航菜单（PC端显示） -->
+      <div
+        v-if="!isMobile"
+        class="left-menu-container"
+      >
         <el-menu
           :default-active="activeMenu"
           class="el-menu-vertical"
@@ -62,6 +75,31 @@
           </el-menu-item>
         </el-menu>
       </div>
+
+      <!-- 移动端菜单抽屉 -->
+      <el-drawer
+        v-model="showMenuDrawer"
+        title="菜单"
+        :size="drawerWidth"
+        direction="ltr"
+        :with-header="true"
+        class="menu-drawer"
+      >
+        <el-menu
+          :default-active="activeMenu"
+          class="el-menu-vertical drawer-menu"
+          @select="handleMenuSelectMobile"
+        >
+          <el-menu-item
+            v-for="menuItem in menuItemList"
+            :key="menuItem.route"
+            :index="menuItem.route"
+          >
+            <el-icon><component :is="menuItem.iconComponent" /></el-icon>
+            <span>{{ menuItem.title }}</span>
+          </el-menu-item>
+        </el-menu>
+      </el-drawer>
 
       <!-- 右侧：内容区域 -->
       <div class="right-content-container">
@@ -95,6 +133,7 @@ import { ref, computed, onMounted, provide, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useWindowSize } from '@vueuse/core'
 import {
   ArrowLeft,
   Edit,
@@ -111,6 +150,12 @@ import SurveyPreview from '@/components/SurveyPreview.vue'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// 响应式设计
+const { width } = useWindowSize()
+const isMobile = computed(() => width.value < 768)
+const showMenuDrawer = ref(false)
+const drawerWidth = computed(() => width.value < 480 ? '70%' : '280px')
 
 // 判断是否为管理员编辑模板
 const isAdminTemplateEdit = computed(() => {
@@ -227,7 +272,7 @@ const showHeaderActions = computed(() => {
   return ['editor', 'logic', 'theme', 'setting'].includes(menu)
 })
 
-// 菜单选择处理
+// 菜单选择处理（PC端）
 const handleMenuSelect = (index) => {
   const id = route.query.id
   const formKey = route.query.formKey
@@ -252,6 +297,12 @@ const handleMenuSelect = (index) => {
       query: { id }
     })
   }
+}
+
+// 菜单选择处理（移动端，选择后关闭抽屉）
+const handleMenuSelectMobile = (index) => {
+  showMenuDrawer.value = false
+  handleMenuSelect(index)
 }
 
 // 加载问卷信息
@@ -448,6 +499,67 @@ onMounted(() => {
   align-items: center;
 }
 
+.menu-toggle-button {
+  margin-left: 5px;
+  font-size: 20px;
+  padding: 0 10px;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 10px;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+
+  .header-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .back-button {
+    padding: 0 5px !important;
+    margin-left: -5px;
+  }
+
+  .back-button .back-text {
+    display: none;
+  }
+
+  .menu-toggle-button {
+    margin-left: 0;
+    padding: 0 8px;
+    font-size: 18px;
+  }
+
+  .header-title {
+    display: none;
+  }
+
+  .header-actions {
+    flex-shrink: 0;
+  }
+
+  .header-actions .el-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .header-actions .el-button span {
+    display: none;
+  }
+
+  .header-actions .el-button::after {
+    content: attr(data-text);
+  }
+}
+
 .main-container {
   flex: 1;
   display: flex;
@@ -464,6 +576,40 @@ onMounted(() => {
 .el-menu-vertical {
   border: none;
   width: 100%;
+}
+
+/* 抽屉菜单样式 */
+.drawer-menu {
+  border: none;
+}
+
+.drawer-menu :deep(.el-menu-item) {
+  height: 50px;
+  line-height: 50px;
+  padding: 0 20px !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-menu :deep(.el-menu-item .el-icon) {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.drawer-menu :deep(.el-menu-item span) {
+  font-size: 14px;
+}
+
+.drawer-menu :deep(.el-menu-item.is-active) {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+@media (max-width: 768px) {
+  .right-content-container {
+    margin-left: 0 !important;
+  }
 }
 
 .right-content-container {

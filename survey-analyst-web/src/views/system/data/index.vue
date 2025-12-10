@@ -52,7 +52,8 @@
         v-model:page-size="pageSize"
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
+        :layout="paginationLayout"
+        :pager-count="width < 768 ? 5 : 7"
         class="pagination"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -62,10 +63,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useWindowSize } from '@vueuse/core'
 import { Search, View, Delete } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
+
+const { width } = useWindowSize()
 
 const loading = ref(false)
 const responseList = ref([])
@@ -73,6 +77,17 @@ const surveyIdFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+// 响应式分页布局
+const paginationLayout = computed(() => {
+  if (width.value < 768) {
+    // 手机端：简洁布局
+    return 'prev, pager, next'
+  } else {
+    // 电脑端：完整布局
+    return 'total, sizes, prev, pager, next, jumper'
+  }
+})
 
 const loadResponseList = async () => {
   loading.value = true
@@ -163,9 +178,10 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 200px;
+  width: 300px;
   min-width: 150px;
-  flex: 1;
+  max-width: 300px;
+  flex: 0 0 auto;
 }
 
 .search-button {
@@ -183,6 +199,37 @@ onMounted(() => {
 
 .pagination :deep(.el-pagination) {
   flex-wrap: nowrap;
+}
+
+/* 响应式设计 - 手机端滚动条 */
+@media (max-width: 768px) {
+  .data-management {
+    padding: 15px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .data-management::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .data-management::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .data-management::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .data-management::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
 }
 
 /* 响应式设计 */

@@ -11,52 +11,48 @@
             <el-input-number
               v-model="recoveryForm.maxResponses"
               :min="0"
+              :formatter="formatLimitValue"
+              :parser="parseLimitValue"
               placeholder="不限制"
               style="width: 300px"
             />
-            <span style="margin-left: 10px; color: #909399">0表示不限制</span>
+            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
           <el-form-item label="每个IP答题次数限制">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-              <el-switch v-model="recoveryForm.ipWriteCountLimitStatus" />
-              <template v-if="recoveryForm.ipWriteCountLimitStatus">
-                <el-input-number
-                  v-model="recoveryForm.ipWriteCountLimit"
-                  :min="1"
-                  style="width: 200px"
-                />
-                <span style="color: #909399">次</span>
-              </template>
-            </div>
+            <el-input-number
+              v-model="recoveryForm.ipWriteCountLimit"
+              :min="0"
+              :formatter="formatLimitValue"
+              :parser="parseLimitValue"
+              placeholder="不限制"
+              style="width: 300px"
+            />
+            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
           <el-form-item label="每个设备答题次数限制">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-              <el-switch v-model="recoveryForm.deviceWriteCountLimitStatus" />
-              <template v-if="recoveryForm.deviceWriteCountLimitStatus">
-                <el-input-number
-                  v-model="recoveryForm.deviceWriteCountLimit"
-                  :min="1"
-                  style="width: 200px"
-                />
-                <span style="color: #909399">次</span>
-              </template>
-            </div>
+            <el-input-number
+              v-model="recoveryForm.deviceWriteCountLimit"
+              :min="0"
+              :formatter="formatLimitValue"
+              :parser="parseLimitValue"
+              placeholder="不限制"
+              style="width: 300px"
+            />
+            <span class="hint-text">0表示不限制</span>
           </el-form-item>
 
           <el-form-item label="每个用户答题次数限制">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-              <el-switch v-model="recoveryForm.accountWriteCountLimitStatus" />
-              <template v-if="recoveryForm.accountWriteCountLimitStatus">
-                <el-input-number
-                  v-model="recoveryForm.accountWriteCountLimit"
-                  :min="1"
-                  style="width: 200px"
-                />
-                <span style="color: #909399">次</span>
-              </template>
-            </div>
+            <el-input-number
+              v-model="recoveryForm.accountWriteCountLimit"
+              :min="0"
+              :formatter="formatLimitValue"
+              :parser="parseLimitValue"
+              placeholder="不限制"
+              style="width: 300px"
+            />
+            <span class="hint-text">0表示不限制</span>
           </el-form-item>
         </el-form>
       </el-card>
@@ -195,14 +191,28 @@ const publishForm = reactive({
 })
 
 const recoveryForm = reactive({
-  maxResponses: null,
-  ipWriteCountLimitStatus: false,
-  ipWriteCountLimit: 1,
-  deviceWriteCountLimitStatus: false,
-  deviceWriteCountLimit: 1,
-  accountWriteCountLimitStatus: false,
-  accountWriteCountLimit: 1
+  maxResponses: 0,
+  ipWriteCountLimit: 0,
+  deviceWriteCountLimit: 0,
+  accountWriteCountLimit: 0
 })
+
+// 格式化函数：0显示为"不限制"
+const formatLimitValue = (value) => {
+  if (value === null || value === undefined || value === 0) {
+    return '不限制'
+  }
+  return String(value)
+}
+
+// 解析函数："不限制"转换为0
+const parseLimitValue = (value) => {
+  if (value === '不限制' || value === '' || value === null || value === undefined) {
+    return 0
+  }
+  const num = Number(value)
+  return isNaN(num) ? 0 : num
+}
 
 const surveyLink = ref('')
 const qrCodeBase64 = ref('')
@@ -272,38 +282,50 @@ const loadRecoverySettings = async (surveyId) => {
       const settings = res.data.settings
       
       // 从问卷数据或设置中获取最大填写数
-      recoveryForm.maxResponses = survey.value.maxResponses || settings.maxResponses || null
+      recoveryForm.maxResponses = survey.value.maxResponses ?? settings.maxResponses ?? 0
       
       // IP限制
-      if (settings.ipWriteCountLimitStatus !== undefined) {
-        recoveryForm.ipWriteCountLimitStatus = settings.ipWriteCountLimitStatus
-      }
-      if (settings.ipWriteCountLimit !== undefined) {
-        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit || 1
+      if (settings.ipWriteCountLimitStatus === false) {
+        // 开关为false，表示未启用限制
+        recoveryForm.ipWriteCountLimit = 0
+      } else if (settings.ipWriteCountLimitStatus === true && settings.ipWriteCountLimit !== undefined && settings.ipWriteCountLimit !== null) {
+        // 开关为true，使用实际限制值
+        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit
+      } else if (settings.ipWriteCountLimit !== undefined && settings.ipWriteCountLimit !== null) {
+        // 没有开关状态，但有值：如果值为1（旧默认值），转换为0；否则使用实际值
+        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit === 1 ? 0 : settings.ipWriteCountLimit
+      } else {
+        recoveryForm.ipWriteCountLimit = 0
       }
       
       // 设备限制
-      if (settings.deviceWriteCountLimitStatus !== undefined) {
-        recoveryForm.deviceWriteCountLimitStatus = settings.deviceWriteCountLimitStatus
-      }
-      if (settings.deviceWriteCountLimit !== undefined) {
-        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit || 1
+      if (settings.deviceWriteCountLimitStatus === false) {
+        recoveryForm.deviceWriteCountLimit = 0
+      } else if (settings.deviceWriteCountLimitStatus === true && settings.deviceWriteCountLimit !== undefined && settings.deviceWriteCountLimit !== null) {
+        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit
+      } else if (settings.deviceWriteCountLimit !== undefined && settings.deviceWriteCountLimit !== null) {
+        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit === 1 ? 0 : settings.deviceWriteCountLimit
+      } else {
+        recoveryForm.deviceWriteCountLimit = 0
       }
       
       // 用户限制
-      if (settings.accountWriteCountLimitStatus !== undefined) {
-        recoveryForm.accountWriteCountLimitStatus = settings.accountWriteCountLimitStatus
-      }
-      if (settings.accountWriteCountLimit !== undefined) {
-        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit || 1
+      if (settings.accountWriteCountLimitStatus === false) {
+        recoveryForm.accountWriteCountLimit = 0
+      } else if (settings.accountWriteCountLimitStatus === true && settings.accountWriteCountLimit !== undefined && settings.accountWriteCountLimit !== null) {
+        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit
+      } else if (settings.accountWriteCountLimit !== undefined && settings.accountWriteCountLimit !== null) {
+        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit === 1 ? 0 : settings.accountWriteCountLimit
+      } else {
+        recoveryForm.accountWriteCountLimit = 0
       }
     } else {
       // 如果没有设置，尝试从问卷数据中获取最大填写数
-      recoveryForm.maxResponses = survey.value.maxResponses || null
+      recoveryForm.maxResponses = survey.value.maxResponses ?? 0
     }
   } catch (error) {
     // 如果接口不存在，使用默认值
-    recoveryForm.maxResponses = survey.value.maxResponses || null
+    recoveryForm.maxResponses = survey.value.maxResponses ?? 0
   }
 }
 
@@ -355,13 +377,10 @@ const handlePublish = async () => {
     if (res.code === 200) {
       // 保存回收限制设置
       const recoverySettings = {
-        maxResponses: recoveryForm.maxResponses,
-        ipWriteCountLimitStatus: recoveryForm.ipWriteCountLimitStatus,
-        ipWriteCountLimit: recoveryForm.ipWriteCountLimitStatus ? recoveryForm.ipWriteCountLimit : 1,
-        deviceWriteCountLimitStatus: recoveryForm.deviceWriteCountLimitStatus,
-        deviceWriteCountLimit: recoveryForm.deviceWriteCountLimitStatus ? recoveryForm.deviceWriteCountLimit : 1,
-        accountWriteCountLimitStatus: recoveryForm.accountWriteCountLimitStatus,
-        accountWriteCountLimit: recoveryForm.accountWriteCountLimitStatus ? recoveryForm.accountWriteCountLimit : 1
+        maxResponses: recoveryForm.maxResponses ?? 0,
+        ipWriteCountLimit: recoveryForm.ipWriteCountLimit ?? 0,
+        deviceWriteCountLimit: recoveryForm.deviceWriteCountLimit ?? 0,
+        accountWriteCountLimit: recoveryForm.accountWriteCountLimit ?? 0
       }
       
       try {
@@ -453,6 +472,25 @@ onMounted(() => {
 <style scoped>
 .publish-container {
   padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.publish-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.publish-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.publish-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
 }
 
 /* 第一行：发布设置和回收限制 */
@@ -562,15 +600,60 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.recovery-form .hint-text {
+  margin-left: 10px;
+  color: #909399;
+  font-size: 13px;
+}
+
 .recovery-form :deep(.el-form-item__label) {
   white-space: nowrap;
   word-break: keep-all;
+  line-height: 32px;
+  padding-right: 12px;
+}
+
+.card-header span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .publish-container {
     padding: 15px;
+  }
+
+  .recovery-form :deep(.el-form-item) {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .recovery-form :deep(.el-form-item__label) {
+    width: 100% !important;
+    text-align: left !important;
+    margin-bottom: 8px;
+    padding-right: 0;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .recovery-form :deep(.el-form-item__content) {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .recovery-form :deep(.el-input-number) {
+    width: 100% !important;
+  }
+
+  .recovery-form .hint-text {
+    margin-left: 0 !important;
+    margin-top: 8px;
+    display: block;
+    width: 100%;
   }
 
   .cards-row {

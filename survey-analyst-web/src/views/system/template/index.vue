@@ -6,20 +6,19 @@
         <el-form :inline="true" class="filter-form">
           <div class="search-row">
             <el-form-item label="" class="search-form-item">
-              <el-input
-                v-model="queryParams.name"
+            <el-input
+              v-model="queryParams.name"
                 class="search-input"
-                placeholder="请输入模板名称"
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
+              placeholder="请输入模板名称"
+              @keyup.enter="handleSearch"
+            />
+          </el-form-item>
             <el-form-item class="search-button-item">
-              <el-button class="search-template-btn" type="primary" @click="handleSearch" :icon="Search">
-                查询
-              </el-button>
-            </el-form-item>
+            <el-button class="search-template-btn" type="primary" @click="handleSearch" :icon="Search">
+              查询
+            </el-button>
+          </el-form-item>
           </div>
-          <el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleAddTemplate" :icon="Plus">
               添加模板
@@ -145,10 +144,10 @@
         <el-table-column label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
-              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -166,7 +165,8 @@
         :total="total"
         :page-sizes="[12, 24, 48, 96]"
         background
-        layout="total, sizes, prev, pager, next, jumper"
+        :layout="paginationLayout"
+        :pager-count="width < 768 ? 5 : 7"
         @size-change="handleSizeChange"
         @current-change="handlePageChange"
       />
@@ -314,12 +314,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Edit, Delete, Grid, List, Setting, Plus, ArrowDown, Close, Check, Upload } from '@element-plus/icons-vue'
+import { useWindowSize } from '@vueuse/core'
+import { Search, View, Edit, Delete, Setting, Plus, ArrowDown, Close, Check, Upload } from '@element-plus/icons-vue'
 import { adminApi, templateApi, surveyApi } from '@/api'
 import { getToken } from '@/utils/auth'
 import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
+const { width } = useWindowSize()
 
 const loading = ref(false)
 const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图
@@ -332,6 +334,17 @@ const queryParams = ref({
 const total = ref(0)
 const templateTypeList = ref([])
 const templateList = ref([])
+
+// 响应式分页布局
+const paginationLayout = computed(() => {
+  if (width.value < 768) {
+    // 手机端：简洁布局
+    return 'prev, pager, next'
+  } else {
+    // 电脑端：完整布局
+    return 'total, sizes, prev, pager, next, jumper'
+  }
+})
 
 const editDialogVisible = ref(false)
 const addTemplateDialogVisible = ref(false)
@@ -734,6 +747,38 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 768px) {
+  .template-list-container {
+    margin: 10px;
+    padding: 15px;
+    width: calc(100% - 20px);
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .template-list-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .template-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
 .create-header-container {
   display: flex;
   flex-direction: column;
@@ -758,7 +803,9 @@ onMounted(() => {
 }
 
 .search-form-item {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 300px;
+  max-width: 300px;
   min-width: 200px;
   margin-right: 0 !important;
 }
@@ -770,6 +817,7 @@ onMounted(() => {
 
 .search-input {
   width: 100%;
+  max-width: 300px;
 }
 
 .view-toggle-item {
@@ -1005,25 +1053,46 @@ onMounted(() => {
 
   .filter-form {
     width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
   }
 
   .search-row {
     width: 100%;
+    display: flex;
     flex-direction: row;
     gap: 8px;
+    align-items: center;
+    flex-basis: 100%;
   }
 
   .search-form-item {
     flex: 1;
     min-width: 0;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
   }
 
   .search-button-item {
     flex-shrink: 0;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
   }
 
-  .filter-form .el-form-item {
-    width: 100%;
+  /* 添加模板和管理分类按钮在同一行 */
+  .filter-form > .el-form-item:not(.search-form-item):not(.search-button-item) {
+    display: inline-flex;
+    margin-right: 10px;
+    margin-bottom: 0 !important;
+    vertical-align: middle;
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .filter-form > .el-form-item:not(.search-form-item):not(.search-button-item):last-of-type {
     margin-right: 0;
   }
 
@@ -1056,12 +1125,26 @@ onMounted(() => {
     flex-wrap: wrap;
   }
 
+  /* 卡片按钮在同一行显示 */
   .template-actions {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 4px;
   }
 
   .template-actions .el-button {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  /* 卡片封面图左右间距 */
+  .preview-img {
+    margin-left: 8px;
+    margin-right: 8px;
+    width: calc(100% - 16px);
   }
 }
 

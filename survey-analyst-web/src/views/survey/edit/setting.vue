@@ -44,4 +44,54 @@ import ShareSetting from './setting/ShareSetting.vue'
 :deep(.el-tabs--left .el-tabs__nav.is-left) {
   background-color: #ffffff !important;
 }
+
+:deep(.el-tabs__item) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 20px;
+}
+
+:deep(.el-form-item__label) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+@media (max-width: 768px) {
+  .setting-container {
+    padding: 10px;
+  }
+
+  .setting-tabs {
+    width: 100%;
+  }
+
+  :deep(.el-tabs__item) {
+    padding: 0 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  :deep(.el-tabs__nav-wrap) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  :deep(.el-tabs__nav-wrap)::-webkit-scrollbar {
+    display: none;
+  }
+
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+    width: 90px !important;
+    padding-right: 8px;
+  }
+
+  :deep(.el-tabs__content) {
+    padding: 15px 10px;
+  }
+}
 </style>

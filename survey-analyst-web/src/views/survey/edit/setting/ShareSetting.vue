@@ -229,13 +229,25 @@ onMounted(() => {
   .label {
     width: 200px;
     margin: 0;
+    font-size: 14px;
+    line-height: 32px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 
 .setting-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #606266;
   margin-bottom: 10px;
+}
+
+:deep(.el-input), :deep(.el-textarea) {
+  font-size: 14px;
+}
+
+:deep(.el-input__inner), :deep(.el-textarea__inner) {
+  font-size: 14px;
 }
 
 .share-img {
@@ -304,6 +316,36 @@ onMounted(() => {
   height: 60px;
   border-radius: 4px;
   object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  .share-setting-view {
+    padding: 15px 10px;
+  }
+
+  .setting-title {
+    font-size: 13px;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    
+    .label {
+      width: 100%;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+  }
+
+  .setting-label {
+    font-size: 12px;
+  }
+
+  :deep(.el-input), :deep(.el-textarea) {
+    width: 100%;
+  }
 }
 </style>
 

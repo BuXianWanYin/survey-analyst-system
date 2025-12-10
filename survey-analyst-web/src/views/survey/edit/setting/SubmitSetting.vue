@@ -29,6 +29,7 @@
           { required: true, message: '请输入跳转地址', trigger: 'blur' },
           { type: 'url', message: '请输入正确的url地址', trigger: ['blur', 'change'] }
         ]"
+        class="jump-url-item"
       >
         <el-input
           v-model="form.submitJumpUrl"
@@ -146,7 +147,29 @@ onMounted(() => {
   .label {
     width: 200px;
     margin: 0;
+    font-size: 14px;
+    line-height: 32px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
+}
+
+:deep(.el-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+:deep(.el-radio) {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+:deep(.el-radio__label) {
+  font-size: 14px;
+  padding-left: 6px;
 }
 
 .submit-btn {
@@ -155,6 +178,48 @@ onMounted(() => {
 
 .mt20 {
   margin-top: 20px;
+}
+
+.jump-url-item {
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.jump-url-item :deep(.el-form-item__content) {
+  margin-left: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .submit-setting-view {
+    padding: 15px 10px;
+  }
+
+  .setting-title {
+    font-size: 13px;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    
+    .label {
+      width: 100%;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+  }
+
+  :deep(.el-radio-group) {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  :deep(.el-radio) {
+    margin-right: 0;
+  }
 }
 </style>
 

@@ -169,11 +169,12 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         formConfig.setUpdateTime(LocalDateTime.now());
         formConfigService.saveFormConfig(formConfig);
 
-        // 获取表单项列表：优先从 scheme 中获取，如果为空则从 form_item 表中查询
-        List<FormItem> sourceFormItems = definition.getFormItems();
+        // 获取表单项列表：优先从 form_item 表中查询，确保 regList 等字段完整
+        // 因为 regList 存储在数据库的 reg_list 列中，不在 scheme 的 JSON 中
+        List<FormItem> sourceFormItems = formItemService.getByFormKey(templateFormKey);
         if (sourceFormItems == null || sourceFormItems.isEmpty()) {
-            // 如果 scheme 中的 formItems 为空，从 form_item 表中查询模板的表单项
-            sourceFormItems = formItemService.getByFormKey(templateFormKey);
+            // 如果 form_item 表中没有数据，则从 scheme 中获取（兼容旧数据）
+            sourceFormItems = definition.getFormItems();
         }
 
         // 复制表单项

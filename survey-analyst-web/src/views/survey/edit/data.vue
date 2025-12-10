@@ -264,6 +264,40 @@ onMounted(() => {
 <style lang="scss" scoped>
 .data-container {
   padding: 20px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-container :deep(.el-card) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.data-container :deep(.el-card__body) {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.data-container :deep(.el-card__body)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.data-container :deep(.el-card__body)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.data-container :deep(.el-card__body)::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
 }
 
 .card-header {

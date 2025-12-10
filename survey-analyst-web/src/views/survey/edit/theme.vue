@@ -1,7 +1,30 @@
 <template>
   <div class="theme-container">
+    <!-- 移动端浮动按钮 -->
+    <div v-if="isMobile" class="mobile-toggle-button">
+      <el-button
+        :icon="Setting"
+        circle
+        type="primary"
+        class="toggle-btn"
+        @click="showSettingsDrawer = !showSettingsDrawer"
+      />
+    </div>
+
+    <!-- 移动端遮罩层 -->
+    <transition name="fade">
+      <div
+        v-if="isMobile && showSettingsDrawer"
+        class="mobile-overlay"
+        @click="showSettingsDrawer = false"
+      />
+    </transition>
+
     <!-- 中间：实时预览 -->
-    <div class="center-container">
+    <div
+      class="center-container"
+      @click="handleCenterClick"
+    >
       <div class="preview-wrapper">
         <!-- 预览模式切换 -->
         <div class="preview-tabs">
@@ -202,7 +225,10 @@
     </div>
 
     <!-- 右侧：设置项 -->
-    <div class="right-container">
+    <div
+      class="right-container"
+      :class="{ 'mobile-hidden': isMobile && !showSettingsDrawer }"
+    >
       <el-scrollbar class="right-scrollbar">
         <div class="settings-panel">
           <p class="settings-title">
@@ -403,11 +429,12 @@
 import { ref, reactive, computed, onMounted, watch, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Iphone, Monitor } from '@element-plus/icons-vue'
+import { Iphone, Monitor, Setting } from '@element-plus/icons-vue'
 import { formApi, surveyApi } from '@/api'
 import { getToken } from '@/utils/auth'
 import SurveyFormRender from '@/components/SurveyFormRender.vue'
 import { getImageUrl, getRelativeImageUrl } from '@/utils/image'
+import { useWindowSize } from '@vueuse/core'
 
 const route = useRoute()
 const props = defineProps({
@@ -439,6 +466,28 @@ const localSurveyDescription = ref('')
 const localFormKey = ref(null)
 const localFormItems = ref([])
 const previewMode = ref('mobile')
+
+// 响应式设计
+const { width } = useWindowSize()
+const isMobile = computed(() => width.value < 992)
+const showSettingsDrawer = ref(false) // 初始值为 false，确保移动端默认不显示抽屉
+
+// 处理中间区域点击事件（点击其他地方关闭抽屉）
+const handleCenterClick = (event) => {
+  if (!isMobile.value) return
+  
+  const target = event.target
+  const rightContainer = document.querySelector('.right-container')
+  const toggleButton = document.querySelector('.mobile-toggle-button')
+  
+  if (toggleButton && toggleButton.contains(target)) {
+    return
+  }
+  
+  if (rightContainer && !rightContainer.contains(target)) {
+    showSettingsDrawer.value = false
+  }
+}
 
 // 使用 computed 合并 props 和本地 ref，避免命名冲突
 const surveyId = computed(() => props.surveyId || localSurveyId.value)
@@ -1068,6 +1117,43 @@ onMounted(() => {
   }
 }
 
+// 移动端浮动按钮
+.mobile-toggle-button {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;
+  z-index: 1001;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px !important;
+}
+
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 // 右侧：设置项
 .right-container {
   width: 400px;
@@ -1121,6 +1207,95 @@ onMounted(() => {
     max-height: 60px;
     border: 1px solid #ebeef5;
     border-radius: 4px;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 992px) {
+  .theme-container {
+    position: relative;
+  }
+
+  .mobile-overlay {
+    display: block;
+  }
+
+  .center-container {
+    width: 100%;
+  }
+
+  .right-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    transform: translateX(100%); /* 默认隐藏 */
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .right-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .right-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .right-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .right-container.mobile-hidden {
+    transform: translateX(100%) !important; /* 确保隐藏 */
+  }
+
+  .right-container:not(.mobile-hidden) {
+    transform: translateX(0) !important; /* 显示 */
+  }
+
+  .settings-form {
+    padding-bottom: 120px; /* 为浮动按钮留出空间 */
+  }
+
+  .mobile-toggle-button {
+    right: 15px;
+    bottom: 60px;
+  }
+
+  .toggle-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .right-container {
+    width: 90%;
+    max-width: 320px;
+  }
+
+  .mobile-toggle-button {
+    right: 10px;
+    bottom: 50px;
+  }
+
+  .toggle-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 }
 </style>

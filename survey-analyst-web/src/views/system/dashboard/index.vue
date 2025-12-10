@@ -393,6 +393,30 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .admin-dashboard {
     padding: 15px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+
+  .admin-dashboard::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .admin-dashboard::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .admin-dashboard::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  .admin-dashboard::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
   }
 
   .page-title {
