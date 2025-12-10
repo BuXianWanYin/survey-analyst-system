@@ -69,7 +69,7 @@
               >
                 停止发布
               </el-button>
-<el-button :icon="Delete" type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
             </div>
           </div>
         </div>
@@ -100,17 +100,19 @@
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
         <el-table-column label="操作" min-width="250" fixed="right">
           <template #default="{ row }">
-            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button
-              v-if="row.status === 'PUBLISHED'"
-              :icon="VideoPause"
-              type="warning"
-              size="small"
-              @click="handleUpdateStatus(row, 'ENDED')"
-            >
-              停止发布
-            </el-button>
-            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+              <el-button
+                v-if="row.status === 'PUBLISHED'"
+                :icon="VideoPause"
+                type="warning"
+                size="small"
+                @click="handleUpdateStatus(row, 'ENDED')"
+              >
+                停止发布
+              </el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -310,6 +312,7 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   width: 100%;
+  align-items: stretch;
 }
 
 .survey-card-item {
@@ -319,6 +322,9 @@ onMounted(() => {
   padding: 20px;
   transition: all 0.3s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .survey-card-item:hover {
@@ -331,6 +337,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
+  min-height: 50px;
 }
 
 .survey-card-title {
@@ -347,6 +354,9 @@ onMounted(() => {
 
 .survey-card-content {
   margin-bottom: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .survey-card-desc {
@@ -383,6 +393,37 @@ onMounted(() => {
   border-top: 1px solid #ebeef5;
   align-items: center;
   justify-content: center;
+  margin-top: auto;
+  min-height: 52px;
+}
+
+.survey-card-actions .el-button {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.survey-card-actions :deep(.el-button) {
+  height: 32px !important;
+  line-height: 32px !important;
+  padding: 0 15px !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.action-buttons .el-button {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.action-buttons :deep(.el-button) {
+  height: 32px !important;
+  line-height: 32px !important;
+  padding: 0 15px !important;
 }
 
 .pagination {

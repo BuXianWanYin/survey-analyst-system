@@ -1,124 +1,135 @@
 <template>
   <div class="publish-container">
-    <!-- 卡片1：发布设置 -->
-    <el-card class="publish-settings-card">
-      <template #header>
-        <div class="card-header">
-          <span>发布设置</span>
-          <el-button 
-            v-if="survey.status !== 'PUBLISHED'"
-            :icon="Promotion" 
-            type="primary" 
-            @click="handlePublish" 
-            :loading="publishing"
-          >
-            发布问卷
-          </el-button>
-        </div>
-      </template>
+    <div class="cards-row">
+      <el-card class="recovery-limits-card">
+        <template #header>
+          <span>回收设置</span>
+        </template>
 
-      <el-form :model="publishForm" label-width="120px">
-        <el-form-item label="访问权限">
-          <el-radio-group v-model="publishForm.accessType">
-            <el-radio label="PUBLIC">公开访问</el-radio>
-            <el-radio label="PASSWORD">密码访问</el-radio>
-          </el-radio-group>
-        </el-form-item>
+        <el-form :model="recoveryForm" label-width="180px" class="recovery-form">
+          <el-form-item label="最大填写数">
+            <el-input-number
+              v-model="recoveryForm.maxResponses"
+              :min="0"
+              placeholder="不限制"
+              style="width: 300px"
+            />
+            <span style="margin-left: 10px; color: #909399">0表示不限制</span>
+          </el-form-item>
 
-        <el-form-item v-if="publishForm.accessType === 'PASSWORD'" label="访问密码">
-          <el-input
-            v-model="publishForm.password"
-            type="password"
-            placeholder="请输入访问密码"
-            style="width: 300px"
-            show-password
-          />
-        </el-form-item>
+          <el-form-item label="每个IP答题次数限制">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+              <el-switch v-model="recoveryForm.ipWriteCountLimitStatus" />
+              <template v-if="recoveryForm.ipWriteCountLimitStatus">
+                <el-input-number
+                  v-model="recoveryForm.ipWriteCountLimit"
+                  :min="1"
+                  style="width: 200px"
+                />
+                <span style="color: #909399">次</span>
+              </template>
+            </div>
+          </el-form-item>
 
-        <el-form-item label="开始时间">
-          <el-date-picker
-            v-model="publishForm.startTime"
-            type="datetime"
-            placeholder="选择开始时间"
-            style="width: 300px"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
+          <el-form-item label="每个设备答题次数限制">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+              <el-switch v-model="recoveryForm.deviceWriteCountLimitStatus" />
+              <template v-if="recoveryForm.deviceWriteCountLimitStatus">
+                <el-input-number
+                  v-model="recoveryForm.deviceWriteCountLimit"
+                  :min="1"
+                  style="width: 200px"
+                />
+                <span style="color: #909399">次</span>
+              </template>
+            </div>
+          </el-form-item>
 
-        <el-form-item label="结束时间">
-          <el-date-picker
-            v-model="publishForm.endTime"
-            type="datetime"
-            placeholder="选择结束时间"
-            style="width: 300px"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item label="每个用户答题次数限制">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+              <el-switch v-model="recoveryForm.accountWriteCountLimitStatus" />
+              <template v-if="recoveryForm.accountWriteCountLimitStatus">
+                <el-input-number
+                  v-model="recoveryForm.accountWriteCountLimit"
+                  :min="1"
+                  style="width: 200px"
+                />
+                <span style="color: #909399">次</span>
+              </template>
+            </div>
+          </el-form-item>
+        </el-form>
+      </el-card>
 
-    <!-- 卡片2：回收限制 -->
-    <el-card class="recovery-limits-card">
-      <template #header>
-        <span>回收限制</span>
-      </template>
-
-      <el-form :model="recoveryForm" label-width="180px" class="recovery-form">
-        <el-form-item label="最大填写数">
-          <el-input-number
-            v-model="recoveryForm.maxResponses"
-            :min="0"
-            placeholder="不限制"
-            style="width: 300px"
-          />
-          <span style="margin-left: 10px; color: #909399">0表示不限制</span>
-        </el-form-item>
-
-        <el-form-item label="每个IP答题次数限制">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-            <el-switch v-model="recoveryForm.ipWriteCountLimitStatus" />
-            <template v-if="recoveryForm.ipWriteCountLimitStatus">
-              <el-input-number
-                v-model="recoveryForm.ipWriteCountLimit"
-                :min="1"
-                style="width: 200px"
-              />
-              <span style="color: #909399">次</span>
-            </template>
+      <el-card class="publish-settings-card">
+        <template #header>
+          <div class="card-header">
+            <span>发布设置</span>
+            <el-button 
+              v-if="survey.status !== 'PUBLISHED'"
+              :icon="Promotion" 
+              type="primary" 
+              @click="handlePublish" 
+              :loading="publishing"
+            >
+              发布问卷
+            </el-button>
+            <el-button 
+              v-else
+              :icon="Close" 
+              type="danger" 
+              @click="handleUnpublish" 
+              :loading="unpublishing"
+            >
+              停止发布
+            </el-button>
           </div>
-        </el-form-item>
+        </template>
 
-        <el-form-item label="每个设备答题次数限制">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-            <el-switch v-model="recoveryForm.deviceWriteCountLimitStatus" />
-            <template v-if="recoveryForm.deviceWriteCountLimitStatus">
-              <el-input-number
-                v-model="recoveryForm.deviceWriteCountLimit"
-                :min="1"
-                style="width: 200px"
-              />
-              <span style="color: #909399">次</span>
-            </template>
-          </div>
-        </el-form-item>
+        <el-form :model="publishForm" label-width="120px">
+          <el-form-item label="访问权限">
+            <el-radio-group v-model="publishForm.accessType">
+              <el-radio label="PUBLIC">公开访问</el-radio>
+              <el-radio label="PASSWORD">密码访问</el-radio>
+            </el-radio-group>
+          </el-form-item>
 
-        <el-form-item label="每个用户答题次数限制">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
-            <el-switch v-model="recoveryForm.accountWriteCountLimitStatus" />
-            <template v-if="recoveryForm.accountWriteCountLimitStatus">
-              <el-input-number
-                v-model="recoveryForm.accountWriteCountLimit"
-                :min="1"
-                style="width: 200px"
-              />
-              <span style="color: #909399">次</span>
-            </template>
-          </div>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item v-if="publishForm.accessType === 'PASSWORD'" label="访问密码">
+            <el-input
+              v-model="publishForm.password"
+              type="password"
+              placeholder="请输入访问密码"
+              style="width: 300px"
+              show-password
+            />
+          </el-form-item>
 
-    <!-- 卡片3：发布成功后的分享信息 -->
+          <el-form-item label="开始时间">
+            <el-date-picker
+              v-model="publishForm.startTime"
+              type="datetime"
+              placeholder="选择开始时间"
+              style="width: 300px"
+              value-format="YYYY-MM-DD HH:mm:ss"
+            />
+          </el-form-item>
+
+          <el-form-item label="结束时间">
+            <el-date-picker
+              v-model="publishForm.endTime"
+              type="datetime"
+              placeholder="选择结束时间"
+              style="width: 300px"
+              value-format="YYYY-MM-DD HH:mm:ss"
+            />
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+
+    </div>
+
+    <!-- 第二行：二维码和链接卡片 -->
     <el-card v-if="survey.status === 'PUBLISHED'" class="publish-success-card">
       <template #header>
         <span>分享问卷</span>
@@ -129,9 +140,14 @@
         <div class="qrcode-section">
           <div v-if="qrCodeBase64" class="qrcode-container">
             <img :src="qrCodeBase64" alt="二维码" class="qrcode-image" />
-            <el-button :icon="Download" type="primary" @click="handleDownloadQRCode" style="margin-top: 15px">
-              下载二维码
-            </el-button>
+            <div class="qrcode-buttons">
+              <el-button :icon="Download" type="primary" @click="handleDownloadQRCode">
+                下载二维码
+              </el-button>
+              <el-button :icon="DocumentCopy" type="primary" @click="handleCopyQRCode">
+                复制二维码
+              </el-button>
+            </div>
           </div>
           <el-button v-else type="primary" @click="loadQRCode" :loading="loadingQRCode">
             生成二维码
@@ -140,13 +156,18 @@
 
         <!-- 链接 -->
         <div class="link-section">
-          <div class="link-label">问卷链接</div>
+          <div class="link-label">问卷填写链接</div>
           <div class="link-input-group">
+            <!-- 隐藏的测量元素 -->
+            <span ref="measureSpan" class="link-measure">{{ surveyLink }}</span>
             <el-input
               v-model="surveyLink"
               readonly
               class="link-input"
+              :style="{ width: linkInputWidth }"
             />
+          </div>
+          <div class="link-button-wrapper">
             <el-button :icon="Link" type="primary" @click="handleCopyLink">复制链接</el-button>
           </div>
         </div>
@@ -156,10 +177,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Share, Promotion, Link, Download } from '@element-plus/icons-vue'
+import { Promotion, Link, Download, Close, DocumentCopy } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 
@@ -183,11 +204,31 @@ const recoveryForm = reactive({
   accountWriteCountLimit: 1
 })
 
-const activeTab = ref('link')
 const surveyLink = ref('')
 const qrCodeBase64 = ref('')
 const loadingQRCode = ref(false)
 const publishing = ref(false)
+const unpublishing = ref(false)
+const linkInputWidth = ref('auto')
+const measureSpan = ref(null)
+
+// 计算链接输入框宽度
+const calculateLinkWidth = () => {
+  nextTick(() => {
+    if (measureSpan.value && surveyLink.value) {
+      const width = measureSpan.value.offsetWidth
+      // 加上输入框的内边距和边框，大约5px
+      linkInputWidth.value = `${Math.max(width + 5, 200)}px`
+    } else {
+      linkInputWidth.value = 'auto'
+    }
+  })
+}
+
+// 监听链接变化，重新计算宽度
+watch(surveyLink, () => {
+  calculateLinkWidth()
+})
 
 const loadSurveyData = async () => {
   const surveyId = route.query.id
@@ -210,6 +251,14 @@ const loadSurveyData = async () => {
       
       // 加载问卷链接
       await loadSurveyLink()
+      
+      // 如果问卷已发布，自动加载二维码
+      if (res.data.status === 'PUBLISHED') {
+        await loadQRCode()
+      }
+      
+      // 计算链接输入框宽度
+      calculateLinkWidth()
     }
   } catch (error) {
     ElMessage.error('加载问卷数据失败')
@@ -273,6 +322,8 @@ const loadSurveyLink = async () => {
     const baseUrl = window.location.origin
     surveyLink.value = `${baseUrl}/survey/fill/${route.query.id}`
   }
+  // 加载链接后计算宽度
+  calculateLinkWidth()
 }
 
 const loadQRCode = async () => {
@@ -355,6 +406,44 @@ const handleDownloadQRCode = () => {
   link.click()
 }
 
+const handleCopyQRCode = async () => {
+  if (!qrCodeBase64.value) {
+    ElMessage.warning('请先生成二维码')
+    return
+  }
+  
+  try {
+    // 将base64转换为blob
+    const response = await fetch(qrCodeBase64.value)
+    const blob = await response.blob()
+    
+    // 复制到剪贴板
+    await navigator.clipboard.write([
+      new ClipboardItem({ [blob.type]: blob })
+    ])
+    ElMessage.success('二维码已复制到剪贴板')
+  } catch (error) {
+    ElMessage.error('复制二维码失败')
+  }
+}
+
+const handleUnpublish = async () => {
+  unpublishing.value = true
+  try {
+    const surveyId = route.query.id
+    const res = await surveyApi.unpublishSurvey(surveyId)
+    if (res.code === 200) {
+      ElMessage.success('已停止发布')
+      survey.value.status = 'ENDED'
+      await loadSurveyData()
+    }
+  } catch (error) {
+    ElMessage.error('停止发布失败')
+  } finally {
+    unpublishing.value = false
+  }
+}
+
 
 onMounted(() => {
   loadSurveyData()
@@ -366,8 +455,19 @@ onMounted(() => {
   padding: 20px;
 }
 
+/* 第一行：发布设置和回收限制 */
+.cards-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
 .publish-settings-card,
-.recovery-limits-card,
+.recovery-limits-card {
+  flex: 1;
+  width: 50%;
+}
+
 .publish-success-card {
   margin-bottom: 20px;
 }
@@ -378,22 +478,26 @@ onMounted(() => {
   align-items: center;
 }
 
+/* 二维码和链接卡片内容 */
 .publish-success-content {
   display: flex;
-  gap: 40px;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
 }
 
 .qrcode-section {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .qrcode-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .qrcode-image {
@@ -401,10 +505,20 @@ onMounted(() => {
   height: 200px;
   border: 1px solid #ebeef5;
   border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.qrcode-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
 }
 
 .link-section {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .link-label {
@@ -414,13 +528,32 @@ onMounted(() => {
 }
 
 .link-input-group {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  margin-bottom: 15px;
+  padding: 0 20px;
+  position: relative;
+}
+
+.link-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 0;
+  margin: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .link-input {
-  flex: 1;
+  min-width: 200px;
+}
+
+.link-button-wrapper {
+  display: flex;
+  justify-content: center;
 }
 
 .share-buttons {
@@ -440,6 +573,16 @@ onMounted(() => {
     padding: 15px;
   }
 
+  .cards-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .publish-settings-card,
+  .recovery-limits-card {
+    width: 100%;
+  }
+
   .card-header {
     flex-direction: column;
     align-items: flex-start;
@@ -450,39 +593,36 @@ onMounted(() => {
     width: 100%;
   }
 
-  .publish-settings-card,
-  .recovery-limits-card,
   .publish-success-card {
     margin-bottom: 15px;
   }
 
   .publish-success-content {
-    flex-direction: column;
     gap: 20px;
   }
 
-  .qrcode-section {
+  .qrcode-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .qrcode-buttons .el-button {
     width: 100%;
   }
 
   .link-section {
-    width: 100%;
+    max-width: 100%;
   }
 
   .link-input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .link-input {
     width: 100%;
   }
 
-  .share-buttons {
-    flex-direction: column;
+  .link-button-wrapper {
+    width: 100%;
   }
 
-  .share-buttons .el-button {
+  .link-button-wrapper .el-button {
     width: 100%;
   }
 

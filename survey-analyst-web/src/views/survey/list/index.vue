@@ -32,7 +32,7 @@
           </el-radio-group>
         </div>
       </el-col>
-      <el-col :xs="24" :sm="24" :md="6" :lg="4" :xl="4">
+      <el-col :xs="24" :sm="24" :md="6" :lg="4" :xl="4" class="view-toggle-col">
         <div class="view-toggle">
           <el-button-group>
             <el-button
@@ -593,23 +593,36 @@ onMounted(() => {
   overflow-x: auto;
 }
 
+.view-toggle-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .view-toggle {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   margin-top: 10px;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
   .view-toggle {
     margin-top: 0;
   }
+  
+  .view-toggle-col {
+    justify-content: center;
+  }
 }
 
 .survey-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+  align-items: stretch;
 }
 
 @media (max-width: 768px) {
@@ -623,6 +636,15 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s;
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.survey-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .survey-card:hover {
@@ -634,6 +656,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 40px;
 }
 
 .share-button {
@@ -655,7 +678,10 @@ onMounted(() => {
 }
 
 .card-body {
+  flex: 1;
   min-height: 150px;
+  display: flex;
+  flex-direction: column;
 }
 
 .survey-title {
@@ -707,13 +733,23 @@ onMounted(() => {
   justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid #ebeef5;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+  margin-top: auto;
+  min-height: 52px;
 }
 
 .card-footer .el-button {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
+  margin: 0;
+}
+
+.card-footer :deep(.el-button) {
+  height: 32px !important;
+  line-height: 32px !important;
+  padding: 0 15px !important;
 }
 
 .survey-table {

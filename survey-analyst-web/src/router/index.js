@@ -223,6 +223,16 @@ const routes = [
         }
       },
       {
+        path: 'system/dashboard',
+        name: 'SystemDashboard',
+        component: () => import('@/views/system/dashboard/index.vue'),
+        meta: {
+          title: '数据概览',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
         path: 'system/user',
         name: 'SystemUser',
         component: () => import('@/views/system/user/index.vue'),
