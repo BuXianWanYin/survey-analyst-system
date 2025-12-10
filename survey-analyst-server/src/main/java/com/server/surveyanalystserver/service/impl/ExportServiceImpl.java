@@ -165,7 +165,7 @@ public class ExportServiceImpl implements ExportService {
                 
                 // 所用时间列（优先使用completeTime，如果没有则通过startTime和createTime计算）
                 if (formData.getCompleteTime() != null) {
-                    row.put("所用时间(秒)", formData.getCompleteTime() / 1000.0);
+                    row.put("所用时间(秒)", formData.getCompleteTime());
                 } else if (formData.getStartTime() != null && formData.getCreateTime() != null) {
                     long durationSeconds = java.time.Duration.between(formData.getStartTime(), formData.getCreateTime()).getSeconds();
                     row.put("所用时间(秒)", durationSeconds);
