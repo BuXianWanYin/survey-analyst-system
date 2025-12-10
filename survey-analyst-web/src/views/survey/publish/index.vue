@@ -15,7 +15,6 @@
           <el-radio-group v-model="publishForm.accessType">
             <el-radio label="PUBLIC">公开访问</el-radio>
             <el-radio label="PASSWORD">密码访问</el-radio>
-            <el-radio label="PRIVATE">私有访问</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -91,19 +90,6 @@
           </div>
         </el-tab-pane>
 
-        <!-- 嵌入代码 -->
-        <el-tab-pane label="嵌入代码" name="embed">
-          <div class="tool-section">
-            <el-input
-              v-model="embedCode"
-              type="textarea"
-              :rows="4"
-              readonly
-            />
-            <el-button type="primary" @click="handleCopyEmbedCode">复制代码</el-button>
-          </div>
-        </el-tab-pane>
-
         <!-- 社交媒体分享 -->
         <el-tab-pane label="社交媒体分享" name="share">
           <div class="tool-section">
@@ -150,7 +136,6 @@ const publishForm = reactive({
 const activeTab = ref('link')
 const surveyLink = ref('')
 const qrCodeBase64 = ref('')
-const embedCode = ref('')
 const loadingQRCode = ref(false)
 const publishing = ref(false)
 
@@ -204,17 +189,6 @@ const loadQRCode = async () => {
   }
 }
 
-const loadEmbedCode = async () => {
-  try {
-    const res = await surveyPublishApi.getEmbedCode(route.query.id)
-    if (res.code === 200) {
-      embedCode.value = res.data
-    }
-  } catch (error) {
-    ElMessage.error('获取嵌入代码失败')
-  }
-}
-
 const handlePublish = async () => {
   publishing.value = true
   try {
@@ -243,19 +217,6 @@ const handleCopyLink = async () => {
   try {
     await navigator.clipboard.writeText(surveyLink.value)
     ElMessage.success('链接已复制到剪贴板')
-  } catch (error) {
-    ElMessage.error('复制失败')
-  }
-}
-
-const handleCopyEmbedCode = async () => {
-  if (!embedCode.value) {
-    await loadEmbedCode()
-  }
-  
-  try {
-    await navigator.clipboard.writeText(embedCode.value)
-    ElMessage.success('代码已复制到剪贴板')
   } catch (error) {
     ElMessage.error('复制失败')
   }

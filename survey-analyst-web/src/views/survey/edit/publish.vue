@@ -1,6 +1,6 @@
 <template>
   <div class="publish-container">
-    <!-- 发布设置 -->
+    <!-- 卡片1：发布设置 -->
     <el-card class="publish-settings-card">
       <template #header>
         <div class="card-header">
@@ -16,7 +16,6 @@
           <el-radio-group v-model="publishForm.accessType">
             <el-radio label="PUBLIC">公开访问</el-radio>
             <el-radio label="PASSWORD">密码访问</el-radio>
-            <el-radio label="PRIVATE">私有访问</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -28,16 +27,6 @@
             style="width: 300px"
             show-password
           />
-        </el-form-item>
-
-        <el-form-item label="最大填写数">
-          <el-input-number
-            v-model="publishForm.maxResponses"
-            :min="0"
-            placeholder="不限制"
-            style="width: 300px"
-          />
-          <span style="margin-left: 10px; color: #909399">0表示不限制</span>
         </el-form-item>
 
         <el-form-item label="开始时间">
@@ -62,7 +51,68 @@
       </el-form>
     </el-card>
 
-    <!-- 多渠道发布工具 -->
+    <!-- 卡片2：回收限制 -->
+    <el-card class="recovery-limits-card">
+      <template #header>
+        <span>回收限制</span>
+      </template>
+
+      <el-form :model="recoveryForm" label-width="180px" class="recovery-form">
+        <el-form-item label="最大填写数">
+          <el-input-number
+            v-model="recoveryForm.maxResponses"
+            :min="0"
+            placeholder="不限制"
+            style="width: 300px"
+          />
+          <span style="margin-left: 10px; color: #909399">0表示不限制</span>
+        </el-form-item>
+
+        <el-form-item label="每个IP答题次数限制">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+            <el-switch v-model="recoveryForm.ipWriteCountLimitStatus" />
+            <template v-if="recoveryForm.ipWriteCountLimitStatus">
+              <el-input-number
+                v-model="recoveryForm.ipWriteCountLimit"
+                :min="1"
+                style="width: 200px"
+              />
+              <span style="color: #909399">次</span>
+            </template>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="每个设备答题次数限制">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+            <el-switch v-model="recoveryForm.deviceWriteCountLimitStatus" />
+            <template v-if="recoveryForm.deviceWriteCountLimitStatus">
+              <el-input-number
+                v-model="recoveryForm.deviceWriteCountLimit"
+                :min="1"
+                style="width: 200px"
+              />
+              <span style="color: #909399">次</span>
+            </template>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="每个用户答题次数限制">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+            <el-switch v-model="recoveryForm.accountWriteCountLimitStatus" />
+            <template v-if="recoveryForm.accountWriteCountLimitStatus">
+              <el-input-number
+                v-model="recoveryForm.accountWriteCountLimit"
+                :min="1"
+                style="width: 200px"
+              />
+              <span style="color: #909399">次</span>
+            </template>
+          </div>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 卡片3：多渠道发布工具 -->
     <el-card class="publish-tools-card">
       <template #header>
         <span>多渠道发布工具</span>
@@ -96,19 +146,6 @@
           </div>
         </el-tab-pane>
 
-        <!-- 嵌入代码 -->
-        <el-tab-pane label="嵌入代码" name="embed">
-          <div class="tool-section">
-            <el-input
-              v-model="embedCode"
-              type="textarea"
-              :rows="4"
-              readonly
-            />
-            <el-button :icon="DocumentCopy" type="primary" @click="handleCopyEmbedCode">复制代码</el-button>
-          </div>
-        </el-tab-pane>
-
         <!-- 社交媒体分享 -->
         <el-tab-pane label="社交媒体分享" name="share">
           <div class="tool-section">
@@ -134,8 +171,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Share, Promotion, Link, Download, Picture, DocumentCopy } from '@element-plus/icons-vue'
-import { surveyApi, surveyPublishApi } from '@/api'
+import { Share, Promotion, Link, Download } from '@element-plus/icons-vue'
+import { surveyApi, surveyPublishApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -144,15 +181,23 @@ const survey = ref({})
 const publishForm = reactive({
   accessType: 'PUBLIC',
   password: '',
-  maxResponses: null,
   startTime: null,
   endTime: null
+})
+
+const recoveryForm = reactive({
+  maxResponses: null,
+  ipWriteCountLimitStatus: false,
+  ipWriteCountLimit: 1,
+  deviceWriteCountLimitStatus: false,
+  deviceWriteCountLimit: 1,
+  accountWriteCountLimitStatus: false,
+  accountWriteCountLimit: 1
 })
 
 const activeTab = ref('link')
 const surveyLink = ref('')
 const qrCodeBase64 = ref('')
-const embedCode = ref('')
 const loadingQRCode = ref(false)
 const publishing = ref(false)
 
@@ -169,15 +214,59 @@ const loadSurveyData = async () => {
       survey.value = res.data
       publishForm.accessType = res.data.accessType || 'PUBLIC'
       publishForm.password = res.data.password || ''
-      publishForm.maxResponses = res.data.maxResponses
       publishForm.startTime = res.data.startTime ? dayjs(res.data.startTime).format('YYYY-MM-DD HH:mm:ss') : null
       publishForm.endTime = res.data.endTime ? dayjs(res.data.endTime).format('YYYY-MM-DD HH:mm:ss') : null
+      
+      // 加载回收限制设置
+      await loadRecoverySettings(surveyId)
       
       // 加载问卷链接
       await loadSurveyLink()
     }
   } catch (error) {
     ElMessage.error('加载问卷数据失败')
+  }
+}
+
+const loadRecoverySettings = async (surveyId) => {
+  try {
+    const res = await formApi.getFormSetting(surveyId)
+    if (res.code === 200 && res.data && res.data.settings) {
+      const settings = res.data.settings
+      
+      // 从问卷数据或设置中获取最大填写数
+      recoveryForm.maxResponses = survey.value.maxResponses || settings.maxResponses || null
+      
+      // IP限制
+      if (settings.ipWriteCountLimitStatus !== undefined) {
+        recoveryForm.ipWriteCountLimitStatus = settings.ipWriteCountLimitStatus
+      }
+      if (settings.ipWriteCountLimit !== undefined) {
+        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit || 1
+      }
+      
+      // 设备限制
+      if (settings.deviceWriteCountLimitStatus !== undefined) {
+        recoveryForm.deviceWriteCountLimitStatus = settings.deviceWriteCountLimitStatus
+      }
+      if (settings.deviceWriteCountLimit !== undefined) {
+        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit || 1
+      }
+      
+      // 用户限制
+      if (settings.accountWriteCountLimitStatus !== undefined) {
+        recoveryForm.accountWriteCountLimitStatus = settings.accountWriteCountLimitStatus
+      }
+      if (settings.accountWriteCountLimit !== undefined) {
+        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit || 1
+      }
+    } else {
+      // 如果没有设置，尝试从问卷数据中获取最大填写数
+      recoveryForm.maxResponses = survey.value.maxResponses || null
+    }
+  } catch (error) {
+    // 如果接口不存在，使用默认值
+    recoveryForm.maxResponses = survey.value.maxResponses || null
   }
 }
 
@@ -212,33 +301,39 @@ const loadQRCode = async () => {
   }
 }
 
-const loadEmbedCode = async () => {
-  try {
-    const res = await surveyPublishApi.getEmbedCode(route.query.id)
-    if (res.code === 200) {
-      embedCode.value = res.data
-    } else {
-      // 如果接口不存在，生成默认嵌入代码
-      const baseUrl = window.location.origin
-      embedCode.value = `<iframe src="${baseUrl}/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
-    }
-  } catch (error) {
-    // 如果接口不存在，生成默认嵌入代码
-    const baseUrl = window.location.origin
-    embedCode.value = `<iframe src="${baseUrl}/survey/fill/${route.query.id}" width="100%" height="600px" frameborder="0"></iframe>`
-  }
-}
-
 const handlePublish = async () => {
   publishing.value = true
   try {
+    const surveyId = route.query.id
+    
+    // 更新问卷基本信息（访问权限、密码、时间）
     const updateData = {
-      ...publishForm
+      ...publishForm,
+      maxResponses: recoveryForm.maxResponses
     }
     
-    const res = await surveyApi.updateSurvey(route.query.id, updateData)
+    const res = await surveyApi.updateSurvey(surveyId, updateData)
     if (res.code === 200) {
-      const publishRes = await surveyApi.publishSurvey(route.query.id)
+      // 保存回收限制设置
+      const recoverySettings = {
+        maxResponses: recoveryForm.maxResponses,
+        ipWriteCountLimitStatus: recoveryForm.ipWriteCountLimitStatus,
+        ipWriteCountLimit: recoveryForm.ipWriteCountLimitStatus ? recoveryForm.ipWriteCountLimit : 1,
+        deviceWriteCountLimitStatus: recoveryForm.deviceWriteCountLimitStatus,
+        deviceWriteCountLimit: recoveryForm.deviceWriteCountLimitStatus ? recoveryForm.deviceWriteCountLimit : 1,
+        accountWriteCountLimitStatus: recoveryForm.accountWriteCountLimitStatus,
+        accountWriteCountLimit: recoveryForm.accountWriteCountLimitStatus ? recoveryForm.accountWriteCountLimit : 1
+      }
+      
+      try {
+        await formApi.saveFormSetting(surveyId, recoverySettings)
+      } catch (error) {
+        // 保存回收限制设置失败，但不阻止发布流程
+        // 如果接口不存在或出错，继续执行发布
+      }
+      
+      // 发布问卷
+      const publishRes = await surveyApi.publishSurvey(surveyId)
       if (publishRes.code === 200) {
         ElMessage.success('发布成功')
         survey.value.status = 'PUBLISHED'
@@ -256,19 +351,6 @@ const handleCopyLink = async () => {
   try {
     await navigator.clipboard.writeText(surveyLink.value)
     ElMessage.success('链接已复制到剪贴板')
-  } catch (error) {
-    ElMessage.error('复制失败')
-  }
-}
-
-const handleCopyEmbedCode = async () => {
-  if (!embedCode.value) {
-    await loadEmbedCode()
-  }
-  
-  try {
-    await navigator.clipboard.writeText(embedCode.value)
-    ElMessage.success('代码已复制到剪贴板')
   } catch (error) {
     ElMessage.error('复制失败')
   }
@@ -330,6 +412,7 @@ onMounted(() => {
 }
 
 .publish-settings-card,
+.recovery-limits-card,
 .publish-tools-card {
   margin-bottom: 20px;
 }
@@ -367,6 +450,11 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
+}
+
+.recovery-form :deep(.el-form-item__label) {
+  white-space: nowrap;
+  word-break: keep-all;
 }
 </style>
 

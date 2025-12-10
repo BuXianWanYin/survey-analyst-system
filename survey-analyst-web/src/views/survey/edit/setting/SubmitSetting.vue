@@ -2,9 +2,6 @@
   <div class="submit-setting-view">
     <p class="setting-title">
       提交设置
-      <span class="setting-desc">
-        自定义表单提交成功后的提示内容，以及可以跳转指定链接
-      </span>
     </p>
     <el-divider />
     <el-form ref="formRef" :model="form" :rules="rules">

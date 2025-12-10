@@ -4,9 +4,6 @@
       <el-tab-pane label="提交设置">
         <SubmitSetting />
       </el-tab-pane>
-      <el-tab-pane label="回收设置">
-        <WriteSetting />
-      </el-tab-pane>
       <el-tab-pane label="通知设置">
         <NotifySetting />
       </el-tab-pane>
@@ -19,7 +16,6 @@
 
 <script setup>
 import SubmitSetting from './setting/SubmitSetting.vue'
-import WriteSetting from './setting/WriteSetting.vue'
 import NotifySetting from './setting/NotifySetting.vue'
 import ShareSetting from './setting/ShareSetting.vue'
 </script>

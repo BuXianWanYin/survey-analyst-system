@@ -2,9 +2,6 @@
   <div class="share-setting-view">
     <p class="setting-title">
       分享设置
-      <span class="setting-desc">
-        自定义表单在分享的标题以及图片等
-      </span>
     </p>
     <el-divider />
     <el-form ref="formRef" :model="form" :rules="rules">

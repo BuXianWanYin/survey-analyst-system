@@ -57,6 +57,46 @@
         <template #header>
           <div class="card-header">
             <el-tag type="primary" size="small">问卷</el-tag>
+            <el-dropdown
+              v-if="survey.status === 'PUBLISHED'"
+              trigger="hover"
+              placement="bottom-end"
+              @command="handleShareCommand"
+            >
+              <el-button
+                :icon="Share"
+                text
+                circle
+                class="share-button"
+                @click.stop
+              >
+                <el-icon><Share /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :command="{ action: 'copyLink', id: survey.id }">
+                    <el-icon><Link /></el-icon>
+                    <span style="margin-left: 8px">复制链接</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'copyQRCode', id: survey.id }">
+                    <el-icon><QrCode /></el-icon>
+                    <span style="margin-left: 8px">复制二维码</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided :command="{ action: 'wechat', id: survey.id }">
+                    <img src="/icons/wechat.svg" class="share-icon" alt="微信" />
+                    <span style="margin-left: 8px">微信分享</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'weibo', id: survey.id }">
+                    <img src="/icons/weibo.svg" class="share-icon" alt="微博" />
+                    <span style="margin-left: 8px">微博分享</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'qq', id: survey.id }">
+                    <img src="/icons/qq.svg" class="share-icon" alt="QQ" />
+                    <span style="margin-left: 8px">QQ分享</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
         <div class="card-body">
@@ -99,11 +139,46 @@
             {{ formatDate(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" align="center" fixed="right">
+        <el-table-column label="操作" width="350" align="center" fixed="right">
           <template #default="{ row }">
             <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(row.id)">编辑</el-button>
             <el-button :icon="Promotion" type="success" size="small" @click.stop="handlePublish(row.id)">发布</el-button>
             <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(row.id)">统计</el-button>
+            <el-dropdown
+              v-if="row.status === 'PUBLISHED'"
+              trigger="hover"
+              placement="bottom-end"
+              @command="handleShareCommand"
+            >
+              <el-button :icon="Share" type="info" size="small" @click.stop>
+                <el-icon><Share /></el-icon>
+                分享
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :command="{ action: 'copyLink', id: row.id }">
+                    <el-icon><Link /></el-icon>
+                    <span style="margin-left: 8px">复制链接</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'copyQRCode', id: row.id }">
+                    <el-icon><QrCode /></el-icon>
+                    <span style="margin-left: 8px">复制二维码</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided :command="{ action: 'wechat', id: row.id }">
+                    <img src="/icons/wechat.svg" class="share-icon" alt="微信" />
+                    <span style="margin-left: 8px">微信分享</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'weibo', id: row.id }">
+                    <img src="/icons/weibo.svg" class="share-icon" alt="微博" />
+                    <span style="margin-left: 8px">微博分享</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="{ action: 'qq', id: row.id }">
+                    <img src="/icons/qq.svg" class="share-icon" alt="QQ" />
+                    <span style="margin-left: 8px">QQ分享</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button :icon="Delete" type="danger" size="small" @click.stop="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
@@ -111,6 +186,26 @@
     </div>
 
     <el-empty v-if="!loading && surveyList.length === 0" description="暂无数据" />
+
+    <!-- 二维码对话框 -->
+    <el-dialog
+      v-model="showQRCodeDialog"
+      title="问卷二维码"
+      width="400px"
+      align-center
+    >
+      <div v-if="currentQRCode" class="qrcode-dialog-content">
+        <img :src="currentQRCode" alt="二维码" class="qrcode-dialog-image">
+        <div class="qrcode-dialog-actions">
+          <el-button type="primary" @click="handleDownloadQRCode">下载二维码</el-button>
+          <el-button @click="handleCopyQRCodeImage">复制二维码</el-button>
+        </div>
+      </div>
+      <div v-else class="qrcode-loading">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <span style="margin-left: 10px">正在生成二维码...</span>
+      </div>
+    </el-dialog>
 
     <!-- 创建问卷对话框 -->
     <el-dialog
@@ -163,8 +258,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check } from '@element-plus/icons-vue'
-import { surveyApi } from '@/api'
+import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, QrCode, Loading } from '@element-plus/icons-vue'
+import { surveyApi, surveyPublishApi } from '@/api'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -234,6 +329,11 @@ const createForm = ref({
   title: '',
   description: ''
 })
+
+// 二维码相关
+const showQRCodeDialog = ref(false)
+const currentQRCode = ref('')
+const currentQRCodeSurveyId = ref(null)
 
 const goToCreateSurvey = () => {
   createForm.value = {
@@ -323,6 +423,84 @@ const formatDate = (date) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
+// 分享功能处理
+const handleShareCommand = async ({ action, id }) => {
+  try {
+    switch (action) {
+      case 'copyLink': {
+        const res = await surveyPublishApi.getSurveyLink(id)
+        if (res.code === 200) {
+          await navigator.clipboard.writeText(res.data)
+          ElMessage.success('链接已复制到剪贴板')
+        }
+        break
+      }
+      case 'copyQRCode': {
+        // 显示二维码对话框
+        currentQRCodeSurveyId.value = id
+        currentQRCode.value = ''
+        showQRCodeDialog.value = true
+        // 加载二维码
+        const res = await surveyPublishApi.getQRCode(id)
+        if (res.code === 200) {
+          currentQRCode.value = res.data
+        } else {
+          ElMessage.error('生成二维码失败')
+          showQRCodeDialog.value = false
+        }
+        break
+      }
+      case 'wechat':
+      case 'weibo':
+      case 'qq': {
+        const res = await surveyPublishApi.getShareLinks(id)
+        if (res.code === 200) {
+          const shareUrl = res.data[action]
+          if (shareUrl) {
+            window.open(shareUrl, '_blank')
+          } else {
+            ElMessage.warning('该平台分享链接暂不可用')
+          }
+        }
+        break
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
+  }
+}
+
+// 下载二维码
+const handleDownloadQRCode = () => {
+  if (!currentQRCode.value) return
+  
+  const link = document.createElement('a')
+  link.href = currentQRCode.value
+  link.download = `survey-${currentQRCodeSurveyId.value}-qrcode.png`
+  link.click()
+  ElMessage.success('二维码下载成功')
+}
+
+// 复制二维码图片
+const handleCopyQRCodeImage = async () => {
+  if (!currentQRCode.value) return
+  
+  try {
+    const response = await fetch(currentQRCode.value)
+    const blob = await response.blob()
+    await navigator.clipboard.write([
+      new ClipboardItem({ [blob.type]: blob })
+    ])
+    ElMessage.success('二维码已复制到剪贴板')
+  } catch (error) {
+    // 如果浏览器不支持复制图片，提示下载
+    ElMessage.warning('当前浏览器不支持复制图片，请使用下载功能')
+    handleDownloadQRCode()
+  }
+}
+
 onMounted(() => {
   loadSurveyList()
 })
@@ -382,7 +560,25 @@ onMounted(() => {
 
 .card-header {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.share-button {
+  color: #409eff;
+  font-size: 18px;
+}
+
+.share-button:hover {
+  color: #66b1ff;
+}
+
+.share-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  display: inline-block;
+  margin-right: 0;
 }
 
 .card-body {
@@ -456,6 +652,33 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.qrcode-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.qrcode-dialog-image {
+  width: 300px;
+  height: 300px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+
+.qrcode-dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.qrcode-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
 }
 </style>
 

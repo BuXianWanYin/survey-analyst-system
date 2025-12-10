@@ -2,9 +2,6 @@
   <div class="write-setting-view">
     <p class="setting-title">
       回收设置
-      <span class="setting-desc">
-        自定义表单收集限制填写环境等
-      </span>
     </p>
     <el-divider />
     <el-form ref="formRef" :model="form" :rules="rules">

@@ -169,10 +169,10 @@ logs/
 **/application-prod.yml
 **/.env.production
 **/.env.local
+# 主配置文件包含敏感信息（邮件账号密码等），不上传
+survey-analyst-server/src/main/resources/application.yml
 
-# ============================================
 # 其他
-# ============================================
 
 # 测试覆盖率
 coverage/

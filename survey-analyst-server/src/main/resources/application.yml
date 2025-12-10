@@ -6,6 +6,10 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+  # 邮件配置（敏感信息，不上传）
+  mail:
+    username: 3050604024@qq.com  # 发送邮件的邮箱
+    password: rxhidqusgbsmdcgh  # 邮箱授权码
 
 server:
   port: 8080
@@ -15,4 +19,3 @@ server:
       charset: UTF-8
       enabled: true
       force: true
-
