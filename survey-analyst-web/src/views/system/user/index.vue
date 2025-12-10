@@ -18,9 +18,9 @@
               <el-option label="启用" :value="1" />
               <el-option label="禁用" :value="0" />
             </el-select>
-            <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
-          <el-button type="primary" @click="handleAdd">添加用户</el-button>
+          <el-button :icon="Plus" type="primary" @click="handleAdd">添加用户</el-button>
         </div>
       </template>
 
@@ -46,15 +46,16 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button :icon="Edit" type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button
+              :icon="row.status === 1 ? Lock : Unlock"
               :type="row.status === 1 ? 'warning' : 'success'"
               size="small"
               @click="handleToggleStatus(row)"
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -100,8 +101,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddSave">保存</el-button>
+        <el-button :icon="Close" @click="addDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleAddSave">保存</el-button>
       </template>
     </el-dialog>
 
@@ -131,8 +132,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button :icon="Close" @click="editDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -141,6 +142,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus, Edit, Lock, Unlock, Delete, Close, Check } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 import dayjs from 'dayjs'
 

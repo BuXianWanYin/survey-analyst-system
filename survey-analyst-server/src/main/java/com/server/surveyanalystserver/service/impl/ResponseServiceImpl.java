@@ -5,15 +5,19 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.Answer;
 import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
+import com.server.surveyanalystserver.service.EmailService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormItemService;
+import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.ResponseService;
 import com.server.surveyanalystserver.service.SurveyService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +29,7 @@ import java.util.Map;
 /**
  * 填写记录Service实现类
  */
+@Slf4j
 @Service
 public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> implements ResponseService {
 
@@ -42,6 +47,12 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     
     @Autowired
     private SurveyService surveyService;
+    
+    @Autowired
+    private FormSettingService formSettingService;
+    
+    @Autowired
+    private EmailService emailService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -113,6 +124,32 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         } catch (Exception e) {
             // 如果保存到 form_data 失败，不影响主流程，只记录日志
             // log.error("保存到 form_data 失败", e);
+        }
+        
+        // 发送邮件通知
+        try {
+            FormSetting formSetting = formSettingService.getBySurveyId(response.getSurveyId());
+            if (formSetting != null && formSetting.getSettings() != null) {
+                Object emailNotifyObj = formSetting.getSettings().get("emailNotify");
+                Object emailListObj = formSetting.getSettings().get("newWriteNotifyEmail");
+                
+                // 检查是否启用了邮件通知
+                boolean emailNotify = false;
+                if (emailNotifyObj instanceof Boolean) {
+                    emailNotify = (Boolean) emailNotifyObj;
+                } else if (emailNotifyObj != null) {
+                    emailNotify = Boolean.parseBoolean(emailNotifyObj.toString());
+                }
+                
+                // 如果启用了邮件通知且有邮箱列表，发送邮件
+                if (emailNotify && emailListObj != null && !emailListObj.toString().trim().isEmpty()) {
+                    String emailList = emailListObj.toString().trim();
+                    emailService.sendSurveySubmitNotification(emailList, survey.getTitle(), survey.getId());
+                }
+            }
+        } catch (Exception e) {
+            // 邮件发送失败不影响主流程，只记录日志
+            log.error("发送邮件通知失败", e);
         }
         
         return response;

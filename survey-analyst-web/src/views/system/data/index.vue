@@ -13,7 +13,7 @@
               style="width: 200px"
               @keyup.enter="handleSearch"
             />
-            <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
         </div>
       </template>
@@ -42,8 +42,8 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -65,6 +65,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, View, Delete } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const loading = ref(false)

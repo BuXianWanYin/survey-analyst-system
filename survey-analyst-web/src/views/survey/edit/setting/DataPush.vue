@@ -68,8 +68,8 @@
         </el-form-item>
         
         <el-form-item>
-          <el-button type="primary" @click="handleSave">保存设置</el-button>
-          <el-button @click="handleSendTest">发送测试</el-button>
+          <el-button :icon="Check" type="primary" @click="handleSave">保存设置</el-button>
+          <el-button :icon="Promotion" @click="handleSendTest">发送测试</el-button>
         </el-form-item>
       </template>
     </el-form>
@@ -80,6 +80,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Check, Promotion } from '@element-plus/icons-vue'
 import { formApi } from '@/api'
 
 const route = useRoute()

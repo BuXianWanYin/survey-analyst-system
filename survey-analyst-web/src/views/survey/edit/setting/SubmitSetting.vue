@@ -39,7 +39,7 @@
         />
       </el-form-item>
       <div class="submit-btn">
-        <el-button type="primary" @click="handleSave">保存设置</el-button>
+        <el-button :icon="Check" type="primary" @click="handleSave">保存设置</el-button>
       </div>
     </el-form>
   </div>
@@ -49,6 +49,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Check } from '@element-plus/icons-vue'
 import { formApi } from '@/api'
 
 const route = useRoute()

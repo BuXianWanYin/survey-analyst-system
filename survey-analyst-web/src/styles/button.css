@@ -1,0 +1,58 @@
+/* 柔和的按钮配色方案 - 使用Element Plus实际使用的CSS变量 */
+:root {
+  /* Primary 按钮颜色 - 柔和的蓝色 */
+  --el-color-primary: #6b9eff;
+  --el-color-primary-light-3: #8bb3ff;
+  --el-color-primary-light-5: #a8c5ff;
+  --el-color-primary-light-7: #c5d9ff;
+  --el-color-primary-light-8: #d4e3ff;
+  --el-color-primary-light-9: #e8f0ff;
+  --el-color-primary-dark-2: #5a8eef;
+  
+  /* Success 按钮颜色 - 柔和的绿色 */
+  --el-color-success: #85ce61;
+  --el-color-success-light-3: #95d671;
+  --el-color-success-light-5: #a8de85;
+  --el-color-success-light-7: #bbe699;
+  --el-color-success-light-8: #c8ecad;
+  --el-color-success-light-9: #dbf2c6;
+  --el-color-success-dark-2: #75be51;
+  
+  /* Warning 按钮颜色 - 柔和的橙色 */
+  --el-color-warning: #ebb563;
+  --el-color-warning-light-3: #f5c573;
+  --el-color-warning-light-5: #f8d085;
+  --el-color-warning-light-7: #fbd997;
+  --el-color-warning-light-8: #fce2a9;
+  --el-color-warning-light-9: #feebbb;
+  --el-color-warning-dark-2: #dba553;
+  
+  /* Danger 按钮颜色 - 柔和的红色 */
+  --el-color-danger: #f78989;
+  --el-color-danger-light-3: #ff9999;
+  --el-color-danger-light-5: #ffaaaa;
+  --el-color-danger-light-7: #ffbbbb;
+  --el-color-danger-light-8: #ffcccc;
+  --el-color-danger-light-9: #ffdddd;
+  --el-color-danger-dark-2: #e77979;
+}
+
+/* 确保图标和文字之间有间距 */
+.el-button .el-icon {
+  margin-right: 6px;
+}
+
+/* 圆形按钮不需要间距 */
+.el-button.is-circle .el-icon {
+  margin-right: 0;
+}
+
+/* 兼容旧的选择器 */
+.el-button [class^="el-icon"] {
+  margin-right: 6px;
+}
+
+.el-button.is-circle [class^="el-icon"] {
+  margin-right: 0;
+}
+

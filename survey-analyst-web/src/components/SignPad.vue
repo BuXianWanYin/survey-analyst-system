@@ -24,6 +24,7 @@
       </div>
       <div class="sign-pad-actions">
         <el-button
+          :icon="Check"
           type="primary"
           size="small"
           :disabled="disabled || isEmpty"
@@ -32,6 +33,7 @@
           保存
         </el-button>
         <el-button
+          :icon="RefreshLeft"
           type="default"
           size="small"
           :disabled="disabled || canUndo === false"
@@ -40,6 +42,7 @@
           回撤
         </el-button>
         <el-button
+          :icon="Delete"
           type="danger"
           size="small"
           :disabled="disabled"
@@ -64,6 +67,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { Check, RefreshLeft, Delete } from '@element-plus/icons-vue'
 import SignaturePad from 'signature_pad'
 
 const props = defineProps({

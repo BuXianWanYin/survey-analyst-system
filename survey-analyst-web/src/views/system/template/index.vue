@@ -28,7 +28,7 @@
               trigger="click"
               @command="handleCategoryCommand"
             >
-              <el-button type="success" size="default" icon="Setting">
+              <el-button type="success" size="default" :icon="Setting">
                 管理分类
                 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
@@ -152,10 +152,10 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-            <el-button type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -208,8 +208,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addTemplateDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirmAddTemplate">确定</el-button>
+        <el-button :icon="Close" @click="addTemplateDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleConfirmAddTemplate">确定</el-button>
       </template>
     </el-dialog>
 
@@ -254,7 +254,7 @@
               :limit="1"
               class="template-cover-upload"
             >
-              <el-button type="primary">选择图片</el-button>
+              <el-button :icon="Upload" type="primary">选择图片</el-button>
             </el-upload>
             <!-- 如果有图片，显示图片预览和操作按钮 -->
             <div v-else class="template-cover-preview-wrapper">
@@ -292,8 +292,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button :icon="Close" @click="editDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
 
@@ -309,8 +309,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="categoryDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveCategory">确定</el-button>
+        <el-button :icon="Close" @click="categoryDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleSaveCategory">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -320,7 +320,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Edit, Delete, Grid, List, Setting, Plus, ArrowDown } from '@element-plus/icons-vue'
+import { Search, View, Edit, Delete, Grid, List, Setting, Plus, ArrowDown, Close, Check, Upload } from '@element-plus/icons-vue'
 import { adminApi, templateApi, surveyApi } from '@/api'
 import { getToken } from '@/utils/auth'
 import { getImageUrl } from '@/utils/image'

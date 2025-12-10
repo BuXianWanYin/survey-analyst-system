@@ -1,8 +1,7 @@
 <template>
   <div class="survey-list-container">
     <div class="toolbar">
-      <el-button type="primary" size="large" @click="goToCreateSurvey">
-        <el-icon><Plus /></el-icon>
+      <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey">
         创建问卷
       </el-button>
       <div class="search-section">
@@ -13,7 +12,7 @@
           style="width: 300px"
           @keyup.enter="handleSearch"
         />
-        <el-button type="primary" @click="handleSearch">查询</el-button>
+        <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
       </div>
     </div>
 
@@ -71,10 +70,10 @@
           </div>
         </div>
         <div class="card-footer">
-          <el-link type="primary" @click="handleEdit(survey.id)">编辑</el-link>
-          <el-link type="primary" @click="handlePublish(survey.id)">发布</el-link>
-          <el-link type="primary" @click="handleStatistics(survey.id)">统计</el-link>
-          <el-link type="danger" @click="handleDelete(survey.id)">删除</el-link>
+          <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(survey.id)">编辑</el-button>
+          <el-button :icon="Promotion" type="success" size="small" @click.stop="handlePublish(survey.id)">发布</el-button>
+          <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(survey.id)">统计</el-button>
+          <el-button :icon="Delete" type="danger" size="small" @click.stop="handleDelete(survey.id)">删除</el-button>
         </div>
       </el-card>
     </div>
@@ -102,13 +101,10 @@
         </el-table-column>
         <el-table-column label="操作" width="300" align="center" fixed="right">
           <template #default="{ row }">
-            <el-link type="primary" @click.stop="handleEdit(row.id)">编辑</el-link>
-            <el-divider direction="vertical" />
-            <el-link type="primary" @click.stop="handlePublish(row.id)">发布</el-link>
-            <el-divider direction="vertical" />
-            <el-link type="primary" @click.stop="handleStatistics(row.id)">统计</el-link>
-            <el-divider direction="vertical" />
-            <el-link type="danger" @click.stop="handleDelete(row.id)">删除</el-link>
+            <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(row.id)">编辑</el-button>
+            <el-button :icon="Promotion" type="success" size="small" @click.stop="handlePublish(row.id)">发布</el-button>
+            <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(row.id)">统计</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click.stop="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -144,8 +140,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateSurvey">确定</el-button>
+        <el-button :icon="Close" @click="showCreateDialog = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleCreateSurvey">确定</el-button>
       </template>
     </el-dialog>
 
@@ -167,7 +163,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Grid, List } from '@element-plus/icons-vue'
+import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check } from '@element-plus/icons-vue'
 import { surveyApi } from '@/api'
 import dayjs from 'dayjs'
 
@@ -335,6 +331,8 @@ onMounted(() => {
 <style scoped>
 .survey-list-container {
   padding: 20px;
+  background: white;
+  min-height: calc(100vh - 60px);
 }
 
 .toolbar {
@@ -366,7 +364,7 @@ onMounted(() => {
 
 .survey-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -374,6 +372,7 @@ onMounted(() => {
 .survey-card {
   cursor: pointer;
   transition: all 0.3s;
+  min-width: 0;
 }
 
 .survey-card:hover {
@@ -383,7 +382,7 @@ onMounted(() => {
 
 .card-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .card-body {
@@ -439,10 +438,18 @@ onMounted(() => {
   justify-content: space-around;
   padding-top: 10px;
   border-top: 1px solid #ebeef5;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-footer .el-button {
+  flex: 1;
+  min-width: 0;
 }
 
 .survey-table {
   margin-bottom: 20px;
+  background: white;
 }
 
 .pagination {

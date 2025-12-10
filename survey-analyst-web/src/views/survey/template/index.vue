@@ -37,7 +37,7 @@
               @command="handleCategoryCommand"
               style="margin-left: 10px"
             >
-              <el-button type="success" size="default" icon="Setting">
+              <el-button type="success" size="default" :icon="Setting">
                 管理分类
                 <el-icon class="el-icon--right"><arrow-down /></el-icon>
               </el-button>
@@ -94,12 +94,12 @@
       </div>
       <!-- 分类菜单 -->
       <el-menu
-        :default-active="queryParams.type"
+        :default-active="String(queryParams.type || 'null')"
         mode="horizontal"
         style="background-color: transparent"
         @select="handleCategorySelect"
       >
-        <el-menu-item :index="null">全部</el-menu-item>
+        <el-menu-item index="null">全部</el-menu-item>
         <!-- 我的模板只显示用户自己的分类，公共模板显示所有分类（包括系统分类） -->
         <el-menu-item 
           v-for="(item, index) in filteredCategoryList" 
@@ -163,12 +163,12 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" :width="activeTab === 'my' ? 320 : 100" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="toTemplatePreview(row.formKey)">查看</el-button>
+            <el-button :icon="View" type="primary" size="small" @click="toTemplatePreview(row.formKey)">查看</el-button>
             <!-- 只有我的模板才显示编辑和删除按钮 -->
             <template v-if="activeTab === 'my' && row.isPublic !== 1">
-              <el-button type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-              <el-button type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-              <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
+              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </template>
           </template>
         </el-table-column>
@@ -195,8 +195,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="categoryDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveCategory">确定</el-button>
+        <el-button :icon="Close" @click="categoryDialogVisible = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleSaveCategory">确定</el-button>
       </template>
     </el-dialog>
 
@@ -302,7 +302,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, Plus, Edit, ArrowDown, Grid, List, View, Setting } from '@element-plus/icons-vue'
+import { Search, Delete, Plus, Edit, ArrowDown, Grid, List, View, Setting, Close, Check } from '@element-plus/icons-vue'
 import { templateApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { getToken } from '@/utils/auth'

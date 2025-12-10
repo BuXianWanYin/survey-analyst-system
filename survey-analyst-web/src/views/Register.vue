@@ -53,6 +53,7 @@
         </el-form-item>
         <el-form-item>
           <el-button
+            :icon="UserFilled"
             type="primary"
             size="large"
             class="register-button"
@@ -77,7 +78,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Message, Avatar } from '@element-plus/icons-vue'
+import { User, Lock, Message, Avatar, UserFilled } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 
 const router = useRouter()

@@ -28,6 +28,7 @@
         </el-form-item>
         <el-form-item>
           <el-button
+            :icon="Right"
             type="primary"
             size="large"
             class="login-button"
@@ -52,7 +53,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Right } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 

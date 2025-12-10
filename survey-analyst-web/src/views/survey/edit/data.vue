@@ -5,8 +5,8 @@
         <div class="card-header">
           <span>数据管理</span>
           <div class="header-actions">
-            <el-button type="primary" @click="handleExport">导出数据</el-button>
-            <el-button @click="handleRefresh">刷新</el-button>
+            <el-button :icon="Download" type="primary" @click="handleExport">导出数据</el-button>
+            <el-button :icon="Refresh" @click="handleRefresh">刷新</el-button>
           </div>
         </div>
       </template>
@@ -42,8 +42,8 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="text" @click="handleView(row)">查看</el-button>
-            <el-button type="text" danger @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="View" type="text" @click="handleView(row)">查看</el-button>
+            <el-button :icon="Delete" type="text" danger @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -100,6 +100,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, Refresh, View, Delete } from '@element-plus/icons-vue'
 import { responseApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 

@@ -5,7 +5,7 @@
       <template #header>
         <div class="card-header">
           <span>发布设置</span>
-          <el-button type="primary" @click="handlePublish" :loading="publishing">
+          <el-button :icon="Promotion" type="primary" @click="handlePublish" :loading="publishing">
             {{ survey.status === 'PUBLISHED' ? '已发布' : '发布问卷' }}
           </el-button>
         </div>
@@ -77,7 +77,7 @@
               readonly
               style="width: 70%"
             />
-            <el-button type="primary" @click="handleCopyLink">复制链接</el-button>
+            <el-button :icon="Link" type="primary" @click="handleCopyLink">复制链接</el-button>
           </div>
         </el-tab-pane>
 
@@ -87,7 +87,7 @@
             <div v-if="qrCodeBase64" class="qrcode-container">
               <img :src="qrCodeBase64" alt="二维码" class="qrcode-image" />
               <div class="qrcode-actions">
-                <el-button type="primary" @click="handleDownloadQRCode">下载二维码</el-button>
+                <el-button :icon="Download" type="primary" @click="handleDownloadQRCode">下载二维码</el-button>
               </div>
             </div>
             <el-button v-else type="primary" @click="loadQRCode" :loading="loadingQRCode">
@@ -105,7 +105,7 @@
               :rows="4"
               readonly
             />
-            <el-button type="primary" @click="handleCopyEmbedCode">复制代码</el-button>
+            <el-button :icon="DocumentCopy" type="primary" @click="handleCopyEmbedCode">复制代码</el-button>
           </div>
         </el-tab-pane>
 
@@ -113,16 +113,13 @@
         <el-tab-pane label="社交媒体分享" name="share">
           <div class="tool-section">
             <div class="share-buttons">
-              <el-button @click="handleShare('wechat')">
-                <el-icon><Share /></el-icon>
+              <el-button :icon="Share" @click="handleShare('wechat')">
                 微信分享
               </el-button>
-              <el-button @click="handleShare('weibo')">
-                <el-icon><Share /></el-icon>
+              <el-button :icon="Share" @click="handleShare('weibo')">
                 微博分享
               </el-button>
-              <el-button @click="handleShare('qq')">
-                <el-icon><Share /></el-icon>
+              <el-button :icon="Share" @click="handleShare('qq')">
                 QQ分享
               </el-button>
             </div>
@@ -137,7 +134,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Share } from '@element-plus/icons-vue'
+import { Share, Promotion, Link, Download, Picture, DocumentCopy } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi } from '@/api'
 import dayjs from 'dayjs'
 

@@ -20,7 +20,7 @@
               style="width: 200px; margin-left: 10px"
               @keyup.enter="handleSearch"
             />
-            <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
         </div>
       </template>
@@ -53,6 +53,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const loading = ref(false)

@@ -29,7 +29,7 @@
             </el-tag>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleSaveInfo">保存信息</el-button>
+            <el-button :icon="Check" type="primary" @click="handleSaveInfo">保存信息</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -54,7 +54,7 @@
             <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleChangePassword">修改密码</el-button>
+            <el-button :icon="Lock" type="primary" @click="handleChangePassword">修改密码</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -65,6 +65,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Check, Lock } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 
 const userForm = reactive({

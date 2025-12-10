@@ -45,6 +45,24 @@ spring:
       max-request-size: 500MB  # 整个请求最大大小（50MB，支持多文件上传）
       file-size-threshold: 2KB  # 文件写入磁盘的阈值
 
+  # 邮件配置
+  mail:
+    host: smtp.qq.com  # SMTP服务器地址
+    port: 587  # SMTP端口
+    username: your-email@qq.com  # 发送邮件的邮箱
+    password: your-email-password  # 邮箱授权码（不是登录密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 # MyBatis Plus配置
 mybatis-plus:
   configuration:

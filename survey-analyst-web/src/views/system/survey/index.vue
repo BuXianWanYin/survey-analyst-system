@@ -20,7 +20,7 @@
               <el-option label="已暂停" value="PAUSED" />
               <el-option label="已结束" value="ENDED" />
             </el-select>
-            <el-button type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
+            <el-button :icon="Search" type="primary" @click="handleSearch" style="margin-left: 10px">查询</el-button>
           </div>
           <div class="view-toggle-item">
             <el-radio-group v-model="viewMode" size="default" class="view-toggle-group">
@@ -70,9 +70,10 @@
               </div>
             </div>
             <div class="survey-card-actions">
-              <el-button type="primary" size="small" @click="handleView(survey)">查看</el-button>
+              <el-button :icon="View" type="primary" size="small" @click="handleView(survey)">查看</el-button>
               <el-button
                 v-if="survey.status === 'PUBLISHED'"
+                :icon="VideoPause"
                 type="warning"
                 size="small"
                 @click="handleUpdateStatus(survey, 'PAUSED')"
@@ -81,13 +82,14 @@
               </el-button>
               <el-button
                 v-if="survey.status === 'PAUSED'"
+                :icon="VideoPlay"
                 type="success"
                 size="small"
                 @click="handleUpdateStatus(survey, 'PUBLISHED')"
               >
                 恢复
               </el-button>
-              <el-button type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
+              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(survey)">删除</el-button>
             </div>
           </div>
         </div>
@@ -118,9 +120,10 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
+            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
             <el-button
               v-if="row.status === 'PUBLISHED'"
+              :icon="VideoPause"
               type="warning"
               size="small"
               @click="handleUpdateStatus(row, 'PAUSED')"
@@ -129,13 +132,14 @@
             </el-button>
             <el-button
               v-if="row.status === 'PAUSED'"
+              :icon="VideoPlay"
               type="success"
               size="small"
               @click="handleUpdateStatus(row, 'PUBLISHED')"
             >
               恢复
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -158,7 +162,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Grid, List, User, Clock, Lock } from '@element-plus/icons-vue'
+import { Grid, List, User, Clock, Lock, Search, View, VideoPause, VideoPlay, Delete } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 
 const router = useRouter()

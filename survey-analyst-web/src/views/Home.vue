@@ -4,12 +4,10 @@
       <h2>欢迎使用在线问卷调查系统</h2>
       <p class="welcome-desc">快速创建问卷，收集数据，进行多维度分析</p>
       <div class="action-buttons">
-        <el-button type="primary" size="large" @click="goToCreateSurvey">
-          <el-icon><Plus /></el-icon>
+        <el-button :icon="Plus" type="primary" size="large" @click="goToCreateSurvey">
           创建问卷
         </el-button>
-        <el-button size="large" @click="goToSurveyList">
-          <el-icon><List /></el-icon>
+        <el-button :icon="List" size="large" @click="goToSurveyList">
           我的问卷
         </el-button>
       </div>
@@ -70,8 +68,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateSurvey">确定</el-button>
+        <el-button :icon="Close" @click="showCreateDialog = false">取消</el-button>
+        <el-button :icon="Check" type="primary" @click="handleCreateSurvey">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -81,7 +79,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, List } from '@element-plus/icons-vue'
+import { Plus, List, Close, Check } from '@element-plus/icons-vue'
 import { surveyApi } from '@/api'
 
 const router = useRouter()
