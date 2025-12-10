@@ -106,38 +106,22 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                     System.out.println("处理图片列: " + columnName + ", 值: " + 
                         (imageValueStr.length() > 100 ? imageValueStr.substring(0, 100) + "..." : imageValueStr));
                     
-                    // 如果是 Base64 格式，直接处理（不能分割）
-                    if (imageValueStr.startsWith("data:image/")) {
-                        processImage(workbook, drawing, row, sheet, colIndex, rowIndex, imageValueStr, 0, 1);
-                        continue;
-                    }
-                    
                     // 解析图片URL（可能是多个图片用分号分隔）
-                    // 注意：Base64格式的数据不应该被分号分割
+                    // 图片数据已保存为文件路径，格式为 /upload/yyyy/MM/dd/filename.ext
                     List<String> imageUrls = new ArrayList<>();
-                    
-                    // 如果包含Base64数据，需要特殊处理
-                    if (imageValueStr.contains("base64,")) {
-                        // 使用正则表达式或手动分割，避免分割Base64数据
-                        // 简单方法：先检查是否有多个Base64图片（不太可能），或者混合Base64和URL
-                        // 对于Base64，整个字符串作为一个图片处理（因为Base64数据很长，通常不会用分号分隔多个）
-                        imageUrls.add(imageValueStr);
-                    } else {
-                        // 普通URL，可以用分号分割
-                        String[] simpleUrls = imageValueStr.split(";");
-                        for (String url : simpleUrls) {
-                            url = url.trim();
-                            if (!url.isEmpty()) {
-                                imageUrls.add(url);
-                            }
+                    String[] simpleUrls = imageValueStr.split(";");
+                    for (String url : simpleUrls) {
+                        url = url.trim();
+                        if (!url.isEmpty()) {
+                            imageUrls.add(url);
                         }
                     }
                     
-                    // 先统计实际要处理的图片数量
+                    // 先统计实际要处理的图片数量（可能包含空格分隔的多个URL）
                     int totalImages = 0;
                     for (String imageUrl : imageUrls) {
                         if (!imageUrl.isEmpty()) {
-                            if (imageUrl.contains(" ") && !imageUrl.startsWith("data:image")) {
+                            if (imageUrl.contains(" ")) {
                                 String[] urls = imageUrl.split("\\s+");
                                 for (String url : urls) {
                                     if (!url.trim().isEmpty()) {
@@ -157,8 +141,8 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                             continue;
                         }
                         
-                        // 如果URL包含空格分隔的多个URL，进一步分割（但不是Base64）
-                        if (imageUrl.contains(" ") && !imageUrl.startsWith("data:image")) {
+                        // 如果URL包含空格分隔的多个URL，进一步分割
+                        if (imageUrl.contains(" ")) {
                             String[] urls = imageUrl.split("\\s+");
                             for (String url : urls) {
                                 url = url.trim();
@@ -201,23 +185,14 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             
             System.out.println("成功读取图片，大小: " + imageBytes.length + " bytes");
 
-            // 检测图片类型
+            // 检测图片类型（根据文件扩展名）
             int pictureType = Workbook.PICTURE_TYPE_PNG; // 默认PNG
-            if (imageUrl.startsWith("data:image/")) {
-                // Base64 图片，根据 MIME 类型判断
-                if (imageUrl.startsWith("data:image/jpeg") || imageUrl.startsWith("data:image/jpg")) {
-                    pictureType = Workbook.PICTURE_TYPE_JPEG;
-                } else {
-                    pictureType = Workbook.PICTURE_TYPE_PNG;
-                }
+            String urlLower = imageUrl.toLowerCase();
+            if (urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg")) {
+                pictureType = Workbook.PICTURE_TYPE_JPEG;
             } else {
-                // 文件 URL，根据扩展名判断
-                String urlLower = imageUrl.toLowerCase();
-                if (urlLower.endsWith(".jpg") || urlLower.endsWith(".jpeg")) {
-                    pictureType = Workbook.PICTURE_TYPE_JPEG;
-                } else {
-                    pictureType = Workbook.PICTURE_TYPE_PNG;
-                }
+                // PNG、GIF等其他格式都使用PNG类型
+                pictureType = Workbook.PICTURE_TYPE_PNG;
             }
             
             // 创建图片
@@ -294,6 +269,7 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
 
     /**
      * 读取图片字节
+     * 图片数据已保存为文件，路径格式为 /upload/yyyy/MM/dd/filename.ext
      */
     private byte[] readImageBytes(String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
@@ -301,25 +277,8 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
         }
         
         try {
-            // 如果是Base64格式（data:image/...;base64,...），直接解码
-            if (imageUrl.startsWith("data:image/")) {
-                int base64Index = imageUrl.indexOf("base64,");
-                if (base64Index > 0) {
-                    String base64Data = imageUrl.substring(base64Index + 7); // 跳过 "base64,"
-                    try {
-                        byte[] decoded = java.util.Base64.getDecoder().decode(base64Data);
-                        System.out.println("Base64解码成功，大小: " + decoded.length + " bytes");
-                        return decoded;
-                    } catch (Exception e) {
-                        System.err.println("Base64解码失败: " + e.getMessage() + ", base64Data长度: " + base64Data.length());
-                        return null;
-                    }
-                } else {
-                    System.err.println("Base64格式错误，未找到base64,标记: " + imageUrl.substring(0, Math.min(100, imageUrl.length())));
-                }
-            }
-            
             // 如果是相对路径（以/upload/开头），转换为本地文件路径
+            // 路径格式：/upload/yyyy/MM/dd/filename.ext
             if (imageUrl.startsWith("/upload/")) {
                 // 去掉开头的/upload/，直接拼接 upload/ 目录
                 String relativePath = imageUrl.substring(8); // 去掉 "/upload/"
@@ -327,12 +286,13 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                 System.out.println("尝试读取文件: " + imageFile.getAbsolutePath() + ", 存在: " + imageFile.exists());
                 if (imageFile.exists() && imageFile.isFile()) {
                     try (FileInputStream fis = new FileInputStream(imageFile)) {
-                        System.out.println("成功读取文件: " + imageFile.getAbsolutePath());
-                        return IOUtils.toByteArray(fis);
+                        byte[] imageBytes = IOUtils.toByteArray(fis);
+                        System.out.println("成功读取文件: " + imageFile.getAbsolutePath() + ", 大小: " + imageBytes.length + " bytes");
+                        return imageBytes;
                     }
                 } else {
                     System.err.println("文件不存在: " + imageFile.getAbsolutePath());
-                    // 尝试其他可能的路径
+                    // 尝试其他可能的路径（备用方案）
                     File altFile = new File(relativePath);
                     if (altFile.exists() && altFile.isFile()) {
                         System.out.println("使用替代路径读取文件: " + altFile.getAbsolutePath());
@@ -344,12 +304,14 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             } else if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
                 // 如果是HTTP URL，从网络读取
                 try (InputStream is = new URL(imageUrl).openStream()) {
-                    return IOUtils.toByteArray(is);
+                    byte[] imageBytes = IOUtils.toByteArray(is);
+                    System.out.println("成功从网络读取图片: " + imageUrl + ", 大小: " + imageBytes.length + " bytes");
+                    return imageBytes;
                 } catch (Exception e) {
                     System.err.println("网络读取图片失败: " + imageUrl + ", 错误: " + e.getMessage());
                 }
             } else {
-                // 尝试作为相对路径处理（直接是文件名）
+                // 尝试作为相对路径处理（直接是文件名，拼接 upload/ 目录）
                 File imageFile = new File(UPLOAD_DIR + imageUrl);
                 if (imageFile.exists() && imageFile.isFile()) {
                     try (FileInputStream fis = new FileInputStream(imageFile)) {
@@ -362,6 +324,8 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
                         try (FileInputStream fis = new FileInputStream(absFile)) {
                             return IOUtils.toByteArray(fis);
                         }
+                    } else {
+                        System.err.println("无法找到图片文件: " + imageUrl);
                     }
                 }
             }
