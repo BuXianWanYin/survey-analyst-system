@@ -16,17 +16,17 @@ public interface StatisticsService {
 
     /**
      * 获取题目统计
-     * @param questionId 题目ID
+     * @param formItemId 表单项ID（字符串）
      * @return 题目统计数据
      */
-    Map<String, Object> getQuestionStatistics(Long questionId);
+    Map<String, Object> getQuestionStatistics(String formItemId);
 
     /**
      * 获取选项统计（选择人数、比例）
-     * @param questionId 题目ID
+     * @param formItemId 表单项ID（字符串）
      * @return 选项统计数据
      */
-    Map<String, Object> getOptionStatistics(Long questionId);
+    Map<String, Object> getOptionStatistics(String formItemId);
 
     /**
      * 获取填写趋势统计

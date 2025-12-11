@@ -6,7 +6,7 @@ import request from '@/utils/request'
 export const analysisApi = {
   /**
    * 交叉分析
-   * @param {Object} data 分析参数 { surveyId, questionId1, questionId2 }
+   * @param {Object} data 分析参数 { surveyId, formItemId1, formItemId2 }
    * @returns {Promise} 交叉分析结果
    */
   crossAnalysis(data) {
@@ -15,7 +15,7 @@ export const analysisApi = {
 
   /**
    * 趋势分析
-   * @param {Object} data 分析参数 { surveyId, questionId, timeRange }
+   * @param {Object} data 分析参数 { surveyId, formItemId, timeRange }
    * @returns {Promise} 趋势分析结果
    */
   trendAnalysis(data) {

@@ -6,11 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.*;
 import com.server.surveyanalystserver.mapper.*;
 import com.server.surveyanalystserver.service.StatisticsService;
-import com.server.surveyanalystserver.utils.DataCleaningUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -27,6 +25,18 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
 
     @Autowired
     private ResponseMapper responseMapper;
+
+    @Autowired
+    private com.server.surveyanalystserver.service.FormConfigService formConfigService;
+
+    @Autowired
+    private com.server.surveyanalystserver.service.FormItemService formItemService;
+
+    @Autowired
+    private com.server.surveyanalystserver.service.FormDataService formDataService;
+
+    @Autowired
+    private com.server.surveyanalystserver.mapper.FormItemMapper formItemMapper;
 
     @Override
     public Map<String, Object> getSurveyStatistics(Long surveyId) {
@@ -72,15 +82,194 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
     }
 
     @Override
-    public Map<String, Object> getQuestionStatistics(Long questionId) {
-        // 传统问卷系统已废弃，该方法不再支持
-        throw new RuntimeException("该方法已废弃，系统已迁移到表单系统，请使用基于form_item的统计方法");
+    public Map<String, Object> getQuestionStatistics(String formItemId) {
+        // 通过formItemId查找formItem
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> itemWrapper = 
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        itemWrapper.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, formItemId)
+                   .last("LIMIT 1");
+        com.server.surveyanalystserver.entity.FormItem formItem = formItemMapper.selectOne(itemWrapper);
+        
+        if (formItem == null) {
+            throw new RuntimeException("表单项不存在");
+        }
+        
+        String formKey = formItem.getFormKey();
+        
+        // 通过formKey获取surveyId
+        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getByFormKey(formKey);
+        if (formConfig == null) {
+            throw new RuntimeException("表单配置不存在");
+        }
+        Long surveyId = formConfig.getSurveyId();
+
+        // 先从缓存获取
+        StatisticsCache cache = getCache(surveyId, formItemId, "QUESTION_STAT");
+        if (cache != null) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cachedData = objectMapper.readValue(cache.getStatData(), Map.class);
+                return cachedData;
+            } catch (Exception e) {
+                // 缓存数据解析失败，重新计算
+            }
+        }
+
+        Map<String, Object> statistics = new HashMap<>();
+        statistics.put("formItemId", formItemId);
+        statistics.put("questionTitle", formItem.getLabel());
+        statistics.put("questionType", formItem.getType());
+
+        // 获取该表单的所有数据
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            formDataService.getFormDataList(page, formKey);
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+
+        // 解析scheme获取选项信息
+        ObjectMapper objectMapper = new ObjectMapper();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> scheme = null;
+        try {
+            if (formItem.getScheme() != null) {
+                scheme = objectMapper.readValue(formItem.getScheme(), Map.class);
+            }
+        } catch (Exception e) {
+            // 解析失败
+        }
+
+        // 判断题型并统计
+        String type = formItem.getType();
+        if (isChoiceType(type)) {
+            // 选择题：统计选项分布
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> options = new ArrayList<>();
+            if (scheme != null && scheme.containsKey("config")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> config = (Map<String, Object>) scheme.get("config");
+                if (config != null && config.containsKey("options")) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> opts = (List<Map<String, Object>>) config.get("options");
+                    if (opts != null) {
+                        options = opts;
+                    }
+                }
+            }
+
+            // 统计每个选项的选择次数
+            Map<String, Integer> optionCount = new HashMap<>();
+            int totalCount = 0;
+            
+            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+                Map<String, Object> originalData = data.getOriginalData();
+                if (originalData != null && originalData.containsKey(formItemId)) {
+                    Object value = originalData.get(formItemId);
+                    if (value != null) {
+                        totalCount++;
+                        if (value instanceof List) {
+                            // 多选题
+                            List<?> values = (List<?>) value;
+                            for (Object v : values) {
+                                String optionValue = String.valueOf(v);
+                                optionCount.put(optionValue, optionCount.getOrDefault(optionValue, 0) + 1);
+                            }
+                        } else {
+                            // 单选题
+                            String optionValue = String.valueOf(value);
+                            optionCount.put(optionValue, optionCount.getOrDefault(optionValue, 0) + 1);
+                        }
+                    }
+                }
+            }
+
+            // 构建选项统计
+            List<Map<String, Object>> optionStats = new ArrayList<>();
+            for (Map<String, Object> option : options) {
+                String optionValue = String.valueOf(option.get("value"));
+                String optionLabel = String.valueOf(option.get("label"));
+                int count = optionCount.getOrDefault(optionValue, 0);
+                double percentage = totalCount > 0 ? (double) count / totalCount * 100 : 0;
+                
+                Map<String, Object> optionStat = new HashMap<>();
+                optionStat.put("optionValue", optionValue);
+                optionStat.put("optionLabel", optionLabel);
+                optionStat.put("count", count);
+                optionStat.put("percentage", Math.round(percentage * 100.0) / 100.0);
+                optionStats.add(optionStat);
+            }
+            
+            statistics.put("optionStats", optionStats);
+            statistics.put("totalCount", totalCount);
+        } else if (isTextType(type)) {
+            // 文本题：统计有效答案数
+            int validAnswers = 0;
+            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+                Map<String, Object> originalData = data.getOriginalData();
+                if (originalData != null && originalData.containsKey(formItemId)) {
+                    Object value = originalData.get(formItemId);
+                    if (value != null && !String.valueOf(value).trim().isEmpty()) {
+                        validAnswers++;
+                    }
+                }
+            }
+            
+            statistics.put("validAnswers", validAnswers);
+            statistics.put("totalAnswers", formDataList.size());
+        } else if ("RATE".equals(type) || "SLIDER".equals(type)) {
+            // 评分题/滑块：计算平均分
+            List<Double> ratings = new ArrayList<>();
+            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+                Map<String, Object> originalData = data.getOriginalData();
+                if (originalData != null && originalData.containsKey(formItemId)) {
+                    Object value = originalData.get(formItemId);
+                    if (value != null) {
+                        try {
+                            double rating = Double.parseDouble(String.valueOf(value));
+                            ratings.add(rating);
+                        } catch (NumberFormatException e) {
+                            // 忽略无效值
+                        }
+                    }
+                }
+            }
+
+            if (!ratings.isEmpty()) {
+                double avgRating = ratings.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+                statistics.put("averageRating", Math.round(avgRating * 100.0) / 100.0);
+                statistics.put("maxRating", ratings.stream().mapToDouble(Double::doubleValue).max().orElse(0));
+                statistics.put("minRating", ratings.stream().mapToDouble(Double::doubleValue).min().orElse(0));
+            }
+            statistics.put("totalRatings", ratings.size());
+        }
+
+        // 保存到缓存
+        saveCache(surveyId, formItemId, "QUESTION_STAT", statistics);
+
+        return statistics;
     }
 
     @Override
-    public Map<String, Object> getOptionStatistics(Long questionId) {
-        // 传统问卷系统已废弃，该方法不再支持
-        throw new RuntimeException("该方法已废弃，系统已迁移到表单系统，请使用基于form_item的统计方法");
+    public Map<String, Object> getOptionStatistics(String formItemId) {
+        // 选项统计与题目统计相同
+        return getQuestionStatistics(formItemId);
+    }
+
+    /**
+     * 判断是否为选择题类型
+     */
+    private boolean isChoiceType(String type) {
+        return "RADIO".equals(type) || "CHECKBOX".equals(type) || "SELECT".equals(type) 
+            || "IMAGE_SELECT".equals(type) || "CASCADER".equals(type);
+    }
+
+    /**
+     * 判断是否为文本题类型
+     */
+    private boolean isTextType(String type) {
+        return "INPUT".equals(type) || "TEXTAREA".equals(type) || "NUMBER".equals(type) 
+            || "DATE".equals(type) || "TIME".equals(type) || "DATETIME".equals(type);
     }
 
     @Override
@@ -236,15 +425,15 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
     /**
      * 获取缓存
      */
-    private StatisticsCache getCache(Long surveyId, Long questionId, String statType) {
+    private StatisticsCache getCache(Long surveyId, String formItemId, String statType) {
         LambdaQueryWrapper<StatisticsCache> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StatisticsCache::getSurveyId, surveyId)
                .eq(StatisticsCache::getStatType, statType);
         
-        if (questionId != null) {
-            wrapper.eq(StatisticsCache::getQuestionId, questionId);
+        if (formItemId != null) {
+            wrapper.eq(StatisticsCache::getFormItemId, formItemId);
         } else {
-            wrapper.isNull(StatisticsCache::getQuestionId);
+            wrapper.isNull(StatisticsCache::getFormItemId);
         }
         
         return this.getOne(wrapper);
@@ -253,13 +442,13 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
     /**
      * 保存缓存
      */
-    private void saveCache(Long surveyId, Long questionId, String statType, Map<String, Object> data) {
-        StatisticsCache cache = getCache(surveyId, questionId, statType);
+    private void saveCache(Long surveyId, String formItemId, String statType, Map<String, Object> data) {
+        StatisticsCache cache = getCache(surveyId, formItemId, statType);
         
         if (cache == null) {
             cache = new StatisticsCache();
             cache.setSurveyId(surveyId);
-            cache.setQuestionId(questionId);
+            cache.setFormItemId(formItemId);
             cache.setStatType(statType);
         }
         

@@ -7,9 +7,6 @@
       <el-tab-pane label="通知设置">
         <NotifySetting />
       </el-tab-pane>
-      <el-tab-pane label="分享设置">
-        <ShareSetting />
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -17,7 +14,6 @@
 <script setup>
 import SubmitSetting from './setting/SubmitSetting.vue'
 import NotifySetting from './setting/NotifySetting.vue'
-import ShareSetting from './setting/ShareSetting.vue'
 </script>
 
 <style lang="scss" scoped>

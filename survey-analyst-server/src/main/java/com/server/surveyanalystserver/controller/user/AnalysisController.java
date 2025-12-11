@@ -26,10 +26,10 @@ public class AnalysisController {
     @PostMapping("/cross")
     public Result<Map<String, Object>> crossAnalysis(@RequestBody Map<String, Object> params) {
         Long surveyId = Long.valueOf(params.get("surveyId").toString());
-        Long questionId1 = Long.valueOf(params.get("questionId1").toString());
-        Long questionId2 = Long.valueOf(params.get("questionId2").toString());
+        String formItemId1 = params.get("formItemId1").toString();
+        String formItemId2 = params.get("formItemId2").toString();
         
-        Map<String, Object> result = analysisService.crossAnalysis(surveyId, questionId1, questionId2);
+        Map<String, Object> result = analysisService.crossAnalysis(surveyId, formItemId1, formItemId2);
         return Result.success("分析成功", result);
     }
 
@@ -38,10 +38,10 @@ public class AnalysisController {
     @PostMapping("/trend")
     public Result<Map<String, Object>> trendAnalysis(@RequestBody Map<String, Object> params) {
         Long surveyId = Long.valueOf(params.get("surveyId").toString());
-        Long questionId = Long.valueOf(params.get("questionId").toString());
+        String formItemId = params.get("formItemId").toString();
         String timeRange = params.get("timeRange") != null ? params.get("timeRange").toString() : "30d";
         
-        Map<String, Object> result = analysisService.trendAnalysis(surveyId, questionId, timeRange);
+        Map<String, Object> result = analysisService.trendAnalysis(surveyId, formItemId, timeRange);
         return Result.success("分析成功", result);
     }
 

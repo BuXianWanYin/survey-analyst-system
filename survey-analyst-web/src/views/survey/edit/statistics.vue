@@ -60,7 +60,7 @@
               <el-form :model="crossAnalysisForm" label-width="120px">
                 <el-form-item label="题目1">
                   <el-select
-                    v-model="crossAnalysisForm.questionId1"
+                    v-model="crossAnalysisForm.formItemId1"
                     placeholder="请选择题目1"
                     style="width: 300px"
                     @change="handleCrossQuestion1Change"
@@ -75,7 +75,7 @@
                 </el-form-item>
                 <el-form-item label="题目2">
                   <el-select
-                    v-model="crossAnalysisForm.questionId2"
+                    v-model="crossAnalysisForm.formItemId2"
                     placeholder="请选择题目2"
                     style="width: 300px"
                     @change="handleCrossQuestion2Change"
@@ -254,8 +254,8 @@ const hourChartOption = ref(null)
 
 // 交叉分析相关
 const crossAnalysisForm = reactive({
-  questionId1: null,
-  questionId2: null
+  formItemId1: null,
+  formItemId2: null
 })
 const crossAnalyzing = ref(false)
 const crossAnalysisResult = ref(null)
@@ -288,7 +288,6 @@ const loadFormConfig = async () => {
               formItemId: item.formItemId,
               label: item.label,
               type: item.type,
-              questionId: item.questionId, // 保存questionId用于交叉分析
               scheme: scheme || {}
             }
           })
@@ -454,16 +453,16 @@ const choiceFormItems = computed(() => {
 
 // 交叉分析题目2的选项（排除题目1）
 const crossQuestion2Options = computed(() => {
-  if (!crossAnalysisForm.questionId1) {
+  if (!crossAnalysisForm.formItemId1) {
     return choiceFormItems.value
   }
-  return choiceFormItems.value.filter(item => item.formItemId !== crossAnalysisForm.questionId1)
+  return choiceFormItems.value.filter(item => item.formItemId !== crossAnalysisForm.formItemId1)
 })
 
 // 处理交叉分析题目1变化
 const handleCrossQuestion1Change = () => {
-  if (crossAnalysisForm.questionId2 === crossAnalysisForm.questionId1) {
-    crossAnalysisForm.questionId2 = null
+  if (crossAnalysisForm.formItemId2 === crossAnalysisForm.formItemId1) {
+    crossAnalysisForm.formItemId2 = null
   }
   crossAnalysisResult.value = null
 }
@@ -475,7 +474,7 @@ const handleCrossQuestion2Change = () => {
 
 // 执行交叉分析
 const handleCrossAnalyze = async () => {
-  if (!crossAnalysisForm.questionId1 || !crossAnalysisForm.questionId2) {
+  if (!crossAnalysisForm.formItemId1 || !crossAnalysisForm.formItemId2) {
     ElMessage.warning('请选择两个题目')
     return
   }
@@ -485,17 +484,17 @@ const handleCrossAnalyze = async () => {
     return
   }
 
-  // 获取选中的表单项的questionId
-  const item1 = formItems.value.find(item => item.formItemId === crossAnalysisForm.questionId1)
-  const item2 = formItems.value.find(item => item.formItemId === crossAnalysisForm.questionId2)
+  // 验证表单项是否存在
+  const item1 = formItems.value.find(item => item.formItemId === crossAnalysisForm.formItemId1)
+  const item2 = formItems.value.find(item => item.formItemId === crossAnalysisForm.formItemId2)
 
-  if (!item1 || !item1.questionId) {
-    ElMessage.warning('题目1未关联到问卷题目，无法进行交叉分析')
+  if (!item1) {
+    ElMessage.warning('题目1不存在，无法进行交叉分析')
     return
   }
 
-  if (!item2 || !item2.questionId) {
-    ElMessage.warning('题目2未关联到问卷题目，无法进行交叉分析')
+  if (!item2) {
+    ElMessage.warning('题目2不存在，无法进行交叉分析')
     return
   }
 
@@ -503,8 +502,8 @@ const handleCrossAnalyze = async () => {
   try {
     const res = await analysisApi.crossAnalysis({
       surveyId: surveyId.value,
-      questionId1: item1.questionId,
-      questionId2: item2.questionId
+      formItemId1: crossAnalysisForm.formItemId1,
+      formItemId2: crossAnalysisForm.formItemId2
     })
 
     if (res.code === 200) {

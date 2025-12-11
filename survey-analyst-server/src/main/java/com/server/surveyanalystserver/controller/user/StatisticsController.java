@@ -31,17 +31,17 @@ public class StatisticsController {
 
     @ApiOperation(value = "获取题目统计", notes = "获取单个题目的统计数据")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping("/question/{questionId}")
-    public Result<Map<String, Object>> getQuestionStatistics(@PathVariable Long questionId) {
-        Map<String, Object> statistics = statisticsService.getQuestionStatistics(questionId);
+    @GetMapping("/question/{formItemId}")
+    public Result<Map<String, Object>> getQuestionStatistics(@PathVariable String formItemId) {
+        Map<String, Object> statistics = statisticsService.getQuestionStatistics(formItemId);
         return Result.success("获取成功", statistics);
     }
 
     @ApiOperation(value = "获取选项统计", notes = "获取题目的选项统计数据")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping("/option/{questionId}")
-    public Result<Map<String, Object>> getOptionStatistics(@PathVariable Long questionId) {
-        Map<String, Object> statistics = statisticsService.getOptionStatistics(questionId);
+    @GetMapping("/option/{formItemId}")
+    public Result<Map<String, Object>> getOptionStatistics(@PathVariable String formItemId) {
+        Map<String, Object> statistics = statisticsService.getOptionStatistics(formItemId);
         return Result.success("获取成功", statistics);
     }
 

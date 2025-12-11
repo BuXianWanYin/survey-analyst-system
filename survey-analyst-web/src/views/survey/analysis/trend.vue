@@ -19,7 +19,7 @@
         </el-form-item>
         <el-form-item label="题目">
           <el-select
-            v-model="analysisForm.questionId"
+            v-model="analysisForm.formItemId"
             placeholder="请选择题目"
             style="width: 300px"
             @change="handleAnalyze"
@@ -117,7 +117,7 @@ const trendOptions = ref([])
 
 const analysisForm = reactive({
   surveyId: null,
-  questionId: null,
+  formItemId: null,
   timeRange: '30d'
 })
 

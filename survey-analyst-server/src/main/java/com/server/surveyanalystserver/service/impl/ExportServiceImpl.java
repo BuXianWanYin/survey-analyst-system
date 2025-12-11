@@ -50,6 +50,12 @@ public class ExportServiceImpl implements ExportService {
     private FormItemMapper formItemMapper;
 
     @Autowired
+    private com.server.surveyanalystserver.service.FormConfigService formConfigService;
+
+    @Autowired
+    private com.server.surveyanalystserver.service.FormItemService formItemService;
+
+    @Autowired
     private FormConfigMapper formConfigMapper;
 
     @Override
@@ -632,8 +638,48 @@ public class ExportServiceImpl implements ExportService {
             overview.put("有效率(%)", surveyStats.get("validRate"));
             exportData.add(overview);
 
-            // 注意：题目统计功能已废弃，系统已迁移到表单系统
-            // 如需导出题目统计，请使用基于form_item的导出方法
+            // 题目统计（基于form_item）
+            try {
+                // 获取formKey
+                com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+                if (formConfig != null && formConfig.getFormKey() != null) {
+                    // 获取所有表单项
+                    List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formConfig.getFormKey());
+                    
+                    for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
+                        if (formItem.getFormItemId() == null) continue;
+                        
+                        try {
+                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId());
+                            
+                            Map<String, Object> row = new HashMap<>();
+                            row.put("统计项", "题目统计");
+                            row.put("题目", formItem.getLabel());
+                            row.put("题型", formItem.getType());
+
+                            if (questionStat.containsKey("optionStats")) {
+                                @SuppressWarnings("unchecked")
+                                List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
+                                for (Map<String, Object> optionStat : optionStats) {
+                                    Map<String, Object> optionRow = new HashMap<>(row);
+                                    optionRow.put("选项", optionStat.get("optionLabel"));
+                                    optionRow.put("选择人数", optionStat.get("count"));
+                                    optionRow.put("比例(%)", optionStat.get("percentage"));
+                                    exportData.add(optionRow);
+                                }
+                            } else {
+                                row.put("有效答案数", questionStat.get("validAnswers"));
+                                row.put("总答案数", questionStat.get("totalAnswers"));
+                                exportData.add(row);
+                            }
+                        } catch (Exception e) {
+                            // 如果某个题目统计失败，跳过
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 如果获取题目统计失败，只导出问卷概览
+            }
 
             // 使用EasyExcel导出
             EasyExcel.write(outputStream, Map.class)
@@ -713,13 +759,60 @@ public class ExportServiceImpl implements ExportService {
             statsTable.addCell(createCell(String.valueOf(surveyStats.get("validRate")), false));
             document.add(statsTable);
 
-            // 注意：题目统计功能已废弃，系统已迁移到表单系统
-            // 如需导出题目统计，请使用基于form_item的导出方法
-            Paragraph note = new Paragraph("注意：题目统计功能已废弃，系统已迁移到表单系统")
-                    .setFontSize(12)
-                    .setMarginTop(20)
-                    .setMarginBottom(10);
-            document.add(note);
+            // 题目统计（基于form_item）
+            try {
+                // 获取formKey
+                com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+                if (formConfig != null && formConfig.getFormKey() != null) {
+                    // 获取所有表单项
+                    List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formConfig.getFormKey());
+                    
+                    int index = 1;
+                    for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
+                        if (formItem.getFormItemId() == null) continue;
+                        
+                        try {
+                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId());
+
+                            Paragraph qTitle = new Paragraph(index + ". " + formItem.getLabel())
+                                    .setFontSize(14)
+                                    .setBold()
+                                    .setMarginTop(15)
+                                    .setMarginBottom(5);
+                            document.add(qTitle);
+
+                            if (questionStat.containsKey("optionStats")) {
+                                @SuppressWarnings("unchecked")
+                                List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
+                                float[] optionColumnWidths = {40, 30, 30};
+                                Table optionTable = new Table(optionColumnWidths);
+                                optionTable.addCell(createCell("选项", true));
+                                optionTable.addCell(createCell("选择人数", true));
+                                optionTable.addCell(createCell("比例(%)", true));
+                                
+                                for (Map<String, Object> optionStat : optionStats) {
+                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("optionLabel")), false));
+                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("count")), false));
+                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("percentage")), false));
+                                }
+                                document.add(optionTable);
+                            } else {
+                                Paragraph statText = new Paragraph("有效答案数：" + questionStat.get("validAnswers") + 
+                                                               "，总答案数：" + questionStat.get("totalAnswers"))
+                                        .setFontSize(12)
+                                        .setMarginBottom(10);
+                                document.add(statText);
+                            }
+                            
+                            index++;
+                        } catch (Exception e) {
+                            // 如果某个题目统计失败，跳过
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 如果获取题目统计失败，只导出问卷概览
+            }
 
             // 关闭文档
             document.close();

@@ -29,9 +29,9 @@ public class StatisticsCache implements Serializable {
     @ApiModelProperty(value = "问卷ID", required = true)
     private Long surveyId;
 
-    @TableField("question_id")
-    @ApiModelProperty(value = "题目ID（题目统计）")
-    private Long questionId;
+    @TableField("form_item_id")
+    @ApiModelProperty(value = "表单项ID（题目统计，字符串）")
+    private String formItemId;
 
     @TableField("stat_type")
     @ApiModelProperty(value = "统计类型", required = true)

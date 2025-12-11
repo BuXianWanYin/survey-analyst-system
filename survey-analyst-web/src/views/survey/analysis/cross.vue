@@ -19,7 +19,7 @@
         </el-form-item>
         <el-form-item label="题目1">
           <el-select
-            v-model="analysisForm.questionId1"
+            v-model="analysisForm.formItemId1"
             placeholder="请选择题目1"
             style="width: 300px"
             @change="handleQuestion1Change"
@@ -34,7 +34,7 @@
         </el-form-item>
         <el-form-item label="题目2">
           <el-select
-            v-model="analysisForm.questionId2"
+            v-model="analysisForm.formItemId2"
             placeholder="请选择题目2"
             style="width: 300px"
             @change="handleQuestion2Change"
@@ -129,8 +129,8 @@ const heatmapChartOption = ref(null)
 
 const analysisForm = reactive({
   surveyId: null,
-  questionId1: null,
-  questionId2: null
+  formItemId1: null,
+  formItemId2: null
 })
 
 const loadSurveyList = async () => {
@@ -145,12 +145,12 @@ const loadSurveyList = async () => {
 }
 
 const handleQuestion1Change = async () => {
-  if (!analysisForm.surveyId || !analysisForm.questionId1) return
+  if (!analysisForm.surveyId || !analysisForm.formItemId1) return
 
   try {
     const res = await questionApi.getQuestionsBySurveyId(analysisForm.surveyId)
     if (res.code === 200) {
-      questions2.value = (res.data || []).filter(q => q.id !== analysisForm.questionId1)
+      questions2.value = (res.data || []).filter(q => q.id !== analysisForm.formItemId1)
     }
   } catch (error) {
     ElMessage.error('加载题目列表失败')
@@ -158,12 +158,12 @@ const handleQuestion1Change = async () => {
 }
 
 const handleQuestion2Change = async () => {
-  if (!analysisForm.surveyId || !analysisForm.questionId2) return
+  if (!analysisForm.surveyId || !analysisForm.formItemId2) return
 
   try {
     const res = await questionApi.getQuestionsBySurveyId(analysisForm.surveyId)
     if (res.code === 200) {
-      questions1.value = (res.data || []).filter(q => q.id !== analysisForm.questionId2)
+      questions1.value = (res.data || []).filter(q => q.id !== analysisForm.formItemId2)
     }
   } catch (error) {
     ElMessage.error('加载题目列表失败')
@@ -171,7 +171,7 @@ const handleQuestion2Change = async () => {
 }
 
 const handleAnalyze = async () => {
-  if (!analysisForm.surveyId || !analysisForm.questionId1 || !analysisForm.questionId2) {
+  if (!analysisForm.surveyId || !analysisForm.formItemId1 || !analysisForm.formItemId2) {
     ElMessage.warning('请选择问卷和两个题目')
     return
   }
@@ -180,8 +180,8 @@ const handleAnalyze = async () => {
   try {
     const res = await analysisApi.crossAnalysis({
       surveyId: analysisForm.surveyId,
-      questionId1: analysisForm.questionId1,
-      questionId2: analysisForm.questionId2
+      formItemId1: analysisForm.formItemId1,
+      formItemId2: analysisForm.formItemId2
     })
 
     if (res.code === 200) {

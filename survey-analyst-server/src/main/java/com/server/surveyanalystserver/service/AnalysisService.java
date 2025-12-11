@@ -10,20 +10,20 @@ public interface AnalysisService {
     /**
      * 交叉分析
      * @param surveyId 问卷ID
-     * @param questionId1 题目1 ID
-     * @param questionId2 题目2 ID
+     * @param formItemId1 表单项1 ID（字符串）
+     * @param formItemId2 表单项2 ID（字符串）
      * @return 交叉分析结果
      */
-    Map<String, Object> crossAnalysis(Long surveyId, Long questionId1, Long questionId2);
+    Map<String, Object> crossAnalysis(Long surveyId, String formItemId1, String formItemId2);
 
     /**
      * 趋势分析
      * @param surveyId 问卷ID
-     * @param questionId 题目ID
+     * @param formItemId 表单项ID（字符串）
      * @param timeRange 时间范围
      * @return 趋势分析结果
      */
-    Map<String, Object> trendAnalysis(Long surveyId, Long questionId, String timeRange);
+    Map<String, Object> trendAnalysis(Long surveyId, String formItemId, String timeRange);
 
     /**
      * 样本画像分析

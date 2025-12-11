@@ -15,20 +15,22 @@ export const statisticsApi = {
 
   /**
    * 获取题目统计
-   * @param {Number} questionId 题目ID
+   * @param {String} formItemId 表单项ID（字符串）
    * @returns {Promise} 题目统计数据
    */
-  getQuestionStatistics(questionId) {
-    return request.get(`/statistics/question/${questionId}`)
+  getQuestionStatistics(formItemId) {
+    // 对 formItemId 进行 URL 编码，确保特殊字符正确处理
+    return request.get(`/statistics/question/${encodeURIComponent(formItemId)}`)
   },
 
   /**
    * 获取选项统计
-   * @param {Number} questionId 题目ID
+   * @param {String} formItemId 表单项ID（字符串）
    * @returns {Promise} 选项统计数据
    */
-  getOptionStatistics(questionId) {
-    return request.get(`/statistics/option/${questionId}`)
+  getOptionStatistics(formItemId) {
+    // 对 formItemId 进行 URL 编码，确保特殊字符正确处理
+    return request.get(`/statistics/option/${encodeURIComponent(formItemId)}`)
   },
 
   /**

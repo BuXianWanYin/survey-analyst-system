@@ -1,8 +1,6 @@
 package com.server.surveyanalystserver.utils;
 
-import com.server.surveyanalystserver.entity.Answer;
 import com.server.surveyanalystserver.entity.Response;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -65,24 +63,5 @@ public class DataCleaningUtils {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 处理缺失值
-     * @param answers 答案列表
-     * @return 处理后的答案列表
-     */
-    public static List<Answer> handleMissingValues(List<Answer> answers) {
-        if (answers == null || answers.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return answers.stream()
-                .filter(answer -> {
-                    // 过滤掉完全为空的答案
-                    return (answer.getOptionId() != null) || 
-                           (answer.getContent() != null && !answer.getContent().trim().isEmpty()) ||
-                           (answer.getFileUrl() != null && !answer.getFileUrl().trim().isEmpty());
-                })
-                .collect(Collectors.toList());
-    }
 }
 
