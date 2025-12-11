@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.controller.user;
+package com.server.surveyanalystserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 
 /**

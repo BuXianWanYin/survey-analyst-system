@@ -10,7 +10,7 @@ import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.ResponseVO;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
-import com.server.surveyanalystserver.mapper.user.UserMapper;
+import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.ResponseService;

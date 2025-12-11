@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.controller.user;
+package com.server.surveyanalystserver.controller;
 
 import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.FormTheme;

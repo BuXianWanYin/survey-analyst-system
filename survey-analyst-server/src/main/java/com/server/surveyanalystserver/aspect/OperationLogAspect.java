@@ -3,7 +3,7 @@ package com.server.surveyanalystserver.aspect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.mapper.user.UserMapper;
+import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.service.OperationLogService;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;

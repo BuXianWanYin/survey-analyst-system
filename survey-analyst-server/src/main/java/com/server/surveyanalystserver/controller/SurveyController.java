@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.controller.user;
+package com.server.surveyanalystserver.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;

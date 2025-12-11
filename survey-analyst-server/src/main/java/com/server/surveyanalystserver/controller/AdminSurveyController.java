@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.controller.admin;
+package com.server.surveyanalystserver.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -6,7 +6,7 @@ import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.SurveyVO;
-import com.server.surveyanalystserver.mapper.user.UserMapper;
+import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.service.SurveyService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

@@ -7,7 +7,7 @@ import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.OperationLogVO;
 import com.server.surveyanalystserver.mapper.OperationLogMapper;
-import com.server.surveyanalystserver.mapper.user.UserMapper;
+import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.service.OperationLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.mapper.user;
+package com.server.surveyanalystserver.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.server.surveyanalystserver.entity.User;

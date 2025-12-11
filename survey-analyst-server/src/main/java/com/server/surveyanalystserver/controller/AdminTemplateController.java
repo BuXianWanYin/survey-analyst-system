@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.controller.admin;
+package com.server.surveyanalystserver.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

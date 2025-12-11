@@ -2,7 +2,7 @@ package com.server.surveyanalystserver.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.mapper.user.UserMapper;
+import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
