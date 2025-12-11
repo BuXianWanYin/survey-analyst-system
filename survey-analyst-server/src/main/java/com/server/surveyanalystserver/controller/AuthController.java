@@ -4,7 +4,7 @@ import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.UserLoginDTO;
 import com.server.surveyanalystserver.entity.dto.UserRegisterDTO;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +28,55 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @ApiOperation(value = "用户注册", notes = "用户注册接口")
+    @ApiOperation(value = "用户注册", notes = "用户注册接口（需要验证码）")
     @PostMapping("/register")
-    public Result<User> register(@RequestBody UserRegisterDTO dto) {
-        User user = userService.register(dto);
-        return Result.success("注册成功", user);
+    public Result<User> register(@RequestBody Map<String, String> params) {
+        String account = params.get("account");
+        String email = params.get("email");
+        String username = params.get("username");
+        String password = params.get("password");
+        String code = params.get("code");
+        
+        if (account == null || account.trim().isEmpty()) {
+            return Result.error("账号不能为空");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            return Result.error("邮箱不能为空");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            return Result.error("用户名不能为空");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            return Result.error("密码不能为空");
+        }
+        if (code == null || code.trim().isEmpty()) {
+            return Result.error("验证码不能为空");
+        }
+        
+        // 验证验证码
+        try {
+            boolean valid = userService.verifyCode(email.trim(), code.trim(), "REGISTER");
+            if (!valid) {
+                return Result.error("验证码错误或已过期");
+            }
+        } catch (Exception e) {
+            return Result.error("验证码验证失败：" + e.getMessage());
+        }
+        
+        // 注册用户
+        try {
+            UserRegisterDTO dto = new UserRegisterDTO();
+            dto.setAccount(account.trim());
+            dto.setEmail(email.trim());
+            dto.setUsername(username.trim());
+            dto.setPassword(password.trim());
+            
+            User user = userService.register(dto);
+            
+            return Result.success("注册成功", user);
+        } catch (Exception e) {
+            return Result.error("注册失败：" + e.getMessage());
+        }
     }
 
     @Autowired
@@ -78,31 +122,45 @@ public class AuthController {
         return Result.success("登录成功", data);
     }
 
-    @ApiOperation(value = "发送密码重置邮件", notes = "发送密码重置邮件到指定邮箱")
-    @PostMapping("/forgot-password")
-    public Result<Void> forgotPassword(@RequestBody Map<String, String> params) {
+    @ApiOperation(value = "发送验证码", notes = "发送验证码到指定邮箱（注册或重置密码）")
+    @PostMapping("/send-verification-code")
+    public Result<Void> sendVerificationCode(@RequestBody Map<String, String> params) {
         String email = params.get("email");
+        String type = params.get("type"); // REGISTER 或 RESET_PASSWORD
+        
         if (email == null || email.trim().isEmpty()) {
             return Result.error("邮箱不能为空");
         }
         
+        if (type == null || (!type.equals("REGISTER") && !type.equals("RESET_PASSWORD"))) {
+            return Result.error("验证码类型无效");
+        }
+        
         try {
-            userService.sendPasswordResetEmail(email.trim());
-            // 为了安全，无论用户是否存在都返回成功
-            return Result.success("如果该邮箱已注册，密码重置链接已发送到您的邮箱，请查收");
+            boolean success = userService.sendVerificationCode(email.trim(), type);
+            if (success) {
+                return Result.success("验证码已发送到您的邮箱，请查收");
+            } else {
+                return Result.error("发送验证码失败");
+            }
         } catch (Exception e) {
-            return Result.error("发送密码重置邮件失败：" + e.getMessage());
+            return Result.error(e.getMessage());
         }
     }
 
-    @ApiOperation(value = "重置密码", notes = "使用重置令牌重置密码")
+    @ApiOperation(value = "重置密码", notes = "使用验证码重置密码")
     @PostMapping("/reset-password")
     public Result<Void> resetPassword(@RequestBody Map<String, String> params) {
-        String token = params.get("token");
+        String email = params.get("email");
+        String code = params.get("code");
         String newPassword = params.get("newPassword");
         
-        if (token == null || token.trim().isEmpty()) {
-            return Result.error("重置令牌不能为空");
+        if (email == null || email.trim().isEmpty()) {
+            return Result.error("邮箱不能为空");
+        }
+        
+        if (code == null || code.trim().isEmpty()) {
+            return Result.error("验证码不能为空");
         }
         
         if (newPassword == null || newPassword.trim().isEmpty()) {
@@ -114,14 +172,14 @@ public class AuthController {
         }
         
         try {
-            boolean success = userService.resetPassword(token.trim(), newPassword.trim());
+            boolean success = userService.resetPasswordByCode(email.trim(), code.trim(), newPassword.trim());
             if (success) {
                 return Result.success("密码重置成功，请使用新密码登录");
             } else {
                 return Result.error("密码重置失败");
             }
         } catch (Exception e) {
-            return Result.error("密码重置失败：" + e.getMessage());
+            return Result.error(e.getMessage());
         }
     }
 

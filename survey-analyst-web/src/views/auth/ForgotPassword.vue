@@ -16,6 +16,37 @@
             :prefix-icon="Message"
           />
         </el-form-item>
+        <el-form-item prop="code">
+          <div class="code-input-wrapper">
+            <el-input
+              v-model="forgotPasswordForm.code"
+              placeholder="请输入验证码"
+              size="large"
+              :prefix-icon="Lock"
+              class="code-input"
+            />
+            <el-button
+              type="primary"
+              size="large"
+              class="send-code-button"
+              :disabled="countdown > 0 || sendingCode"
+              :loading="sendingCode"
+              @click="handleSendCode"
+            >
+              <span v-if="countdown > 0">{{ countdown }}秒</span>
+              <span v-else>发送验证码</span>
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item prop="newPassword">
+          <el-input
+            v-model="forgotPasswordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码（6-20个字符）"
+            size="large"
+            :prefix-icon="Lock"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button
             type="primary"
@@ -24,7 +55,7 @@
             :loading="loading"
             @click="handleSubmit"
           >
-            发送重置邮件
+            重置密码
           </el-button>
         </el-form-item>
         <el-form-item>
@@ -41,23 +72,71 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Message } from '@element-plus/icons-vue'
+import { Message, Lock } from '@element-plus/icons-vue'
 import { authApi } from '@/api'
 
 const router = useRouter()
 
 const forgotPasswordFormRef = ref()
 const loading = ref(false)
+const sendingCode = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
 
 const forgotPasswordForm = reactive({
-  email: ''
+  email: '',
+  code: '',
+  newPassword: ''
 })
 
 const forgotPasswordRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 6, message: '验证码为6位数字', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度在6到20个字符', trigger: 'blur' }
   ]
+}
+
+const handleSendCode = async () => {
+  if (!forgotPasswordFormRef.value) return
+
+  // 先验证邮箱
+  try {
+    await forgotPasswordFormRef.value.validateField('email')
+  } catch (error) {
+    return
+  }
+
+  sendingCode.value = true
+  try {
+    const res = await authApi.sendVerificationCode({
+      email: forgotPasswordForm.email,
+      type: 'RESET_PASSWORD'
+    })
+    if (res.code === 200) {
+      ElMessage.success(res.message || '验证码已发送，请查收您的邮箱')
+      // 开始倒计时
+      countdown.value = 60
+      countdownTimer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(countdownTimer)
+          countdownTimer = null
+        }
+      }, 1000)
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '发送验证码失败，请稍后重试')
+  } finally {
+    sendingCode.value = false
+  }
 }
 
 const handleSubmit = async () => {
@@ -67,16 +146,20 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
-        const res = await authApi.forgotPassword({ email: forgotPasswordForm.email })
+        const res = await authApi.resetPassword({
+          email: forgotPasswordForm.email,
+          code: forgotPasswordForm.code,
+          newPassword: forgotPasswordForm.newPassword
+        })
         if (res.code === 200) {
-          ElMessage.success(res.message || '密码重置邮件已发送，请查收您的邮箱')
-          // 3秒后返回登录页
+          ElMessage.success(res.message || '密码重置成功，请使用新密码登录')
+          // 2秒后返回登录页
           setTimeout(() => {
             router.push('/login')
-          }, 3000)
+          }, 2000)
         }
       } catch (error) {
-        ElMessage.error(error.message || '发送失败，请稍后重试')
+        ElMessage.error(error.message || '重置密码失败，请稍后重试')
       } finally {
         loading.value = false
       }
@@ -87,6 +170,14 @@ const handleSubmit = async () => {
 const goToLogin = () => {
   router.push('/login')
 }
+
+// 组件卸载时清除定时器
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -96,18 +187,19 @@ const goToLogin = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  background: #ffffff;
   padding: 20px;
   box-sizing: border-box;
 }
 
 .forgot-password-box {
-  width: 400px;
+  width: 450px;
   max-width: 100%;
   padding: 40px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e4e7ed;
 }
 
 .forgot-password-title {
@@ -120,6 +212,20 @@ const goToLogin = () => {
 
 .forgot-password-form {
   margin-top: 20px;
+}
+
+.code-input-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.code-input {
+  flex: 1;
+}
+
+.send-code-button {
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .submit-button {
@@ -149,4 +255,3 @@ const goToLogin = () => {
   }
 }
 </style>
-

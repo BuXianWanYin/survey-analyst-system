@@ -1,8 +1,7 @@
-package com.server.surveyanalystserver.service.user;
+package com.server.surveyanalystserver.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.entity.dto.UserLoginDTO;
 import com.server.surveyanalystserver.entity.dto.UserRegisterDTO;
 
 /**
@@ -47,19 +46,17 @@ public interface UserService extends IService<User> {
     boolean changePassword(String oldPassword, String newPassword);
 
     /**
-     * 发送密码重置邮件（已废弃，建议使用 sendVerificationCode）
+     * 发送密码重置邮件
      * @param email 邮箱
      */
-    @Deprecated
     void sendPasswordResetEmail(String email);
 
     /**
-     * 重置密码（使用Token，已废弃，建议使用 resetPasswordByCode）
+     * 重置密码
      * @param token 重置令牌
      * @param newPassword 新密码
      * @return 是否成功
      */
-    @Deprecated
     boolean resetPassword(String token, String newPassword);
 
     /**

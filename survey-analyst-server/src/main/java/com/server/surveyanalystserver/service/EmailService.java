@@ -19,5 +19,13 @@ public interface EmailService {
      * @param token 重置令牌
      */
     void sendPasswordResetEmail(String toEmail, String token);
+
+    /**
+     * 发送验证码邮件
+     * @param toEmail 接收邮箱
+     * @param code 验证码
+     * @param type 类型（REGISTER-注册，RESET_PASSWORD-重置密码）
+     */
+    void sendVerificationCodeEmail(String toEmail, String code, String type);
 }
 

@@ -145,7 +145,7 @@ const goToForgotPassword = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  background: #ffffff;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -155,8 +155,9 @@ const goToForgotPassword = () => {
   max-width: 100%;
   padding: 40px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e4e7ed;
 }
 
 .login-title {

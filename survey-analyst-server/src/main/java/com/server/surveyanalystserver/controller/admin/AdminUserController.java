@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

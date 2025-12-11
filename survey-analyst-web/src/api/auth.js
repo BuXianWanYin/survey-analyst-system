@@ -5,17 +5,17 @@ import request from '@/utils/request'
  */
 export const authApi = {
   /**
-   * 发送密码重置邮件
-   * @param {Object} data 包含邮箱
+   * 发送验证码
+   * @param {Object} data 包含邮箱和类型（REGISTER或RESET_PASSWORD）
    * @returns {Promise} 发送结果
    */
-  forgotPassword(data) {
-    return request.post('/auth/forgot-password', data)
+  sendVerificationCode(data) {
+    return request.post('/auth/send-verification-code', data)
   },
 
   /**
-   * 重置密码
-   * @param {Object} data 包含token和新密码
+   * 重置密码（使用验证码）
+   * @param {Object} data 包含邮箱、验证码和新密码
    * @returns {Promise} 重置结果
    */
   resetPassword(data) {

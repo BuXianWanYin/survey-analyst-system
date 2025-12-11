@@ -8,7 +8,7 @@ import com.server.surveyanalystserver.entity.FormTemplateCategory;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.FormTemplateCategoryService;
 import com.server.surveyanalystserver.service.FormTemplateService;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;

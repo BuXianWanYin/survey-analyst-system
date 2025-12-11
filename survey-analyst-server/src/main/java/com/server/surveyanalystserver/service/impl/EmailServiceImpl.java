@@ -122,5 +122,61 @@ public class EmailServiceImpl implements EmailService {
             throw new RuntimeException("发送密码重置邮件失败", e);
         }
     }
+
+    @Override
+    public void sendVerificationCodeEmail(String toEmail, String code, String type) {
+        if (mailSender == null) {
+            log.warn("邮件服务未配置，跳过发送验证码邮件");
+            return;
+        }
+
+        if (!StringUtils.hasText(toEmail)) {
+            log.warn("接收邮箱为空，跳过发送验证码邮件");
+            return;
+        }
+
+        try {
+            String subject;
+            String content;
+            
+            if ("REGISTER".equals(type)) {
+                subject = "注册验证码 - 在线问卷调查与数据分析系统";
+                content = String.format(
+                        "您好！\n\n" +
+                        "您正在注册账号，验证码为：\n\n" +
+                        "%s\n\n" +
+                        "验证码有效期为5分钟，请勿泄露给他人。\n\n" +
+                        "如果您没有注册账号，请忽略此邮件。\n\n" +
+                        "此邮件由系统自动发送，请勿回复。",
+                        code
+                );
+            } else if ("RESET_PASSWORD".equals(type)) {
+                subject = "密码重置验证码 - 在线问卷调查与数据分析系统";
+                content = String.format(
+                        "您好！\n\n" +
+                        "您正在重置密码，验证码为：\n\n" +
+                        "%s\n\n" +
+                        "验证码有效期为5分钟，请勿泄露给他人。\n\n" +
+                        "如果您没有申请重置密码，请忽略此邮件。\n\n" +
+                        "此邮件由系统自动发送，请勿回复。",
+                        code
+                );
+            } else {
+                throw new RuntimeException("未知的验证码类型: " + type);
+            }
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(content);
+            
+            mailSender.send(message);
+            log.info("验证码邮件已发送到: {}, 类型: {}", toEmail, type);
+        } catch (Exception e) {
+            log.error("发送验证码邮件失败: {}", e.getMessage(), e);
+            throw new RuntimeException("发送验证码邮件失败", e);
+        }
+    }
 }
 

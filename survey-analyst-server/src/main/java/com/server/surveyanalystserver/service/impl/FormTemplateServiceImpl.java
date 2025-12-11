@@ -71,7 +71,6 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
                 // 清空不需要的字段（模板中不需要这些字段）
                 templateItem.setId(null);
                 templateItem.setFormKey(newFormKey); // 设置为模板的 formKey，这样可以从 form_item 表中查询
-                templateItem.setQuestionId(null);
                 templateItem.setCreateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
                 templateItem.setUpdateTime(null); // 设置为 null，避免 Jackson 序列化 LocalDateTime 的问题
                 return templateItem;
@@ -186,7 +185,6 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
                 // 覆盖需要特殊处理的字段
                 newItem.setId(null); // 清空ID，让数据库自动生成
                 newItem.setFormKey(newFormKey); // 设置新的 formKey
-                newItem.setQuestionId(null); // 清空 questionId，因为这是新创建的
                 // 确保 span 有默认值
                 if (newItem.getSpan() == null) {
                     newItem.setSpan(24);

@@ -1,4 +1,4 @@
-package com.server.surveyanalystserver.service.impl.user;
+package com.server.surveyanalystserver.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -6,7 +6,7 @@ import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.UserRegisterDTO;
 import com.server.surveyanalystserver.mapper.user.UserMapper;
 import com.server.surveyanalystserver.service.RedisCacheService;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import com.server.surveyanalystserver.utils.DataEncryptionUtils;
 import com.server.surveyanalystserver.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;

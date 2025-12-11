@@ -9,7 +9,7 @@ import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.OperationLogService;
 import com.server.surveyanalystserver.service.ResponseService;
 import com.server.surveyanalystserver.service.SurveyService;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

@@ -11,6 +11,27 @@
       <el-tabs v-model="activeTab" type="border-card" @tab-change="handleTabChange">
         <el-tab-pane label="统计视图" name="chart">
           <div v-loading="loading" class="statistics-content">
+            <!-- 问卷整体统计 -->
+            <el-card v-if="surveyStatistics" class="survey-overview-card" style="margin-bottom: 20px">
+              <template #header>
+                <span>问卷整体统计</span>
+              </template>
+              <el-row :gutter="20">
+                <el-col :span="6">
+                  <el-statistic title="总填写数" :value="surveyStatistics.totalResponses || 0" />
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="已完成数" :value="surveyStatistics.completedResponses || 0" />
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="草稿数" :value="surveyStatistics.draftResponses || 0" />
+                </el-col>
+                <el-col :span="6">
+                  <el-statistic title="有效率" :value="surveyStatistics.validRate || 0" suffix="%" :precision="2" />
+                </el-col>
+              </el-row>
+            </el-card>
+            
             <div v-if="formItems.length === 0" class="empty-tip">
               <el-empty description="暂无表单项，无法统计" />
             </div>
@@ -44,6 +65,35 @@
               <div v-else-if="isTextType(item.type)" class="stat-text">
                 <div class="text-stat-info">
                   <el-statistic title="有效答案数" :value="getTextStat(item.formItemId, 'count') || 0" />
+                  <el-statistic title="总答案数" :value="getTextStat(item.formItemId, 'total') || 0" />
+                </div>
+              </div>
+              
+              <!-- 评分题统计 -->
+              <div v-else-if="isRatingType(item.type)" class="stat-rating">
+                <div class="rating-stat-info">
+                  <el-statistic title="平均分" :value="getRatingStat(item.formItemId, 'averageRating') || 0" :precision="2" />
+                  <el-statistic title="最高分" :value="getRatingStat(item.formItemId, 'maxRating') || 0" />
+                  <el-statistic title="最低分" :value="getRatingStat(item.formItemId, 'minRating') || 0" />
+                  <el-statistic title="评分人数" :value="getRatingStat(item.formItemId, 'totalRatings') || 0" />
+                </div>
+                <!-- 评分分布图 -->
+                <div v-if="getRatingChartOption(item.formItemId)" class="chart-wrapper">
+                  <v-chart
+                    :option="getRatingChartOption(item.formItemId)"
+                    style="height: 300px"
+                    autoresize
+                  />
+                </div>
+              </div>
+              
+              <!-- 数字题统计 -->
+              <div v-else-if="item.type === 'NUMBER'" class="stat-number">
+                <div class="number-stat-info">
+                  <el-statistic title="平均值" :value="getNumberStat(item.formItemId, 'average') || 0" :precision="2" />
+                  <el-statistic title="最大值" :value="getNumberStat(item.formItemId, 'max') || 0" />
+                  <el-statistic title="最小值" :value="getNumberStat(item.formItemId, 'min') || 0" />
+                  <el-statistic title="有效数据数" :value="getNumberStat(item.formItemId, 'count') || 0" />
                 </div>
               </div>
             </div>
@@ -221,7 +271,7 @@ import {
   VisualMapComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { formApi, analysisApi, questionApi } from '@/api'
+import { formApi, analysisApi, questionApi, statisticsApi } from '@/api'
 import dayjs from 'dayjs'
 
 use([
@@ -246,6 +296,7 @@ const analysisLoading = ref(false)
 const activeTab = ref('chart')
 const formItems = ref([])
 const statisticsData = ref({})
+const surveyStatistics = ref(null) // 问卷整体统计
 const timeRange = ref('30d')
 const trendChartOption = ref(null)
 const deviceChartOption = ref(null)
@@ -303,30 +354,43 @@ const loadFormConfig = async () => {
 
 // 加载统计数据
 const loadStatistics = async () => {
-  if (!formKey.value) return
+  if (!formKey.value || !surveyId.value) return
 
   loading.value = true
   try {
-    // 加载表单数据
-    const dataRes = await formApi.getFormDataList(formKey.value, {
-      pageNum: 1,
-      pageSize: 1000
-    })
+    // 1. 加载问卷整体统计
+    const surveyStatRes = await statisticsApi.getSurveyStatistics(surveyId.value)
+    if (surveyStatRes.code === 200) {
+      surveyStatistics.value = surveyStatRes.data
+    }
     
-    if (dataRes.code === 200 && dataRes.data) {
-      const dataList = dataRes.data.records || []
-      
-      // 统计每个表单项的数据
-      formItems.value.forEach(item => {
-        if (isChoiceType(item.type)) {
-          statisticsData.value[item.formItemId] = calculateChoiceStat(item, dataList)
-        } else if (isTextType(item.type)) {
-          statisticsData.value[item.formItemId] = calculateTextStat(item, dataList)
+    // 2. 使用后端API获取每个题目的统计数据
+    for (const item of formItems.value) {
+      try {
+        const statRes = await statisticsApi.getQuestionStatistics(item.formItemId)
+        if (statRes.code === 200 && statRes.data) {
+          statisticsData.value[item.formItemId] = statRes.data
         }
-      })
+      } catch (error) {
+        console.error(`获取题目 ${item.formItemId} 统计失败:`, error)
+        // 如果API失败，使用前端计算作为降级方案
+        const dataRes = await formApi.getFormDataList(formKey.value, {
+          pageNum: 1,
+          pageSize: 1000
+        })
+        if (dataRes.code === 200 && dataRes.data) {
+          const dataList = dataRes.data.records || []
+          if (isChoiceType(item.type)) {
+            statisticsData.value[item.formItemId] = calculateChoiceStat(item, dataList)
+          } else if (isTextType(item.type)) {
+            statisticsData.value[item.formItemId] = calculateTextStat(item, dataList)
+          }
+        }
+      }
     }
   } catch (error) {
     ElMessage.error('加载统计数据失败')
+    console.error('加载统计数据错误:', error)
   } finally {
     loading.value = false
   }
@@ -380,18 +444,18 @@ const calculateTextStat = (item, dataList) => {
   }
 }
 
-// 获取图表配置
+// 获取图表配置（选择题）
 const getChartOption = (formItemId) => {
   const stat = statisticsData.value[formItemId]
-  if (!stat || !stat.optionCount) return null
+  if (!stat || !stat.optionStats) return null
   
   const item = formItems.value.find(i => i.formItemId === formItemId)
   if (!item) return null
   
-  const options = item.scheme?.config?.options || []
-  const data = options.map(opt => ({
-    value: stat.optionCount[opt.value] || 0,
-    name: opt.label
+  // 使用后端返回的optionStats数据
+  const data = stat.optionStats.map(opt => ({
+    value: opt.count || 0,
+    name: opt.optionLabel || opt.optionValue
   }))
   
   return {
@@ -438,7 +502,76 @@ const getChartOption = (formItemId) => {
 // 获取文本统计
 const getTextStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
+  if (!stat) return 0
+  // 后端返回的是 validAnswers 和 totalAnswers
+  if (key === 'count') return stat.validAnswers || 0
+  if (key === 'total') return stat.totalAnswers || 0
+  return stat[key] || 0
+}
+
+// 获取评分统计
+const getRatingStat = (formItemId, key) => {
+  const stat = statisticsData.value[formItemId]
   return stat ? stat[key] : 0
+}
+
+// 获取数字统计
+const getNumberStat = (formItemId, key) => {
+  const stat = statisticsData.value[formItemId]
+  if (!stat) return 0
+  // 数字题可以计算平均值、最大值、最小值
+  if (key === 'average') {
+    // 这里需要从原始数据计算，暂时返回0
+    return 0
+  }
+  return stat[key] || 0
+}
+
+// 判断是否为评分题
+const isRatingType = (type) => {
+  return ['RATE', 'SLIDER'].includes(type)
+}
+
+// 获取评分题图表配置
+const getRatingChartOption = (formItemId) => {
+  const stat = statisticsData.value[formItemId]
+  if (!stat || !stat.optionStats) return null
+  
+  const item = formItems.value.find(i => i.formItemId === formItemId)
+  if (!item) return null
+  
+  // 构建评分分布柱状图
+  const data = stat.optionStats.map(opt => ({
+    value: opt.count || 0,
+    name: opt.optionLabel || opt.optionValue
+  }))
+  
+  return {
+    title: {
+      text: item.label + ' - 评分分布',
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(d => d.name)
+    },
+    yAxis: {
+      type: 'value',
+      name: '人数'
+    },
+    series: [{
+      name: '评分人数',
+      type: 'bar',
+      data: data.map(d => d.value),
+      itemStyle: {
+        color: '#409EFF'
+      }
+    }]
+  }
 }
 
 // 判断是否为选择题
@@ -637,65 +770,108 @@ const getTypeLabel = (type) => {
 
 // 加载趋势数据
 const loadTrendData = async () => {
-  if (!formKey.value) return
+  if (!surveyId.value) return
   
   analysisLoading.value = true
   try {
-    const dataRes = await formApi.getFormDataList(formKey.value, {
-      pageNum: 1,
-      pageSize: 1000
-    })
-    
-    if (dataRes.code === 200 && dataRes.data) {
-      const dataList = dataRes.data.records || []
-      
-      // 计算填写趋势
-      const trendData = calculateTrendData(dataList, timeRange.value)
+    // 1. 使用后端API获取填写趋势
+    const trendRes = await statisticsApi.getResponseTrend(surveyId.value, timeRange.value)
+    if (trendRes.code === 200 && trendRes.data) {
+      const trendData = trendRes.data.data || []
       trendChartOption.value = {
         title: { text: '填写趋势', left: 'center' },
         tooltip: { trigger: 'axis' },
         xAxis: {
           type: 'category',
-          data: trendData.dates
+          data: trendData.map(item => item.date)
         },
-        yAxis: { type: 'value' },
+        yAxis: { type: 'value', name: '填写数量' },
         series: [{
           name: '填写数量',
           type: 'line',
-          data: trendData.counts,
+          data: trendData.map(item => item.count),
           smooth: true,
-          areaStyle: {}
+          areaStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+                { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
+              ]
+            }
+          },
+          itemStyle: { color: '#409EFF' }
         }]
       }
-      
-      // 计算设备类型分布
-      const deviceData = calculateDeviceData(dataList)
+    }
+    
+    // 2. 使用后端API获取设备统计
+    const deviceRes = await statisticsApi.getDeviceStatistics(surveyId.value)
+    if (deviceRes.code === 200 && deviceRes.data) {
+      const deviceCount = deviceRes.data.deviceCount || {}
+      const deviceData = Object.entries(deviceCount).map(([name, value]) => ({
+        name: name === 'PC' ? 'PC端' : name === 'MOBILE' ? '移动端' : name,
+        value: value
+      }))
       deviceChartOption.value = {
         title: { text: '设备类型分布', left: 'center' },
-        tooltip: { trigger: 'item' },
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
         series: [{
           name: '设备类型',
           type: 'pie',
           radius: '60%',
-          data: deviceData
+          data: deviceData,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          }
         }]
       }
-      
-      // 计算填写来源（简化处理，实际应该从IP地址等获取）
+    }
+    
+    // 3. 使用后端API获取填写来源
+    const sourceRes = await statisticsApi.getResponseSource(surveyId.value)
+    if (sourceRes.code === 200 && sourceRes.data) {
+      const sourceCount = sourceRes.data.sourceCount || {}
+      const sourceData = Object.entries(sourceCount).map(([name, value]) => ({
+        name: name === 'direct' ? '直接访问' : name === 'share' ? '分享链接' : name,
+        value: value
+      }))
       sourceChartOption.value = {
         title: { text: '填写来源', left: 'center' },
-        tooltip: { trigger: 'item' },
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
         series: [{
           name: '填写来源',
           type: 'pie',
           radius: '60%',
-          data: [
-            { value: dataList.length, name: '直接访问' }
-          ]
+          data: sourceData
         }]
       }
-      
-      // 计算填写时段分布
+    }
+    
+    // 4. 填写时段分布（需要从Response数据计算，暂时保留前端计算）
+    // 这里可以从后端获取Response列表来计算
+    const dataRes = await formApi.getFormDataList(formKey.value, {
+      pageNum: 1,
+      pageSize: 1000
+    })
+    if (dataRes.code === 200 && dataRes.data) {
+      const dataList = dataRes.data.records || []
       const hourData = calculateHourData(dataList)
       hourChartOption.value = {
         title: { text: '填写时段分布', left: 'center' },
@@ -704,16 +880,18 @@ const loadTrendData = async () => {
           type: 'category',
           data: hourData.hours
         },
-        yAxis: { type: 'value' },
+        yAxis: { type: 'value', name: '填写数量' },
         series: [{
           name: '填写数量',
           type: 'bar',
-          data: hourData.counts
+          data: hourData.counts,
+          itemStyle: { color: '#409EFF' }
         }]
       }
     }
   } catch (error) {
     ElMessage.error('加载分析数据失败')
+    console.error('加载分析数据错误:', error)
   } finally {
     analysisLoading.value = false
   }
@@ -875,6 +1053,36 @@ onMounted(() => {
   .text-stat-info {
     display: flex;
     gap: 30px;
+    flex-wrap: wrap;
+  }
+}
+
+.stat-rating {
+  .rating-stat-info {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  
+  .chart-wrapper {
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+  }
+}
+
+.stat-number {
+  .number-stat-info {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+}
+
+.survey-overview-card {
+  .el-statistic {
+    text-align: center;
   }
 }
 

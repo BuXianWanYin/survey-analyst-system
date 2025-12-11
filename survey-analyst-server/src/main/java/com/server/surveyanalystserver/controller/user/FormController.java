@@ -6,6 +6,7 @@ import com.server.surveyanalystserver.entity.FormItem;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormItemService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ public class FormController {
     private FormItemService formItemService;
     
     @Autowired
-    private com.server.surveyanalystserver.service.user.UserService userService;
+    private UserService userService;
     
     @ApiOperation(value = "保存表单配置", notes = "保存或更新表单配置")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")

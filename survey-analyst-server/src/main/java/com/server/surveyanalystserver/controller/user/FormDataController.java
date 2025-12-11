@@ -10,7 +10,7 @@ import com.server.surveyanalystserver.service.FileService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormSettingService;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import com.server.surveyanalystserver.utils.IpUtils;
 import com.server.surveyanalystserver.utils.UserAgentUtils;
 import io.swagger.annotations.Api;

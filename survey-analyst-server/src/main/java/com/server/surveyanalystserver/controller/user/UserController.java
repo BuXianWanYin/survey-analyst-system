@@ -4,7 +4,7 @@ import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.OperationLogService;
-import com.server.surveyanalystserver.service.user.UserService;
+import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;

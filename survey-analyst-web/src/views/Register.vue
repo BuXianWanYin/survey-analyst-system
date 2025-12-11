@@ -24,6 +24,28 @@
             :prefix-icon="Message"
           />
         </el-form-item>
+        <el-form-item prop="code">
+          <div class="code-input-wrapper">
+            <el-input
+              v-model="registerForm.code"
+              placeholder="请输入邮箱验证码"
+              size="large"
+              :prefix-icon="Lock"
+              class="code-input"
+            />
+            <el-button
+              type="primary"
+              size="large"
+              class="send-code-button"
+              :disabled="countdown > 0 || sendingCode"
+              :loading="sendingCode"
+              @click="handleSendCode"
+            >
+              <span v-if="countdown > 0">{{ countdown }}秒</span>
+              <span v-else>发送验证码</span>
+            </el-button>
+          </div>
+        </el-form-item>
         <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
@@ -75,21 +97,25 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Message, Avatar, UserFilled } from '@element-plus/icons-vue'
-import { userApi } from '@/api'
+import { userApi, authApi } from '@/api'
 
 const router = useRouter()
 const route = useRoute()
 
 const registerFormRef = ref()
 const loading = ref(false)
+const sendingCode = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
 
 const registerForm = reactive({
   account: '',
   email: '',
+  code: '',
   username: '',
   password: '',
   confirmPassword: ''
@@ -112,6 +138,10 @@ const registerRules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 6, message: '验证码为6位数字', trigger: 'blur' }
+  ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 1, max: 50, message: '用户名长度在1到50个字符', trigger: 'blur' }
@@ -126,6 +156,41 @@ const registerRules = {
   ]
 }
 
+const handleSendCode = async () => {
+  if (!registerFormRef.value) return
+
+  // 先验证邮箱
+  try {
+    await registerFormRef.value.validateField('email')
+  } catch (error) {
+    return
+  }
+
+  sendingCode.value = true
+  try {
+    const res = await authApi.sendVerificationCode({
+      email: registerForm.email,
+      type: 'REGISTER'
+    })
+    if (res.code === 200) {
+      ElMessage.success(res.message || '验证码已发送，请查收您的邮箱')
+      // 开始倒计时
+      countdown.value = 60
+      countdownTimer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(countdownTimer)
+          countdownTimer = null
+        }
+      }, 1000)
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '发送验证码失败，请稍后重试')
+  } finally {
+    sendingCode.value = false
+  }
+}
+
 const handleRegister = async () => {
   if (!registerFormRef.value) return
 
@@ -136,6 +201,7 @@ const handleRegister = async () => {
         const res = await userApi.register({
           account: registerForm.account,
           email: registerForm.email,
+          code: registerForm.code,
           username: registerForm.username,
           password: registerForm.password
         })
@@ -173,6 +239,13 @@ const goToLogin = () => {
     router.push('/login')
   }
 }
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -182,7 +255,7 @@ const goToLogin = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  background: #ffffff;
   padding: 20px;
   box-sizing: border-box;
   overflow-y: auto;
@@ -193,8 +266,9 @@ const goToLogin = () => {
   max-width: 100%;
   padding: 40px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e4e7ed;
   margin: auto;
 }
 
@@ -208,6 +282,20 @@ const goToLogin = () => {
 
 .register-form {
   margin-top: 20px;
+}
+
+.code-input-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.code-input {
+  flex: 1;
+}
+
+.send-code-button {
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .register-button {
