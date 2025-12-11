@@ -37,6 +37,14 @@ public interface SurveyService extends IService<Survey> {
      * @return 问卷分页列表
      */
     Page<Survey> getSurveyList(Page<Survey> page, Long userId);
+    
+    /**
+     * 分页查询问卷列表（包含答卷数量）
+     * @param page 分页参数
+     * @param userId 用户ID
+     * @return 问卷分页列表（已填充答卷数量）
+     */
+    Page<Survey> getSurveyListWithResponseCount(Page<Survey> page, Long userId);
 
     /**
      * 发布问卷

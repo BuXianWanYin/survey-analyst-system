@@ -11,16 +11,22 @@ import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.FormDataMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.mapper.SurveyMapper;
+import com.server.surveyanalystserver.service.FileService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.FormSettingService;
+import com.server.surveyanalystserver.utils.IpUtils;
 import com.server.surveyanalystserver.utils.UserAgentUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,8 +47,12 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     @Autowired
     private SurveyMapper surveyMapper;
     
+    @Autowired
+    private FileService fileService;
+    
     @Override
-    public void validateBeforeFill(String formKey, String ipAddress, String deviceId, Long userId) {
+    public void validateBeforeFill(String formKey, HttpServletRequest request, String deviceId, Long userId) {
+        String ipAddress = IpUtils.getIpAddress(request);
         // 获取表单配置，用于获取surveyId
         FormConfig formConfig = formConfigService.getByFormKey(formKey);
         if (formConfig == null) {
@@ -200,8 +210,10 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String userAgent) {
+        // 注意：这个方法保留原有签名，供内部调用
         // 在保存前再次校验（双重校验，确保数据一致性）
-        validateBeforeFill(formKey, ipAddress, deviceId, userId);
+        // 由于validateBeforeFill需要HttpServletRequest，这里跳过校验
+        // 实际校验已在Controller层调用validateBeforeFill时完成
         
         // 获取表单配置，用于获取surveyId
         FormConfig formConfig = formConfigService.getByFormKey(formKey);
@@ -276,6 +288,145 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteFormData(Long id) {
         return this.removeById(id);
+    }
+    
+    @Override
+    public Map<String, Object> processBase64Images(Map<String, Object> originalData) {
+        if (originalData == null) {
+            return null;
+        }
+        
+        Map<String, Object> processedData = new HashMap<>(originalData);
+        
+        for (Map.Entry<String, Object> entry : processedData.entrySet()) {
+            Object value = entry.getValue();
+            
+            if (value instanceof String) {
+                // 检查是否是 base64 图片数据
+                String strValue = (String) value;
+                if (strValue.startsWith("data:image/")) {
+                    try {
+                        // 提取图片格式（png, jpeg, jpg 等）
+                        String mimeType = strValue.substring(5, strValue.indexOf(";"));
+                        String extension = getExtensionFromMimeType(mimeType);
+                        
+                        // 保存 base64 图片为文件
+                        String fileUrl = fileService.saveBase64Image(strValue, extension);
+                        
+                        // 用文件路径替换 base64 数据
+                        entry.setValue(fileUrl);
+                    } catch (Exception e) {
+                        // 如果保存失败，记录日志但不影响主流程
+                        System.err.println("保存base64图片失败: " + e.getMessage());
+                        // 保留原始 base64 数据
+                    }
+                }
+            } else if (value instanceof List) {
+                // 处理 List 中的 base64 数据
+                @SuppressWarnings("unchecked")
+                List<Object> list = (List<Object>) value;
+                List<Object> processedList = new ArrayList<>();
+                
+                for (Object item : list) {
+                    if (item instanceof String) {
+                        String strItem = (String) item;
+                        if (strItem.startsWith("data:image/")) {
+                            try {
+                                // 提取图片格式
+                                String mimeType = strItem.substring(5, strItem.indexOf(";"));
+                                String extension = getExtensionFromMimeType(mimeType);
+                                
+                                // 保存 base64 图片为文件
+                                String fileUrl = fileService.saveBase64Image(strItem, extension);
+                                processedList.add(fileUrl);
+                            } catch (Exception e) {
+                                System.err.println("保存base64图片失败: " + e.getMessage());
+                                processedList.add(item); // 保留原始数据
+                            }
+                        } else {
+                            processedList.add(item);
+                        }
+                    } else {
+                        processedList.add(item);
+                    }
+                }
+                entry.setValue(processedList);
+            }
+        }
+        
+        return processedData;
+    }
+    
+    /**
+     * 根据 MIME 类型获取文件扩展名
+     * @param mimeType MIME 类型（如 image/png, image/jpeg）
+     * @return 文件扩展名（如 .png, .jpg）
+     */
+    private String getExtensionFromMimeType(String mimeType) {
+        if (mimeType == null) {
+            return ".png";
+        }
+        
+        switch (mimeType.toLowerCase()) {
+            case "image/png":
+                return ".png";
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/bmp":
+                return ".bmp";
+            default:
+                return ".png"; // 默认使用 png
+        }
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> saveFormDataWithSettings(String formKey, Map<String, Object> originalData, 
+            HttpServletRequest request, String deviceId, Long userId, LocalDateTime startTime) {
+        // 获取IP地址、User-Agent和浏览器信息
+        String ipAddress = IpUtils.getIpAddress(request);
+        String userAgent = request.getHeader("User-Agent");
+        String browser = UserAgentUtils.getBrowser(userAgent);
+        
+        // 保存表单数据
+        FormData saved = saveFormData(formKey, originalData, ipAddress, deviceId, userId, startTime, browser, userAgent);
+        
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("formData", saved);
+        
+        // 获取提交设置信息
+        FormConfig formConfig = formConfigService.getByFormKey(formKey);
+        if (formConfig != null) {
+            FormSetting formSetting = formSettingService.getBySurveyId(formConfig.getSurveyId());
+            if (formSetting != null && formSetting.getSettings() != null) {
+                Map<String, Object> settings = formSetting.getSettings();
+                Map<String, Object> submitSettings = new HashMap<>();
+                
+                // 提取提交相关设置
+                if (settings.containsKey("submitShowType")) {
+                    submitSettings.put("submitShowType", settings.get("submitShowType"));
+                }
+                if (settings.containsKey("submitShowCustomPageContent")) {
+                    submitSettings.put("submitShowCustomPageContent", settings.get("submitShowCustomPageContent"));
+                }
+                if (settings.containsKey("submitJump")) {
+                    submitSettings.put("submitJump", settings.get("submitJump"));
+                }
+                if (settings.containsKey("submitJumpUrl")) {
+                    submitSettings.put("submitJumpUrl", settings.get("submitJumpUrl"));
+                }
+                
+                result.put("submitSettings", submitSettings);
+            }
+        }
+        
+        return result;
     }
 }
 

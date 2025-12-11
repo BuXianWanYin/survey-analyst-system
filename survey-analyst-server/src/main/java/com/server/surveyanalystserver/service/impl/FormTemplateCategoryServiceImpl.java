@@ -3,8 +3,10 @@ package com.server.surveyanalystserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.*;
+import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.mapper.FormTemplateCategoryMapper;
 import com.server.surveyanalystserver.service.*;
+import com.server.surveyanalystserver.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,9 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
 
     @Autowired
     private FormDataService formDataService;
+    
+    @Autowired
+    private UserService userService;
 
     @Override
     public List<FormTemplateCategory> listAll() {
@@ -85,6 +90,83 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
             category.setIsDeleted(1);
             this.updateById(category);
         }
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FormTemplateCategory createCategory(FormTemplateCategory category, Long userId) {
+        category.setUserId(userId);
+        
+        // 设置默认排序号
+        if (category.getSort() == null) {
+            category.setSort(0);
+        }
+        
+        this.save(category);
+        return category;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long updateCategory(FormTemplateCategory category, Long currentUserId) {
+        FormTemplateCategory existing = this.getById(category.getId());
+        if (existing == null) {
+            throw new RuntimeException("分类不存在");
+        }
+        
+        User currentUser = userService.getById(currentUserId);
+        if (currentUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 如果是系统分类，只有管理员可以更新
+        if (existing.getUserId() == null && !"ADMIN".equals(currentUser.getRole())) {
+            throw new RuntimeException("系统分类只能由管理员修改");
+        }
+        
+        // 如果是用户分类，只能更新自己的分类（管理员可以更新所有）
+        if (existing.getUserId() != null && !existing.getUserId().equals(currentUserId) 
+            && !"ADMIN".equals(currentUser.getRole())) {
+            throw new RuntimeException("无权修改此分类");
+        }
+        
+        existing.setName(category.getName());
+        if (category.getSort() != null) {
+            existing.setSort(category.getSort());
+        }
+        this.updateById(existing);
+        
+        return category.getId();
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long deleteCategory(Long categoryId, Long currentUserId) {
+        FormTemplateCategory existing = this.getById(categoryId);
+        if (existing == null) {
+            throw new RuntimeException("分类不存在");
+        }
+        
+        User currentUser = userService.getById(currentUserId);
+        if (currentUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 权限检查：普通用户只能删除自己的分类，管理员可以删除所有分类
+        if (existing.getUserId() != null && !existing.getUserId().equals(currentUserId) 
+            && !"ADMIN".equals(currentUser.getRole())) {
+            throw new RuntimeException("无权删除此分类");
+        }
+        
+        // 如果是系统分类，只有管理员可以删除
+        if (existing.getUserId() == null && !"ADMIN".equals(currentUser.getRole())) {
+            throw new RuntimeException("系统分类只能由管理员删除");
+        }
+        
+        // 删除该分类下的所有模板及其相关数据
+        this.deleteCategoryWithTemplates(existing.getId());
+        
+        return categoryId;
     }
 }
 

@@ -8,11 +8,14 @@ import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.FormDataMapper;
 import com.server.surveyanalystserver.mapper.SurveyMapper;
+import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.FormLogicService;
 import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.FormThemeService;
+import com.server.surveyanalystserver.service.ResponseService;
 import com.server.surveyanalystserver.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,9 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
     
     @Autowired
     private FormDataMapper formDataMapper;
+    
+    @Autowired
+    private ResponseService responseService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -68,6 +74,17 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
         wrapper.eq(Survey::getUserId, userId);
         wrapper.orderByDesc(Survey::getCreateTime);
         return this.page(page, wrapper);
+    }
+    
+    @Override
+    public Page<Survey> getSurveyListWithResponseCount(Page<Survey> page, Long userId) {
+        Page<Survey> result = getSurveyList(page, userId);
+        // 为每个问卷设置答卷数量
+        result.getRecords().forEach(survey -> {
+            long responseCount = responseService.getResponseCount(survey.getId());
+            survey.setResponseCount(responseCount);
+        });
+        return result;
     }
 
     @Override

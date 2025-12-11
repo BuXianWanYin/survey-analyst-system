@@ -1,14 +1,18 @@
 package com.server.surveyanalystserver.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.*;
+import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.mapper.*;
 import com.server.surveyanalystserver.service.*;
+import com.server.surveyanalystserver.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +39,9 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
 
     @Autowired
     private SurveyService surveyService;
+    
+    @Autowired
+    private UserService userService;
 
     @Override
     public FormTemplate getByFormKey(String formKey) {
@@ -215,6 +222,105 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         return survey;
     }
 
+    @Override
+    public Page<FormTemplate> getTemplatePage(Page<FormTemplate> page, String name, Long type, Integer isPublic, Long userId) {
+        LambdaQueryWrapper<FormTemplate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormTemplate::getIsDeleted, 0);
+        
+        // 如果指定了模板类型，则按类型筛选
+        if (isPublic != null) {
+            wrapper.eq(FormTemplate::getIsPublic, isPublic);
+        }
+        
+        // 如果是查询我的模板，需要过滤当前用户的模板
+        if (isPublic != null && isPublic == 0 && userId != null) {
+            wrapper.eq(FormTemplate::getUserId, userId);
+        }
+        
+        if (StringUtils.hasText(name)) {
+            wrapper.like(FormTemplate::getName, name);
+        }
+        
+        if (type != null) {
+            wrapper.eq(FormTemplate::getCategoryId, type);
+        }
+        
+        wrapper.orderByDesc(FormTemplate::getCreateTime);
+        return this.page(page, wrapper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String updateTemplate(FormTemplate template, Long currentUserId) {
+        FormTemplate existing = this.getByFormKey(template.getFormKey());
+        if (existing == null) {
+            throw new RuntimeException("模板不存在");
+        }
+        
+        // 公共模板不允许更新
+        if (existing.getIsPublic() != null && existing.getIsPublic() == 1) {
+            throw new RuntimeException("公共模板不允许更新");
+        }
+        
+        // 检查权限：只能更新自己创建的模板
+        if (!existing.getUserId().equals(currentUserId)) {
+            // 检查是否为管理员
+            User currentUser = userService.getById(currentUserId);
+            if (currentUser == null || !"ADMIN".equals(currentUser.getRole())) {
+                throw new RuntimeException("无权更新此模板");
+            }
+        }
+        
+        // 更新模板信息
+        if (StringUtils.hasText(template.getName())) {
+            existing.setName(template.getName());
+        }
+        if (StringUtils.hasText(template.getDescription())) {
+            existing.setDescription(template.getDescription());
+        }
+        if (template.getCategoryId() != null) {
+            existing.setCategoryId(template.getCategoryId());
+        }
+        if (StringUtils.hasText(template.getCoverImg())) {
+            existing.setCoverImg(template.getCoverImg());
+        }
+        if (template.getStatus() != null) {
+            existing.setStatus(template.getStatus());
+        }
+        
+        this.updateById(existing);
+        return template.getFormKey();
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String deleteTemplate(String formKey, Long currentUserId) {
+        FormTemplate existing = this.getByFormKey(formKey);
+        if (existing == null) {
+            throw new RuntimeException("模板不存在");
+        }
+        
+        // 公共模板不允许删除
+        if (existing.getIsPublic() != null && existing.getIsPublic() == 1) {
+            throw new RuntimeException("公共模板不允许删除");
+        }
+        
+        // 检查权限：只能删除自己创建的模板
+        if (!existing.getUserId().equals(currentUserId)) {
+            // 检查是否为管理员
+            User currentUser = userService.getById(currentUserId);
+            if (currentUser == null || !"ADMIN".equals(currentUser.getRole())) {
+                throw new RuntimeException("无权删除此模板");
+            }
+        }
+        
+        // 逻辑删除
+        existing.setIsDeleted(1);
+        this.updateById(existing);
+        
+        return formKey;
+    }
+    
     /**
      * 生成唯一的 formKey
      */
