@@ -5,34 +5,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
-import com.server.surveyanalystserver.entity.FormSetting;
 import com.server.surveyanalystserver.entity.Response;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.utils.UserAgentUtils;
 import com.server.surveyanalystserver.entity.dto.ResponseVO;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.mapper.user.UserMapper;
-import com.server.surveyanalystserver.service.EmailService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
-import com.server.surveyanalystserver.service.FormItemService;
-import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.ResponseService;
 import com.server.surveyanalystserver.service.SurveyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * 填写记录Service实现类
@@ -48,221 +36,10 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     private FormDataService formDataService;
     
     @Autowired
-    private FormItemService formItemService;
-    
-    @Autowired
     private SurveyService surveyService;
-    
-    @Autowired
-    private FormSettingService formSettingService;
-    
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private UserMapper userMapper;
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Response submitResponse(Response response, Map<Long, Object> answers, HttpServletRequest request) {
-        // 验证问卷状态和访问权限
-        Survey survey = surveyService.getById(response.getSurveyId());
-        if (survey == null) {
-            throw new RuntimeException("问卷不存在");
-        }
-        
-        // 检查问卷状态
-        if (!"PUBLISHED".equals(survey.getStatus())) {
-            throw new RuntimeException("问卷尚未发布，无法提交");
-        }
-        
-        // 检查时间限制
-        LocalDateTime now = LocalDateTime.now();
-        if (survey.getStartTime() != null && now.isBefore(survey.getStartTime())) {
-            throw new RuntimeException("问卷尚未开始，无法提交");
-        }
-        if (survey.getEndTime() != null && now.isAfter(survey.getEndTime())) {
-            throw new RuntimeException("问卷已结束，无法提交");
-        }
-        
-        // 检查填写数量限制
-        if (survey.getMaxResponses() != null && survey.getMaxResponses() > 0) {
-            long currentCount = getResponseCount(response.getSurveyId());
-            if (currentCount >= survey.getMaxResponses()) {
-                throw new RuntimeException("已超出该问卷的填写数量（" + survey.getMaxResponses() + "份），无法继续提交");
-            }
-        }
-        
-        // 检查IP/设备/用户限制（从表单设置中读取）
-        FormSetting formSetting = formSettingService.getBySurveyId(response.getSurveyId());
-        if (formSetting != null && formSetting.getSettings() != null) {
-            Map<String, Object> settings = formSetting.getSettings();
-            
-            // 检查IP限制
-            if (response.getIpAddress() != null && !response.getIpAddress().isEmpty()) {
-                Object ipLimitStatusObj = settings.get("ipWriteCountLimitStatus");
-                boolean ipLimitStatus = false;
-                if (ipLimitStatusObj instanceof Boolean) {
-                    ipLimitStatus = (Boolean) ipLimitStatusObj;
-                } else if (ipLimitStatusObj != null) {
-                    ipLimitStatus = Boolean.parseBoolean(ipLimitStatusObj.toString());
-                }
-                
-                if (ipLimitStatus) {
-                    Object ipLimitObj = settings.get("ipWriteCountLimit");
-                    int ipLimit = 1;
-                    if (ipLimitObj instanceof Number) {
-                        ipLimit = ((Number) ipLimitObj).intValue();
-                    } else if (ipLimitObj != null) {
-                        try {
-                            ipLimit = Integer.parseInt(ipLimitObj.toString());
-                        } catch (NumberFormatException e) {
-                            ipLimit = 1;
-                        }
-                    }
-                    
-                    LambdaQueryWrapper<Response> ipWrapper = new LambdaQueryWrapper<>();
-                    ipWrapper.eq(Response::getSurveyId, response.getSurveyId())
-                             .eq(Response::getIpAddress, response.getIpAddress())
-                             .eq(Response::getStatus, "COMPLETED");
-                    long ipCount = this.count(ipWrapper);
-                    
-                    if (ipCount >= ipLimit) {
-                        throw new RuntimeException("该IP地址已达到答题次数限制（" + ipLimit + "次），无法继续提交");
-                    }
-                }
-            }
-            
-            // 检查用户限制
-            if (response.getUserId() != null) {
-                Object userLimitStatusObj = settings.get("accountWriteCountLimitStatus");
-                boolean userLimitStatus = false;
-                if (userLimitStatusObj instanceof Boolean) {
-                    userLimitStatus = (Boolean) userLimitStatusObj;
-                } else if (userLimitStatusObj != null) {
-                    userLimitStatus = Boolean.parseBoolean(userLimitStatusObj.toString());
-                }
-                
-                if (userLimitStatus) {
-                    Object userLimitObj = settings.get("accountWriteCountLimit");
-                    int userLimit = 1;
-                    if (userLimitObj instanceof Number) {
-                        userLimit = ((Number) userLimitObj).intValue();
-                    } else if (userLimitObj != null) {
-                        try {
-                            userLimit = Integer.parseInt(userLimitObj.toString());
-                        } catch (NumberFormatException e) {
-                            userLimit = 1;
-                        }
-                    }
-                    
-                    LambdaQueryWrapper<Response> userWrapper = new LambdaQueryWrapper<>();
-                    userWrapper.eq(Response::getSurveyId, response.getSurveyId())
-                               .eq(Response::getUserId, response.getUserId())
-                               .eq(Response::getStatus, "COMPLETED");
-                    long userCount = this.count(userWrapper);
-                    
-                    if (userCount >= userLimit) {
-                        throw new RuntimeException("您已达到答题次数限制（" + userLimit + "次），无法继续提交");
-                    }
-                }
-            }
-        }
-        
-        response.setStatus("COMPLETED");
-        response.setSubmitTime(LocalDateTime.now());
-        if (response.getStartTime() != null) {
-            long duration = Duration.between(response.getStartTime(), response.getSubmitTime()).getSeconds();
-            response.setDuration((int) duration);
-        }
-        this.save(response);
-
-        // 保存到 form_data 表
-        try {
-            FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
-            if (formConfig != null && formConfig.getFormKey() != null) {
-                // 将 answers 转换为 form_data 格式（formItemId -> value）
-                Map<String, Object> originalData = new HashMap<>();
-                for (Map.Entry<Long, Object> entry : answers.entrySet()) {
-                    Long questionId = entry.getKey();
-                    Object answerValue = entry.getValue();
-                    
-                    // 通过 questionId 查找对应的 formItemId
-                    String formItemId = formItemService.getFormItemIdByFormKeyAndQuestionId(
-                        formConfig.getFormKey(), questionId);
-                    
-                    // 必须找到 formItemId 才保存，不再使用兼容模式
-                    if (formItemId != null) {
-                        originalData.put(formItemId, answerValue);
-                    }
-                    // 如果找不到 formItemId，跳过该数据（不再使用 questionId 作为 key）
-                }
-                
-                if (!originalData.isEmpty()) {
-                    // 获取IP地址（从response中获取）
-                    String ipAddress = response.getIpAddress();
-                    // 设备ID暂时为空，后续可以从request中获取
-                    String deviceId = null;
-                    // 用户ID从response中获取
-                    Long userId = response.getUserId();
-                    
-                    // 解析User-Agent信息
-                    String browser = null;
-                    String userAgent = null;
-                    if (request != null) {
-                        userAgent = request.getHeader("User-Agent");
-                        if (userAgent != null && !userAgent.isEmpty()) {
-                            browser = UserAgentUtils.getBrowser(userAgent);
-                        }
-                    }
-                    
-                    formDataService.saveFormData(formConfig.getFormKey(), originalData, ipAddress, deviceId, userId, response.getStartTime(), browser, userAgent);
-                }
-            }
-        } catch (Exception e) {
-            // 如果保存到 form_data 失败，不影响主流程，只记录日志
-            // log.error("保存到 form_data 失败", e);
-        }
-        
-        // 发送邮件通知
-        try {
-            // 复用之前获取的formSetting，如果为null则重新获取
-            if (formSetting == null) {
-                formSetting = formSettingService.getBySurveyId(response.getSurveyId());
-            }
-            if (formSetting != null && formSetting.getSettings() != null) {
-                Object emailNotifyObj = formSetting.getSettings().get("emailNotify");
-                Object emailListObj = formSetting.getSettings().get("newWriteNotifyEmail");
-                
-                // 检查是否启用了邮件通知
-                boolean emailNotify = false;
-                if (emailNotifyObj instanceof Boolean) {
-                    emailNotify = (Boolean) emailNotifyObj;
-                } else if (emailNotifyObj != null) {
-                    emailNotify = Boolean.parseBoolean(emailNotifyObj.toString());
-                }
-                
-                // 如果启用了邮件通知且有邮箱列表，发送邮件
-                if (emailNotify && emailListObj != null && !emailListObj.toString().trim().isEmpty()) {
-                    String emailList = emailListObj.toString().trim();
-                    emailService.sendSurveySubmitNotification(emailList, survey.getTitle(), survey.getId());
-                }
-            }
-        } catch (Exception e) {
-            // 邮件发送失败不影响主流程，只记录日志
-            log.error("发送邮件通知失败", e);
-        }
-        
-        return response;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Response saveDraft(Response response, Map<Long, Object> answers) {
-        response.setStatus("DRAFT");
-        this.saveOrUpdate(response);
-        return response;
-    }
 
     @Override
     public Response getResponseById(Long id) {

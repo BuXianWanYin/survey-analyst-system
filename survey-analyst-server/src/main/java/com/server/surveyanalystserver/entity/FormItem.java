@@ -34,10 +34,6 @@ public class FormItem implements Serializable {
     @ApiModelProperty(value = "表单项唯一标识", required = true)
     private String formItemId;
 
-    @TableField("question_id")
-    @ApiModelProperty(value = "题目ID（逻辑外键，关联question表）")
-    private Long questionId;
-
     @TableField("type")
     @ApiModelProperty(value = "表单项类型", required = true)
     private String type;

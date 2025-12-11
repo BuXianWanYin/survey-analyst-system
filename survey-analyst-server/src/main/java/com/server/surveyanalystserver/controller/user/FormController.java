@@ -6,7 +6,6 @@ import com.server.surveyanalystserver.entity.FormItem;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormItemService;
-import com.server.surveyanalystserver.service.user.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,20 +99,6 @@ public class FormController {
                         item.setRegList(objectMapper.writeValueAsString(regListObj));
                     } catch (Exception e) {
                         // 忽略转换错误
-                    }
-                }
-            }
-            
-            // 设置 questionId（如果存在）
-            if (itemData.get("questionId") != null) {
-                Object questionIdObj = itemData.get("questionId");
-                if (questionIdObj instanceof Number) {
-                    item.setQuestionId(((Number) questionIdObj).longValue());
-                } else if (questionIdObj instanceof String) {
-                    try {
-                        item.setQuestionId(Long.parseLong((String) questionIdObj));
-                    } catch (NumberFormatException e) {
-                        // 忽略解析错误
                     }
                 }
             }

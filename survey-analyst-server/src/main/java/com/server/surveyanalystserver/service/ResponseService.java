@@ -4,29 +4,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.surveyanalystserver.entity.Response;
 
-import java.util.Map;
-
 /**
  * 填写记录Service接口
  */
 public interface ResponseService extends IService<Response> {
-
-    /**
-     * 提交填写记录
-     * @param response 填写记录
-     * @param answers 答案列表（questionId -> answer）
-     * @param request HTTP请求对象（用于获取User-Agent等信息）
-     * @return 提交的填写记录
-     */
-    Response submitResponse(Response response, Map<Long, Object> answers, javax.servlet.http.HttpServletRequest request);
-
-    /**
-     * 保存草稿
-     * @param response 填写记录
-     * @param answers 答案列表
-     * @return 保存的草稿
-     */
-    Response saveDraft(Response response, Map<Long, Object> answers);
 
     /**
      * 获取填写记录详情

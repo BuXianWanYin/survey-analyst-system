@@ -58,30 +58,5 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         wrapper.eq(FormItem::getFormKey, formKey);
         return this.count(wrapper);
     }
-    
-    @Override
-    public String getFormItemIdByQuestionId(Long questionId) {
-        if (questionId == null) {
-            return null;
-        }
-        LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(FormItem::getQuestionId, questionId);
-        wrapper.last("LIMIT 1");
-        FormItem formItem = this.getOne(wrapper);
-        return formItem != null ? formItem.getFormItemId() : null;
-    }
-    
-    @Override
-    public String getFormItemIdByFormKeyAndQuestionId(String formKey, Long questionId) {
-        if (formKey == null || questionId == null) {
-            return null;
-        }
-        LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(FormItem::getFormKey, formKey);
-        wrapper.eq(FormItem::getQuestionId, questionId);
-        wrapper.last("LIMIT 1");
-        FormItem formItem = this.getOne(wrapper);
-        return formItem != null ? formItem.getFormItemId() : null;
-    }
 }
 
