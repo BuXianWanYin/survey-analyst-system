@@ -9,9 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 问卷发布与推广Service实现类
  */
@@ -52,17 +49,6 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
     public String generateEmbedCode(Long surveyId) {
         String surveyLink = generateSurveyLink(surveyId);
         return String.format("<iframe src=\"%s\" width=\"100%%\" height=\"800px\" frameborder=\"0\"></iframe>", surveyLink);
-    }
-
-    @Override
-    public Map<String, String> getShareLinks(Long surveyId) {
-        String surveyLink = generateSurveyLink(surveyId);
-        
-        Map<String, String> shareLinks = new HashMap<>();
-        // 只返回链接，供复制使用
-        shareLinks.put("link", surveyLink);
-        
-        return shareLinks;
     }
 }
 

@@ -40,8 +40,13 @@
         </el-form-item>
         <el-form-item>
           <div class="login-footer">
-            <span>还没有账号？</span>
-            <el-link type="primary" @click="goToRegister">立即注册</el-link>
+            <div class="login-footer-top">
+              <el-link type="primary" @click="goToForgotPassword">忘记密码？</el-link>
+            </div>
+            <div class="login-footer-bottom">
+              <span>还没有账号？</span>
+              <el-link type="primary" @click="goToRegister">立即注册</el-link>
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -127,6 +132,10 @@ const goToRegister = () => {
     router.push('/register')
   }
 }
+
+const goToForgotPassword = () => {
+  router.push('/auth/forgot-password')
+}
 </script>
 
 <style scoped>
@@ -171,6 +180,14 @@ const goToRegister = () => {
   text-align: center;
   font-size: 14px;
   color: #606266;
+}
+
+.login-footer-top {
+  margin-bottom: 10px;
+}
+
+.login-footer-bottom {
+  margin-top: 10px;
 }
 
 .login-footer .el-link {

@@ -3,6 +3,9 @@
  * 按业务模块划分，每个模块创建独立的API文件
  */
 
+// 认证相关 API
+export { authApi } from './auth'
+
 // 用户相关 API
 export { userApi } from './user'
 

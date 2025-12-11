@@ -98,7 +98,7 @@ knife4j:
 security:
   jwt:
     # JWT密钥（至少64字符，512位，用于HS512算法）
-    secret: survey-analyst-jwt-secret-key-2024-this-is-a-very-long-secret-key-for-hs512-algorithm-which-requires-at-least-512-bits
+    secret: 7hJ9kL2mN5pQ8rT1vW4xZ7aB0cD3eF6gH9jL2mN5pQ8rT1vW4xZ7aB0cD3eF6gH9jL2mN5pQ8rT1vW4xZ7aB0cD3eF6gH9jL2mN5pQ8rT1vW4xZ7aB0cD3eF6gH9jL2mN5pQ8rT1v
     expiration: 604800000
     refresh-expiration: 2592000000
 
@@ -112,4 +112,11 @@ file:
 survey:
   access:
     url: http://192.168.31.33:3001
+
+# 数据加密配置
+data:
+  encryption:
+    # 数据加密密钥（生产环境必须使用环境变量配置，不要使用默认值）
+    # 密钥长度建议16、24或32字节（对应AES-128、AES-192、AES-256）
+    secret-key: ${DATA_ENCRYPTION_SECRET_KEY:4pR7tY9wE2qA5sD8fG1hJ3kL6mN0pQ2rT5vX8zB}
 

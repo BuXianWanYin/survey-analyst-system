@@ -1,7 +1,5 @@
 package com.server.surveyanalystserver.service;
 
-import java.util.Map;
-
 /**
  * 问卷发布与推广Service接口
  */
@@ -27,12 +25,5 @@ public interface SurveyPublishService {
      * @return 嵌入代码
      */
     String generateEmbedCode(Long surveyId);
-
-    /**
-     * 获取分享链接
-     * @param surveyId 问卷ID
-     * @return 分享链接Map（包含link等）
-     */
-    Map<String, String> getShareLinks(Long surveyId);
 }
 

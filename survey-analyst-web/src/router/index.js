@@ -20,6 +20,24 @@ const routes = [
       requiresAuth: false
     }
   },
+  {
+    path: '/auth/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/auth/ForgotPassword.vue'),
+    meta: {
+      title: '找回密码',
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/auth/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/views/auth/ResetPassword.vue'),
+    meta: {
+      title: '重置密码',
+      requiresAuth: false
+    }
+  },
   // 问卷填写页面（公开访问，支持 /user/survey/fill/:id 路径）
   {
     path: '/user/survey/fill/:id',

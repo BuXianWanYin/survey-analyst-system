@@ -12,5 +12,12 @@ public interface EmailService {
      * @param surveyId 问卷ID
      */
     void sendSurveySubmitNotification(String toEmails, String surveyTitle, Long surveyId);
+
+    /**
+     * 发送密码重置邮件
+     * @param toEmail 接收邮箱
+     * @param token 重置令牌
+     */
+    void sendPasswordResetEmail(String toEmail, String token);
 }
 

@@ -103,7 +103,7 @@
                       <span style="margin-left: 8px">复制链接</span>
                     </el-dropdown-item>
                     <el-dropdown-item :command="{ action: 'copyQRCode', id: survey.id }">
-                      <img src="/icons/qrcode.svg" class="share-icon" alt="二维码" />
+                      <el-icon><QrCode /></el-icon>
                       <span style="margin-left: 8px">复制二维码</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -197,7 +197,7 @@
                       <span style="margin-left: 8px">复制链接</span>
                     </el-dropdown-item>
                     <el-dropdown-item :command="{ action: 'copyQRCode', id: row.id }">
-                      <img src="/icons/qrcode.svg" class="share-icon" alt="二维码" />
+                      <el-icon><QrCode /></el-icon>
                       <span style="margin-left: 8px">复制二维码</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -285,7 +285,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, Loading, VideoPause } from '@element-plus/icons-vue'
+import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, Loading, VideoPause, QrCode } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi } from '@/api'
 import dayjs from 'dayjs'
 import { useWindowSize } from '@vueuse/core'
@@ -780,14 +780,6 @@ onMounted(() => {
   color: #66b1ff;
 }
 
-.share-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  display: inline-block;
-  margin-right: 0;
-  object-fit: contain;
-}
 
 .card-body {
   flex: 1;

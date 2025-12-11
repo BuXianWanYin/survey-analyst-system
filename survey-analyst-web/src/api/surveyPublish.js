@@ -29,15 +29,6 @@ export const surveyPublishApi = {
    */
   getEmbedCode(id) {
     return request.get(`/survey/${id}/embed-code`)
-  },
-
-  /**
-   * 获取社交媒体分享链接
-   * @param {Number} id 问卷ID
-   * @returns {Promise} 分享链接
-   */
-  getShareLinks(id) {
-    return request.get(`/survey/${id}/share-links`)
   }
 }
 

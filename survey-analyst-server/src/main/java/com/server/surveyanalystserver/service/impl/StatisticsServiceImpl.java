@@ -2,9 +2,9 @@ package com.server.surveyanalystserver.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.surveyanalystserver.entity.*;
 import com.server.surveyanalystserver.mapper.*;
+import com.server.surveyanalystserver.service.RedisCacheService;
 import com.server.surveyanalystserver.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * 统计Service实现类
  */
 @Service
-public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, StatisticsCache> implements StatisticsService {
+public class StatisticsServiceImpl implements StatisticsService {
 
     @Autowired
     private SurveyMapper surveyMapper;
@@ -38,17 +38,26 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
     @Autowired
     private com.server.surveyanalystserver.mapper.FormItemMapper formItemMapper;
 
+    @Autowired
+    private RedisCacheService redisCacheService;
+
+    /**
+     * Redis缓存过期时间（秒）- 1小时
+     */
+    private static final long CACHE_EXPIRE_TIME = 3600L;
+
+    /**
+     * Redis缓存键前缀
+     */
+    private static final String CACHE_KEY_PREFIX = "statistics:";
+
     @Override
     public Map<String, Object> getSurveyStatistics(Long surveyId) {
-        // 先从缓存获取
-        StatisticsCache cache = getCache(surveyId, null, "SURVEY_OVERVIEW");
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(cache.getStatData(), Map.class);
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
+        // 先从Redis缓存获取
+        String cacheKey = buildCacheKey(surveyId, null, "SURVEY_OVERVIEW");
+        Map<String, Object> cachedData = redisCacheService.getMap(cacheKey);
+        if (cachedData != null) {
+            return cachedData;
         }
 
         // 计算统计数据
@@ -75,8 +84,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
         double validRate = totalResponses > 0 ? (double) completedResponses / totalResponses * 100 : 0;
         statistics.put("validRate", Math.round(validRate * 100.0) / 100.0);
 
-        // 保存到缓存
-        saveCache(surveyId, null, "SURVEY_OVERVIEW", statistics);
+        // 保存到Redis缓存
+        redisCacheService.set(cacheKey, statistics, CACHE_EXPIRE_TIME);
 
         return statistics;
     }
@@ -103,17 +112,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
         }
         Long surveyId = formConfig.getSurveyId();
 
-        // 先从缓存获取
-        StatisticsCache cache = getCache(surveyId, formItemId, "QUESTION_STAT");
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                @SuppressWarnings("unchecked")
-                Map<String, Object> cachedData = objectMapper.readValue(cache.getStatData(), Map.class);
-                return cachedData;
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
+        // 先从Redis缓存获取
+        String cacheKey = buildCacheKey(surveyId, formItemId, "QUESTION_STAT");
+        Map<String, Object> cachedData = redisCacheService.getMap(cacheKey);
+        if (cachedData != null) {
+            return cachedData;
         }
 
         Map<String, Object> statistics = new HashMap<>();
@@ -244,8 +247,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
             statistics.put("totalRatings", ratings.size());
         }
 
-        // 保存到缓存
-        saveCache(surveyId, formItemId, "QUESTION_STAT", statistics);
+        // 保存到Redis缓存
+        redisCacheService.set(cacheKey, statistics, CACHE_EXPIRE_TIME);
 
         return statistics;
     }
@@ -274,15 +277,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
 
     @Override
     public Map<String, Object> getResponseTrend(Long surveyId, String timeRange) {
-        // 先从缓存获取
-        StatisticsCache cache = getCache(surveyId, null, "RESPONSE_TREND_" + timeRange);
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(cache.getStatData(), Map.class);
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
+        // 先从Redis缓存获取
+        String cacheKey = buildCacheKey(surveyId, null, "RESPONSE_TREND_" + timeRange);
+        Map<String, Object> cachedData = redisCacheService.getMap(cacheKey);
+        if (cachedData != null) {
+            return cachedData;
         }
 
         Map<String, Object> trend = new HashMap<>();
@@ -325,23 +324,19 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
         trend.put("data", data);
         trend.put("total", responses.size());
 
-        // 保存到缓存
-        saveCache(surveyId, null, "RESPONSE_TREND_" + timeRange, trend);
+        // 保存到Redis缓存
+        redisCacheService.set(cacheKey, trend, CACHE_EXPIRE_TIME);
 
         return trend;
     }
 
     @Override
     public Map<String, Object> getResponseSource(Long surveyId) {
-        // 先从缓存获取
-        StatisticsCache cache = getCache(surveyId, null, "RESPONSE_SOURCE");
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(cache.getStatData(), Map.class);
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
+        // 先从Redis缓存获取
+        String cacheKey = buildCacheKey(surveyId, null, "RESPONSE_SOURCE");
+        Map<String, Object> cachedData = redisCacheService.getMap(cacheKey);
+        if (cachedData != null) {
+            return cachedData;
         }
 
         Map<String, Object> source = new HashMap<>();
@@ -362,23 +357,19 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
         source.put("sourceCount", sourceCount);
         source.put("total", responses.size());
 
-        // 保存到缓存
-        saveCache(surveyId, null, "RESPONSE_SOURCE", source);
+        // 保存到Redis缓存
+        redisCacheService.set(cacheKey, source, CACHE_EXPIRE_TIME);
 
         return source;
     }
 
     @Override
     public Map<String, Object> getDeviceStatistics(Long surveyId) {
-        // 先从缓存获取
-        StatisticsCache cache = getCache(surveyId, null, "DEVICE_STAT");
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(cache.getStatData(), Map.class);
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
+        // 先从Redis缓存获取
+        String cacheKey = buildCacheKey(surveyId, null, "DEVICE_STAT");
+        Map<String, Object> cachedData = redisCacheService.getMap(cacheKey);
+        if (cachedData != null) {
+            return cachedData;
         }
 
         Map<String, Object> device = new HashMap<>();
@@ -407,58 +398,33 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
         device.put("deviceCount", deviceCount);
         device.put("total", responses.size());
 
-        // 保存到缓存
-        saveCache(surveyId, null, "DEVICE_STAT", device);
+        // 保存到Redis缓存
+        redisCacheService.set(cacheKey, device, CACHE_EXPIRE_TIME);
 
         return device;
     }
 
     @Override
     public boolean refreshStatistics(Long surveyId) {
-        // 删除该问卷的所有缓存
-        LambdaQueryWrapper<StatisticsCache> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StatisticsCache::getSurveyId, surveyId);
-        this.remove(wrapper);
+        // 删除该问卷的所有Redis缓存
+        String pattern = CACHE_KEY_PREFIX + "survey:" + surveyId + ":*";
+        redisCacheService.deleteByPattern(pattern);
         return true;
     }
 
     /**
-     * 获取缓存
+     * 构建Redis缓存键
+     * @param surveyId 问卷ID
+     * @param formItemId 表单项ID（可为null）
+     * @param statType 统计类型
+     * @return 缓存键
      */
-    private StatisticsCache getCache(Long surveyId, String formItemId, String statType) {
-        LambdaQueryWrapper<StatisticsCache> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StatisticsCache::getSurveyId, surveyId)
-               .eq(StatisticsCache::getStatType, statType);
-        
+    private String buildCacheKey(Long surveyId, String formItemId, String statType) {
         if (formItemId != null) {
-            wrapper.eq(StatisticsCache::getFormItemId, formItemId);
+            return CACHE_KEY_PREFIX + "survey:" + surveyId + ":item:" + formItemId + ":" + statType;
         } else {
-            wrapper.isNull(StatisticsCache::getFormItemId);
+            return CACHE_KEY_PREFIX + "survey:" + surveyId + ":" + statType;
         }
-        
-        return this.getOne(wrapper);
-    }
-
-    /**
-     * 保存缓存
-     */
-    private void saveCache(Long surveyId, String formItemId, String statType, Map<String, Object> data) {
-        StatisticsCache cache = getCache(surveyId, formItemId, statType);
-        
-        if (cache == null) {
-            cache = new StatisticsCache();
-            cache.setSurveyId(surveyId);
-            cache.setFormItemId(formItemId);
-            cache.setStatType(statType);
-        }
-        
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            cache.setStatData(objectMapper.writeValueAsString(data));
-        } catch (Exception e) {
-            throw new RuntimeException("保存统计数据失败", e);
-        }
-        this.saveOrUpdate(cache);
     }
 }
 

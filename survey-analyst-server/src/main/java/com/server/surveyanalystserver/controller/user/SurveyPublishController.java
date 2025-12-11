@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 /**
  * 问卷发布与推广控制器
  */
@@ -43,14 +41,6 @@ public class SurveyPublishController {
     public Result<String> getEmbedCode(@PathVariable Long id) {
         String embedCode = surveyPublishService.generateEmbedCode(id);
         return Result.success("获取成功", embedCode);
-    }
-
-    @ApiOperation(value = "获取分享链接", notes = "获取问卷分享链接")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
-    @GetMapping("/{id}/share-links")
-    public Result<Map<String, String>> getShareLinks(@PathVariable Long id) {
-        Map<String, String> shareLinks = surveyPublishService.getShareLinks(id);
-        return Result.success("获取成功", shareLinks);
     }
 }
 

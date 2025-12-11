@@ -83,5 +83,44 @@ public class EmailServiceImpl implements EmailService {
             log.error("发送问卷提交通知邮件失败: {}", e.getMessage(), e);
         }
     }
+
+    @Override
+    public void sendPasswordResetEmail(String toEmail, String token) {
+        if (mailSender == null) {
+            log.warn("邮件服务未配置，跳过发送密码重置邮件");
+            return;
+        }
+
+        if (!StringUtils.hasText(toEmail)) {
+            log.warn("接收邮箱为空，跳过发送密码重置邮件");
+            return;
+        }
+
+        try {
+            String resetLink = frontendUrl + "/auth/reset-password?token=" + token;
+            String subject = "密码重置 - 在线问卷调查与数据分析系统";
+            String content = String.format(
+                    "您好！\n\n" +
+                    "您正在申请重置密码。\n\n" +
+                    "请点击以下链接重置您的密码（30分钟内有效）：\n" +
+                    "%s\n\n" +
+                    "如果您没有申请重置密码，请忽略此邮件。\n\n" +
+                    "此邮件由系统自动发送，请勿回复。",
+                    resetLink
+            );
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(content);
+            
+            mailSender.send(message);
+            log.info("密码重置邮件已发送到: {}", toEmail);
+        } catch (Exception e) {
+            log.error("发送密码重置邮件失败: {}", e.getMessage(), e);
+            throw new RuntimeException("发送密码重置邮件失败", e);
+        }
+    }
 }
 
