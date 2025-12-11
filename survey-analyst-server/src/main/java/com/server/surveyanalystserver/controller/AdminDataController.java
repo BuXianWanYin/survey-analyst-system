@@ -22,6 +22,9 @@ public class AdminDataController {
 
     @Autowired
     private ResponseService responseService;
+    
+    @Autowired
+    private com.server.surveyanalystserver.service.FormDataService formDataService;
 
     @ApiOperation(value = "分页查询填写记录", notes = "管理员分页查询所有填写记录（包含问卷名称、发布用户名称、填写用户名称）")
     @PreAuthorize("hasRole('ADMIN')")
@@ -46,6 +49,18 @@ public class AdminDataController {
     public Result<Response> getResponseById(@PathVariable Long id) {
         Response response = responseService.getResponseById(id);
         return Result.success("获取成功", response);
+    }
+
+    @ApiOperation(value = "获取填写记录对应的表单数据详情", notes = "根据Response ID获取对应的表单数据详情")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/response/{id}/form-data")
+    public Result<com.server.surveyanalystserver.entity.FormData> getFormDataByResponseId(@PathVariable Long id) {
+        com.server.surveyanalystserver.entity.FormData formData = 
+            formDataService.getFormDataByResponseId(id);
+        if (formData == null) {
+            return Result.error("未找到对应的表单数据");
+        }
+        return Result.success("获取成功", formData);
     }
 
     @ApiOperation(value = "删除填写记录", notes = "管理员删除填写记录")

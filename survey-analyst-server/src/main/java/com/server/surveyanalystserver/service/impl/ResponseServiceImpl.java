@@ -11,10 +11,10 @@ import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.entity.dto.ResponseVO;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.mapper.UserMapper;
+import com.server.surveyanalystserver.mapper.SurveyMapper;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
 import com.server.surveyanalystserver.service.ResponseService;
-import com.server.surveyanalystserver.service.SurveyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,7 +36,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     private FormDataService formDataService;
     
     @Autowired
-    private SurveyService surveyService;
+    private SurveyMapper surveyMapper;
 
     @Autowired
     private UserMapper userMapper;
@@ -110,9 +110,9 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             vo.setStatus(response.getStatus());
             vo.setCreateTime(response.getCreateTime());
             
-            // 查询问卷信息
+            // 查询问卷信息（直接使用Mapper，避免循环依赖）
             if (response.getSurveyId() != null) {
-                Survey survey = surveyService.getById(response.getSurveyId());
+                Survey survey = surveyMapper.selectById(response.getSurveyId());
                 if (survey != null) {
                     vo.setSurveyTitle(survey.getTitle());
                     vo.setPublisherId(survey.getUserId());

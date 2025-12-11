@@ -46,6 +46,13 @@ public interface FormDataService extends IService<FormData> {
     FormData getFormDataById(Long id);
     
     /**
+     * 根据Response ID获取对应的表单数据
+     * @param responseId Response ID
+     * @return 表单数据，如果不存在返回null
+     */
+    FormData getFormDataByResponseId(Long responseId);
+    
+    /**
      * 删除表单数据
      */
     boolean deleteFormData(Long id);

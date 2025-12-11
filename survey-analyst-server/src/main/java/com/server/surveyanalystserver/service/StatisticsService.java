@@ -17,9 +17,10 @@ public interface StatisticsService {
     /**
      * 获取题目统计
      * @param formItemId 表单项ID（字符串）
+     * @param surveyId 问卷ID（可选，用于容错处理）
      * @return 题目统计数据
      */
-    Map<String, Object> getQuestionStatistics(String formItemId);
+    Map<String, Object> getQuestionStatistics(String formItemId, Long surveyId);
 
     /**
      * 获取选项统计（选择人数、比例）
@@ -56,5 +57,15 @@ public interface StatisticsService {
      * @return 是否成功
      */
     boolean refreshStatistics(Long surveyId);
+
+    /**
+     * 获取所有统计数据（统一接口）
+     * @param surveyId 问卷ID
+     * @param includeTrend 是否包含填写趋势（默认false）
+     * @param includeSource 是否包含填写来源（默认false）
+     * @param includeDevice 是否包含设备统计（默认false）
+     * @return 所有统计数据
+     */
+    Map<String, Object> getAllStatistics(Long surveyId, boolean includeTrend, boolean includeSource, boolean includeDevice);
 }
 

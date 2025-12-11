@@ -16,11 +16,13 @@ export const statisticsApi = {
   /**
    * 获取题目统计
    * @param {String} formItemId 表单项ID（字符串）
+   * @param {Number} surveyId 问卷ID（可选，用于容错处理）
    * @returns {Promise} 题目统计数据
    */
-  getQuestionStatistics(formItemId) {
+  getQuestionStatistics(formItemId, surveyId) {
     // 对 formItemId 进行 URL 编码，确保特殊字符正确处理
-    return request.get(`/statistics/question/${encodeURIComponent(formItemId)}`)
+    const params = surveyId ? { surveyId } : {}
+    return request.get(`/statistics/question/${encodeURIComponent(formItemId)}`, { params })
   },
 
   /**
@@ -68,6 +70,21 @@ export const statisticsApi = {
    */
   refreshStatistics(surveyId) {
     return request.post(`/statistics/refresh/${surveyId}`)
+  },
+
+  /**
+   * 获取所有统计数据（统一接口）
+   * @param {Number} surveyId 问卷ID
+   * @param {Object} options 选项 { includeTrend, includeSource, includeDevice }
+   * @returns {Promise} 所有统计数据
+   */
+  getAllStatistics(surveyId, options = {}) {
+    const params = {
+      includeTrend: options.includeTrend || false,
+      includeSource: options.includeSource || false,
+      includeDevice: options.includeDevice || false
+    }
+    return request.get(`/statistics/all/${surveyId}`, { params })
   }
 }
 

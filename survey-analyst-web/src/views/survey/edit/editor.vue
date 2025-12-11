@@ -3210,7 +3210,8 @@ const saveFormItems = async () => {
       }
     })
     
-    await formApi.saveFormItems(formKey.value, items)
+    // 传递 surveyId，确保后端可以创建或更新 form_config
+    await formApi.saveFormItems(formKey.value, items, surveyId.value)
   } catch (error) {
     // 保存表单项失败
     ElMessage.error('保存表单项失败')

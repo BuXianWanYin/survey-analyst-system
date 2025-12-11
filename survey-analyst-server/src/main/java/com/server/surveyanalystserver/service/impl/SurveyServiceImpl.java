@@ -15,7 +15,6 @@ import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.FormLogicService;
 import com.server.surveyanalystserver.service.FormSettingService;
 import com.server.surveyanalystserver.service.FormThemeService;
-import com.server.surveyanalystserver.service.ResponseService;
 import com.server.surveyanalystserver.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,7 +45,7 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
     private FormDataMapper formDataMapper;
     
     @Autowired
-    private ResponseService responseService;
+    private ResponseMapper responseMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -81,10 +80,31 @@ public class SurveyServiceImpl extends ServiceImpl<SurveyMapper, Survey> impleme
         Page<Survey> result = getSurveyList(page, userId);
         // 为每个问卷设置答卷数量
         result.getRecords().forEach(survey -> {
-            long responseCount = responseService.getResponseCount(survey.getId());
+            long responseCount = getResponseCountBySurveyId(survey.getId());
             survey.setResponseCount(responseCount);
         });
         return result;
+    }
+    
+    /**
+     * 获取问卷的答卷数量（通过formKey统计form_data表）
+     * 此方法直接使用Mapper，避免循环依赖
+     */
+    private long getResponseCountBySurveyId(Long surveyId) {
+        // 通过 surveyId 获取 formKey
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        if (formConfig == null || formConfig.getFormKey() == null) {
+            // 如果没有 formConfig，回退到统计 response 表
+            LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Response::getSurveyId, surveyId);
+            wrapper.ne(Response::getStatus, "DRAFT");
+            return responseMapper.selectCount(wrapper);
+        }
+        
+        // 统计 form_data 表的数据
+        LambdaQueryWrapper<FormData> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormData::getFormKey, formConfig.getFormKey());
+        return formDataMapper.selectCount(wrapper);
     }
 
     @Override

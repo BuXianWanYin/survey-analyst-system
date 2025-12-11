@@ -17,8 +17,8 @@
               <el-option label="禁用" :value="0" />
             </el-select>
             <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
+            <el-button :icon="Plus" type="primary" @click="handleAdd" class="add-button">添加用户</el-button>
           </div>
-          <el-button :icon="Plus" type="primary" @click="handleAdd" class="add-button">添加用户</el-button>
         </div>
       </template>
 

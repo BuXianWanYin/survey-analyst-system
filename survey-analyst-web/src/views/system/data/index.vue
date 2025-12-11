@@ -59,15 +59,58 @@
         @current-change="handleCurrentChange"
       />
     </el-card>
+    
+    <!-- 查看详情对话框 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      title="填写详情"
+      width="900px"
+    >
+      <div v-if="currentFormData" class="data-detail" v-loading="detailLoading">
+        <div class="detail-form-container">
+          <SurveyFormRender
+            :form-items="formItems"
+            :form-model="getFormModel(currentFormData)"
+            :preview-mode="true"
+            :theme-config="themeConfig"
+            :show-number="themeConfig.showNumber || false"
+          />
+        </div>
+        <div class="detail-info">
+          <div class="detail-item">
+            <div class="detail-label">提交时间</div>
+            <div class="detail-value">{{ formatDate(currentFormData.createTime) }}</div>
+          </div>
+          <div v-if="currentFormData.submitRequestIp" class="detail-item">
+            <div class="detail-label">IP地址</div>
+            <div class="detail-value">{{ currentFormData.submitRequestIp }}</div>
+          </div>
+          <div v-if="currentFormData.submitBrowser" class="detail-item">
+            <div class="detail-label">浏览器</div>
+            <div class="detail-value">{{ currentFormData.submitBrowser }}</div>
+          </div>
+          <div v-if="currentFormData.startTime" class="detail-item">
+            <div class="detail-label">开始填写时间</div>
+            <div class="detail-value">{{ formatDate(currentFormData.startTime) }}</div>
+          </div>
+          <div v-if="currentFormData.completeTime" class="detail-item">
+            <div class="detail-label">填写时长</div>
+            <div class="detail-value">{{ currentFormData.completeTime }}秒</div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useWindowSize } from '@vueuse/core'
 import { Search, View, Delete } from '@element-plus/icons-vue'
-import { adminApi } from '@/api'
+import { adminApi, formApi } from '@/api'
+import SurveyFormRender from '@/components/SurveyFormRender.vue'
+import dayjs from 'dayjs'
 
 const { width } = useWindowSize()
 
@@ -77,6 +120,15 @@ const surveyIdFilter = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const viewDialogVisible = ref(false)
+const detailLoading = ref(false)
+const currentFormData = ref(null)
+const formItems = ref([])
+const themeConfig = reactive({
+  themeColor: '#409EFF',
+  backgroundColor: '#ffffff',
+  showNumber: false
+})
 
 // 响应式分页布局
 const paginationLayout = computed(() => {
@@ -122,8 +174,109 @@ const handleCurrentChange = () => {
   loadResponseList()
 }
 
-const handleView = (row) => {
-  ElMessage.info('查看详情功能开发中')
+const handleView = async (row) => {
+  viewDialogVisible.value = true
+  detailLoading.value = true
+  currentFormData.value = null
+  formItems.value = []
+  
+  try {
+    // 1. 获取表单数据
+    const formDataRes = await adminApi.getFormDataByResponseId(row.id)
+    if (formDataRes.code !== 200 || !formDataRes.data) {
+      ElMessage.error('获取表单数据失败')
+      viewDialogVisible.value = false
+      return
+    }
+    
+    currentFormData.value = formDataRes.data
+    
+    // 2. 获取表单项配置
+    if (currentFormData.value.formKey) {
+      const itemsRes = await formApi.getFormItems(currentFormData.value.formKey)
+      if (itemsRes.code === 200 && itemsRes.data) {
+        formItems.value = itemsRes.data.map(item => {
+          const scheme = typeof item.scheme === 'string' 
+            ? JSON.parse(item.scheme) 
+            : item.scheme
+          return {
+            formItemId: item.formItemId,
+            label: item.label,
+            type: item.type,
+            required: item.required === 1,
+            placeholder: scheme.placeholder || item.placeholder || '',
+            disabled: scheme.disabled || false,
+            readonly: scheme.readonly || false,
+            hideType: item.isHideType || false,
+            defaultValue: scheme.defaultValue !== undefined ? scheme.defaultValue : (item.defaultValue || null),
+            config: scheme.config || {},
+            regList: item.regList ? (typeof item.regList === 'string' ? JSON.parse(item.regList) : item.regList) : [],
+            vModel: scheme.vModel || item.formItemId,
+            scheme: scheme || {},
+            sort: item.sort != null ? item.sort : 0
+          }
+        }).sort((a, b) => {
+          const sortA = a.sort != null ? a.sort : 0
+          const sortB = b.sort != null ? b.sort : 0
+          return sortA - sortB
+        })
+      }
+      
+      // 3. 获取外观配置（如果有 surveyId）
+      if (row.surveyId) {
+        try {
+          const themeRes = await formApi.getFormTheme(row.surveyId)
+          if (themeRes.code === 200 && themeRes.data) {
+            const data = themeRes.data
+            if (data.themeColor) themeConfig.themeColor = data.themeColor
+            if (data.backgroundColor) themeConfig.backgroundColor = data.backgroundColor
+            if (data.showNumber !== undefined) themeConfig.showNumber = data.showNumber
+          }
+        } catch (error) {
+          // 使用默认值
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载详情失败:', error)
+    ElMessage.error('加载详情失败')
+    viewDialogVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+// 获取表单模型
+const getFormModel = (formData) => {
+  const formModel = {}
+  const rowData = formData.originalData || {}
+  
+  formItems.value.forEach(item => {
+    if (!item.vModel) return
+    
+    const value = rowData[item.formItemId]
+    
+    // 根据组件类型处理值
+    if (item.type === 'CHECKBOX' || item.type === 'UPLOAD' || item.type === 'IMAGE_UPLOAD') {
+      formModel[item.vModel] = Array.isArray(value) ? value : (value ? [value] : [])
+    } else if (item.type === 'IMAGE_SELECT' && item.config?.multiple) {
+      formModel[item.vModel] = Array.isArray(value) ? value : (value ? [value] : [])
+    } else if (item.type === 'NUMBER' || item.type === 'SLIDER' || item.type === 'RATE') {
+      formModel[item.vModel] = value !== null && value !== undefined ? Number(value) : (item.type === 'SLIDER' ? (item.config?.min || 0) : (item.type === 'RATE' ? 0 : undefined))
+    } else if (item.type === 'SIGN_PAD') {
+      formModel[item.vModel] = value || ''
+    } else {
+      formModel[item.vModel] = value !== null && value !== undefined ? value : ''
+    }
+  })
+  
+  return formModel
+}
+
+// 格式化日期
+const formatDate = (date) => {
+  if (!date) return '-'
+  return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
 const handleDelete = async (row) => {
@@ -300,6 +453,42 @@ onMounted(() => {
   
   :deep(.el-pagination) {
     flex-wrap: nowrap;
+  }
+}
+
+.data-detail {
+  .detail-form-container {
+    margin-bottom: 20px;
+    :deep(.survey-form-render) {
+      width: 100%;
+    }
+    
+    :deep(.form-item-wrapper) {
+      margin-bottom: 20px;
+    }
+  }
+  
+  .detail-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ebeef5;
+  }
+  
+  .detail-item {
+    display: flex;
+    margin-bottom: 12px;
+    
+    .detail-label {
+      width: 120px;
+      color: #909399;
+      font-size: 14px;
+    }
+    
+    .detail-value {
+      flex: 1;
+      color: #303133;
+      font-size: 14px;
+    }
   }
 }
 </style>

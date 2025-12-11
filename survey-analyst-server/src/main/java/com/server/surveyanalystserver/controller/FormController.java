@@ -52,13 +52,39 @@ public class FormController {
         return Result.success("查询成功", config);
     }
     
-    @ApiOperation(value = "批量保存表单项", notes = "批量保存表单项列表")
+    @ApiOperation(value = "批量保存表单项", notes = "批量保存表单项列表，如果 form_config 不存在会自动创建")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/item/batch")
     public Result<Void> batchSaveFormItems(@RequestBody Map<String, Object> data) {
         String formKey = (String) data.get("formKey");
+        if (formKey == null || formKey.isEmpty()) {
+            return Result.error("formKey 不能为空");
+        }
+        
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> itemsData = (List<Map<String, Object>>) data.get("items");
+        Long surveyId = data.get("surveyId") != null ? 
+            ((Number) data.get("surveyId")).longValue() : null;
+        
+        // 确保 form_config 存在
+        FormConfig existingConfig = formConfigService.getByFormKey(formKey);
+        if (existingConfig == null) {
+            // 如果不存在，创建一个基本的 form_config
+            FormConfig newConfig = new FormConfig();
+            newConfig.setFormKey(formKey);
+            newConfig.setSurveyId(surveyId);
+            User currentUser = userService.getCurrentUser();
+            newConfig.setUserId(currentUser.getId());
+            newConfig.setName("未命名表单");
+            newConfig.setDescription("");
+            newConfig.setStatus(1);
+            newConfig.setIsDeleted(0);
+            formConfigService.saveFormConfig(newConfig);
+        } else if (surveyId != null && existingConfig.getSurveyId() == null) {
+            // 如果 form_config 存在但没有 surveyId，而前端传入了 surveyId，则更新
+            existingConfig.setSurveyId(surveyId);
+            formConfigService.saveFormConfig(existingConfig);
+        }
         
         formItemService.batchSaveFromMap(formKey, itemsData);
         return Result.success("保存成功");

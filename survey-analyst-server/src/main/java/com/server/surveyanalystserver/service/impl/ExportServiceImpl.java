@@ -650,7 +650,7 @@ public class ExportServiceImpl implements ExportService {
                         if (formItem.getFormItemId() == null) continue;
                         
                         try {
-                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId());
+                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId(), surveyId);
                             
                             Map<String, Object> row = new HashMap<>();
                             row.put("统计项", "题目统计");
@@ -772,7 +772,7 @@ public class ExportServiceImpl implements ExportService {
                         if (formItem.getFormItemId() == null) continue;
                         
                         try {
-                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId());
+                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId(), surveyId);
 
                             Paragraph qTitle = new Paragraph(index + ". " + formItem.getLabel())
                                     .setFontSize(14)

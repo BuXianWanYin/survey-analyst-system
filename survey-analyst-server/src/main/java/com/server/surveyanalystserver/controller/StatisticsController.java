@@ -32,8 +32,10 @@ public class StatisticsController {
     @ApiOperation(value = "获取题目统计", notes = "获取单个题目的统计数据")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/question/{formItemId}")
-    public Result<Map<String, Object>> getQuestionStatistics(@PathVariable String formItemId) {
-        Map<String, Object> statistics = statisticsService.getQuestionStatistics(formItemId);
+    public Result<Map<String, Object>> getQuestionStatistics(
+            @PathVariable String formItemId,
+            @RequestParam(required = false) Long surveyId) {
+        Map<String, Object> statistics = statisticsService.getQuestionStatistics(formItemId, surveyId);
         return Result.success("获取成功", statistics);
     }
 
@@ -77,6 +79,18 @@ public class StatisticsController {
     public Result<Void> refreshStatistics(@PathVariable Long surveyId) {
         statisticsService.refreshStatistics(surveyId);
         return Result.success("刷新成功");
+    }
+
+    @ApiOperation(value = "获取所有统计数据", notes = "一次性获取问卷的所有统计数据，包括整体统计、各题目统计等")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/all/{surveyId}")
+    public Result<Map<String, Object>> getAllStatistics(
+            @PathVariable Long surveyId,
+            @RequestParam(defaultValue = "false") boolean includeTrend,
+            @RequestParam(defaultValue = "false") boolean includeSource,
+            @RequestParam(defaultValue = "false") boolean includeDevice) {
+        Map<String, Object> statistics = statisticsService.getAllStatistics(surveyId, includeTrend, includeSource, includeDevice);
+        return Result.success("获取成功", statistics);
     }
 }
 

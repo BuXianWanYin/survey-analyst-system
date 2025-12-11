@@ -56,6 +56,9 @@ export const adminApi = {
   getResponseById(id) {
     return request.get(`/admin/data/response/${id}`)
   },
+  getFormDataByResponseId(id) {
+    return request.get(`/admin/data/response/${id}/form-data`)
+  },
   deleteResponse(id) {
     return request.delete(`/admin/data/response/${id}`)
   },

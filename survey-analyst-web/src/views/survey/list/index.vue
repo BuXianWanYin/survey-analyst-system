@@ -127,7 +127,7 @@
         </div>
         <div class="card-footer">
           <el-button :icon="Edit" type="primary" size="small" @click.stop="handleEdit(survey.id)">编辑</el-button>
-          <el-button :icon="DataAnalysis" type="warning" size="small" @click.stop="handleStatistics(survey.id)">统计</el-button>
+          <el-button :icon="DataAnalysis" type="success" size="small" @click.stop="handleStatistics(survey.id)">统计</el-button>
           <el-button :icon="Delete" type="danger" size="small" @click.stop="handleDelete(survey.id)">删除</el-button>
         </div>
       </el-card>
@@ -453,7 +453,11 @@ const handleUnpublish = async (id) => {
 }
 
 const handleStatistics = (id) => {
-  router.push(`/survey/statistics?id=${id}`)
+  // 跳转到编辑容器内的统计页面
+  router.push({
+    name: 'SurveyDesignStatistics',
+    query: { id }
+  })
 }
 
 const handleDelete = async (id) => {

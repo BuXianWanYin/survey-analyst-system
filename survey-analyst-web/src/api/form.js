@@ -26,10 +26,15 @@ export const formApi = {
    * 保存表单项列表
    * @param {String} formKey 表单key
    * @param {Array} items 表单项列表
+   * @param {Number} surveyId 问卷ID（可选）
    * @returns {Promise} 保存结果
    */
-  saveFormItems(formKey, items) {
-    return request.post(`/form/item/batch`, { formKey, items })
+  saveFormItems(formKey, items, surveyId = null) {
+    const data = { formKey, items }
+    if (surveyId) {
+      data.surveyId = surveyId
+    }
+    return request.post(`/form/item/batch`, data)
   },
 
   /**

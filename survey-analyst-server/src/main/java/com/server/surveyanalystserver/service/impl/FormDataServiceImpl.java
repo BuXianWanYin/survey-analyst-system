@@ -285,6 +285,60 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     }
     
     @Override
+    public FormData getFormDataByResponseId(Long responseId) {
+        // 1. 通过 Response ID 获取 Response 信息
+        Response response = responseMapper.selectById(responseId);
+        if (response == null || response.getSurveyId() == null) {
+            return null;
+        }
+        
+        // 2. 通过 surveyId 获取 formKey
+        FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
+        if (formConfig == null || formConfig.getFormKey() == null) {
+            return null;
+        }
+        
+        // 3. 通过 formKey 和提交时间匹配 FormData
+        // 优先使用 submitTime，如果没有则使用 createTime
+        LocalDateTime matchTime = response.getSubmitTime() != null 
+            ? response.getSubmitTime() 
+            : response.getCreateTime();
+        
+        if (matchTime == null) {
+            return null;
+        }
+        
+        // 查询匹配的 FormData（通过 formKey 和创建时间，允许一定的时间误差）
+        LambdaQueryWrapper<FormData> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormData::getFormKey, formConfig.getFormKey());
+        
+        // 如果 Response 有 startTime，也尝试匹配
+        if (response.getStartTime() != null) {
+            wrapper.and(w -> w
+                .eq(FormData::getStartTime, response.getStartTime())
+                .or()
+                .eq(FormData::getCreateTime, matchTime)
+            );
+        } else {
+            wrapper.eq(FormData::getCreateTime, matchTime);
+        }
+        
+        // 如果 Response 有 IP 地址，也尝试匹配
+        if (response.getIpAddress() != null) {
+            wrapper.or(w -> w
+                .eq(FormData::getFormKey, formConfig.getFormKey())
+                .eq(FormData::getSubmitRequestIp, response.getIpAddress())
+                .eq(FormData::getCreateTime, matchTime)
+            );
+        }
+        
+        wrapper.orderByDesc(FormData::getCreateTime);
+        wrapper.last("LIMIT 1");
+        
+        return this.getOne(wrapper);
+    }
+    
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteFormData(Long id) {
         return this.removeById(id);

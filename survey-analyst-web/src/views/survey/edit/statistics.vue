@@ -142,6 +142,9 @@
                   <el-button type="primary" @click="handleCrossAnalyze" :loading="crossAnalyzing">
                     开始分析
                   </el-button>
+                  <el-button type="info" @click="autoStartCrossAnalysis" :loading="crossAnalyzing" style="margin-left: 10px">
+                    自动分析（前两个题目）
+                  </el-button>
                 </el-form-item>
               </el-form>
 
@@ -358,6 +361,44 @@ const loadStatistics = async () => {
 
   loading.value = true
   try {
+    // 使用统一接口一次性获取所有统计数据
+    const allStatRes = await statisticsApi.getAllStatistics(surveyId.value, {
+      includeTrend: false,
+      includeSource: false,
+      includeDevice: false
+    })
+    
+    if (allStatRes.code === 200 && allStatRes.data) {
+      const allData = allStatRes.data
+      
+      // 1. 设置问卷整体统计
+      if (allData.surveyStatistics) {
+        surveyStatistics.value = allData.surveyStatistics
+      }
+      
+      // 2. 设置各题目统计数据
+      if (allData.questionStatistics) {
+        // 将后端返回的统计数据设置到 statisticsData
+        Object.keys(allData.questionStatistics).forEach(formItemId => {
+          statisticsData.value[formItemId] = allData.questionStatistics[formItemId]
+        })
+      }
+    }
+  } catch (error) {
+    ElMessage.error('加载统计数据失败')
+    console.error('加载统计数据错误:', error)
+    // 降级方案：使用旧的逐个请求方式
+    await loadStatisticsFallback()
+  } finally {
+    loading.value = false
+    // 自动执行交叉分析：如果有至少2个选择题，自动选择前两个进行分析
+    autoStartCrossAnalysis()
+  }
+}
+
+// 降级方案：如果统一接口失败，使用旧的逐个请求方式
+const loadStatisticsFallback = async () => {
+  try {
     // 1. 加载问卷整体统计
     const surveyStatRes = await statisticsApi.getSurveyStatistics(surveyId.value)
     if (surveyStatRes.code === 200) {
@@ -367,7 +408,7 @@ const loadStatistics = async () => {
     // 2. 使用后端API获取每个题目的统计数据
     for (const item of formItems.value) {
       try {
-        const statRes = await statisticsApi.getQuestionStatistics(item.formItemId)
+        const statRes = await statisticsApi.getQuestionStatistics(item.formItemId, surveyId.value)
         if (statRes.code === 200 && statRes.data) {
           statisticsData.value[item.formItemId] = statRes.data
         }
@@ -389,10 +430,20 @@ const loadStatistics = async () => {
       }
     }
   } catch (error) {
-    ElMessage.error('加载统计数据失败')
-    console.error('加载统计数据错误:', error)
-  } finally {
-    loading.value = false
+    console.error('降级方案也失败了:', error)
+  }
+}
+
+// 自动开始交叉分析
+const autoStartCrossAnalysis = () => {
+  // 检查是否有选择题（至少2个）
+  const choiceItems = formItems.value.filter(item => isChoiceType(item.type))
+  if (choiceItems.length >= 2) {
+    // 自动选择前两个选择题
+    crossAnalysisForm.formItemId1 = choiceItems[0].formItemId
+    crossAnalysisForm.formItemId2 = choiceItems[1].formItemId
+    // 自动执行分析（不显示提示信息）
+    handleCrossAnalyze(false)
   }
 }
 
@@ -606,14 +657,18 @@ const handleCrossQuestion2Change = () => {
 }
 
 // 执行交叉分析
-const handleCrossAnalyze = async () => {
+const handleCrossAnalyze = async (showWarning = true) => {
   if (!crossAnalysisForm.formItemId1 || !crossAnalysisForm.formItemId2) {
+    if (showWarning) {
     ElMessage.warning('请选择两个题目')
+    }
     return
   }
 
   if (!surveyId.value) {
+    if (showWarning) {
     ElMessage.warning('问卷ID不存在')
+    }
     return
   }
 
@@ -622,12 +677,16 @@ const handleCrossAnalyze = async () => {
   const item2 = formItems.value.find(item => item.formItemId === crossAnalysisForm.formItemId2)
 
   if (!item1) {
+    if (showWarning) {
     ElMessage.warning('题目1不存在，无法进行交叉分析')
+    }
     return
   }
 
   if (!item2) {
+    if (showWarning) {
     ElMessage.warning('题目2不存在，无法进行交叉分析')
+    }
     return
   }
 
