@@ -38,16 +38,7 @@ public class ExportServiceImpl implements ExportService {
     private SurveyMapper surveyMapper;
 
     @Autowired
-    private QuestionMapper questionMapper;
-
-    @Autowired
-    private OptionMapper optionMapper;
-
-    @Autowired
     private ResponseMapper responseMapper;
-
-    @Autowired
-    private AnswerMapper answerMapper;
 
     @Autowired
     private StatisticsService statisticsService;
@@ -629,12 +620,6 @@ public class ExportServiceImpl implements ExportService {
             // 获取问卷统计
             Map<String, Object> surveyStats = statisticsService.getSurveyStatistics(surveyId);
 
-            // 获取所有题目
-            List<Question> questions = questionMapper.selectList(
-                    new LambdaQueryWrapper<Question>().eq(Question::getSurveyId, surveyId)
-                                                      .orderByAsc(Question::getOrderNum)
-            );
-
             // 构建统计数据
             List<Map<String, Object>> exportData = new ArrayList<>();
 
@@ -647,30 +632,8 @@ public class ExportServiceImpl implements ExportService {
             overview.put("有效率(%)", surveyStats.get("validRate"));
             exportData.add(overview);
 
-            // 题目统计
-            for (Question question : questions) {
-                Map<String, Object> questionStat = statisticsService.getQuestionStatistics(question.getId());
-                
-                Map<String, Object> row = new HashMap<>();
-                row.put("统计项", "题目统计");
-                row.put("题目", question.getTitle());
-                row.put("题型", question.getType());
-
-                if (questionStat.containsKey("optionStats")) {
-                    List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
-                    for (Map<String, Object> optionStat : optionStats) {
-                        Map<String, Object> optionRow = new HashMap<>(row);
-                        optionRow.put("选项", optionStat.get("optionContent"));
-                        optionRow.put("选择人数", optionStat.get("count"));
-                        optionRow.put("比例(%)", optionStat.get("percentage"));
-                        exportData.add(optionRow);
-                    }
-                } else {
-                    row.put("有效答案数", questionStat.get("validAnswers"));
-                    row.put("总答案数", questionStat.get("totalAnswers"));
-                    exportData.add(row);
-                }
-            }
+            // 注意：题目统计功能已废弃，系统已迁移到表单系统
+            // 如需导出题目统计，请使用基于form_item的导出方法
 
             // 使用EasyExcel导出
             EasyExcel.write(outputStream, Map.class)
@@ -750,53 +713,13 @@ public class ExportServiceImpl implements ExportService {
             statsTable.addCell(createCell(String.valueOf(surveyStats.get("validRate")), false));
             document.add(statsTable);
 
-            // 题目统计
-            Paragraph questionTitle = new Paragraph("二、题目统计")
-                    .setFontSize(16)
-                    .setBold()
+            // 注意：题目统计功能已废弃，系统已迁移到表单系统
+            // 如需导出题目统计，请使用基于form_item的导出方法
+            Paragraph note = new Paragraph("注意：题目统计功能已废弃，系统已迁移到表单系统")
+                    .setFontSize(12)
                     .setMarginTop(20)
                     .setMarginBottom(10);
-            document.add(questionTitle);
-
-            // 获取所有题目
-            List<Question> questions = questionMapper.selectList(
-                    new LambdaQueryWrapper<Question>().eq(Question::getSurveyId, surveyId)
-                                                      .orderByAsc(Question::getOrderNum)
-            );
-
-            for (int i = 0; i < questions.size(); i++) {
-                Question question = questions.get(i);
-                Map<String, Object> questionStat = statisticsService.getQuestionStatistics(question.getId());
-
-                Paragraph qTitle = new Paragraph((i + 1) + ". " + question.getTitle())
-                        .setFontSize(14)
-                        .setBold()
-                        .setMarginTop(15)
-                        .setMarginBottom(5);
-                document.add(qTitle);
-
-                if (questionStat.containsKey("optionStats")) {
-                    List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
-                    float[] optionColumnWidths = {40, 30, 30};
-                    Table optionTable = new Table(optionColumnWidths);
-                    optionTable.addCell(createCell("选项", true));
-                    optionTable.addCell(createCell("选择人数", true));
-                    optionTable.addCell(createCell("比例(%)", true));
-                    
-                    for (Map<String, Object> optionStat : optionStats) {
-                        optionTable.addCell(createCell(String.valueOf(optionStat.get("optionContent")), false));
-                        optionTable.addCell(createCell(String.valueOf(optionStat.get("count")), false));
-                        optionTable.addCell(createCell(String.valueOf(optionStat.get("percentage")), false));
-                    }
-                    document.add(optionTable);
-                } else {
-                    Paragraph statText = new Paragraph("有效答案数：" + questionStat.get("validAnswers") + 
-                                                       "，总答案数：" + questionStat.get("totalAnswers"))
-                            .setFontSize(12)
-                            .setMarginBottom(10);
-                    document.add(statText);
-                }
-            }
+            document.add(note);
 
             // 关闭文档
             document.close();

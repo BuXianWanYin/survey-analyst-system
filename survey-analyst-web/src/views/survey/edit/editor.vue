@@ -2173,7 +2173,7 @@ import { formApi, templateApi } from '@/api'
 import SurveyPreview from '@/components/SurveyPreview.vue'
 import SignPad from '@/components/SignPad.vue'
 import { getToken } from '@/utils/auth'
-import { getImageUrl } from '@/utils/image'
+import { getImageUrl, getRelativeImageUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -3144,6 +3144,46 @@ const saveFormConfig = async () => {
   }
 }
 
+// 递归处理对象中的图片URL，将完整URL转换为相对路径
+const convertImageUrlsToRelative = (obj) => {
+  if (!obj || typeof obj !== 'object') {
+    return obj
+  }
+  
+  // 如果是数组，递归处理每个元素
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertImageUrlsToRelative(item))
+  }
+  
+  // 创建新对象，避免修改原对象
+  const result = { ...obj }
+  
+  // 处理常见的图片URL字段
+  const imageUrlFields = ['imageUrl', 'url', 'image', 'src', 'previewList']
+  imageUrlFields.forEach(field => {
+    if (result[field] !== undefined && result[field] !== null) {
+      if (Array.isArray(result[field])) {
+        // 如果是数组（如 previewList），处理每个元素
+        result[field] = result[field].map(url => 
+          typeof url === 'string' ? getRelativeImageUrl(url) : url
+        )
+      } else if (typeof result[field] === 'string') {
+        // 如果是字符串，直接转换
+        result[field] = getRelativeImageUrl(result[field])
+      }
+    }
+  })
+  
+  // 递归处理其他属性
+  Object.keys(result).forEach(key => {
+    if (typeof result[key] === 'object' && result[key] !== null) {
+      result[key] = convertImageUrlsToRelative(result[key])
+    }
+  })
+  
+  return result
+}
+
 // 保存表单项
 const saveFormItems = async () => {
   if (!formKey.value) {
@@ -3151,19 +3191,24 @@ const saveFormItems = async () => {
   }
   
   try {
-    const items = drawingList.value.map((item, index) => ({
-      formKey: formKey.value,
-      formItemId: item.formItemId,
-      type: item.type,
-      label: item.label,
-      required: item.required ? 1 : 0,
-      placeholder: item.placeholder || '',
-      sort: index,
-      span: item.span || 24,
-      scheme: JSON.stringify(item),
-      regList: item.regList ? JSON.stringify(item.regList) : null,
-      isHideType: item.hideType ? 1 : 0
-    }))
+    const items = drawingList.value.map((item, index) => {
+      // 深拷贝并转换图片URL为相对路径
+      const itemCopy = convertImageUrlsToRelative(JSON.parse(JSON.stringify(item)))
+      
+      return {
+        formKey: formKey.value,
+        formItemId: itemCopy.formItemId,
+        type: itemCopy.type,
+        label: itemCopy.label,
+        required: itemCopy.required ? 1 : 0,
+        placeholder: itemCopy.placeholder || '',
+        sort: index,
+        span: itemCopy.span || 24,
+        scheme: JSON.stringify(itemCopy),
+        regList: itemCopy.regList ? JSON.stringify(itemCopy.regList) : null,
+        isHideType: itemCopy.hideType ? 1 : 0
+      }
+    })
     
     await formApi.saveFormItems(formKey.value, items)
   } catch (error) {

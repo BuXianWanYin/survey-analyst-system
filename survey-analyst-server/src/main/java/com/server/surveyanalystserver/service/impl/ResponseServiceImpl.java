@@ -3,7 +3,6 @@ package com.server.surveyanalystserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.server.surveyanalystserver.entity.Answer;
 import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormData;
 import com.server.surveyanalystserver.entity.FormSetting;
@@ -12,7 +11,6 @@ import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.utils.UserAgentUtils;
 import com.server.surveyanalystserver.entity.dto.ResponseVO;
-import com.server.surveyanalystserver.mapper.AnswerMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.mapper.user.UserMapper;
 import com.server.surveyanalystserver.service.EmailService;
@@ -43,9 +41,6 @@ import javax.servlet.http.HttpServletRequest;
 @Service
 public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> implements ResponseService {
 
-    @Autowired
-    private AnswerMapper answerMapper;
-    
     @Autowired
     private FormConfigService formConfigService;
     
@@ -182,10 +177,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         }
         this.save(response);
 
-        // 保存答案到 answer 表
-        saveAnswers(response.getId(), answers);
-        
-        // 同时保存到 form_data 表
+        // 保存到 form_data 表
         try {
             FormConfig formConfig = formConfigService.getBySurveyId(response.getSurveyId());
             if (formConfig != null && formConfig.getFormKey() != null) {
@@ -269,11 +261,6 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     public Response saveDraft(Response response, Map<Long, Object> answers) {
         response.setStatus("DRAFT");
         this.saveOrUpdate(response);
-
-        // 保存答案
-        if (answers != null && !answers.isEmpty()) {
-            saveAnswers(response.getId(), answers);
-        }
         return response;
     }
 
@@ -400,43 +387,6 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         Page<ResponseVO> voPage = new Page<>(page.getCurrent(), page.getSize(), total);
         voPage.setRecords(pagedList);
         return voPage;
-    }
-
-    /**
-     * 保存答案
-     */
-    private void saveAnswers(Long responseId, Map<Long, Object> answers) {
-        for (Map.Entry<Long, Object> entry : answers.entrySet()) {
-            Long questionId = entry.getKey();
-            Object answerValue = entry.getValue();
-
-            if (answerValue instanceof List) {
-                // 多选题：保存多个选项
-                @SuppressWarnings("unchecked")
-                List<Long> optionIds = (List<Long>) answerValue;
-                for (Long optionId : optionIds) {
-                    Answer answer = new Answer();
-                    answer.setResponseId(responseId);
-                    answer.setQuestionId(questionId);
-                    answer.setOptionId(optionId);
-                    answerMapper.insert(answer);
-                }
-            } else if (answerValue instanceof Long) {
-                // 单选题：保存单个选项
-                Answer answer = new Answer();
-                answer.setResponseId(responseId);
-                answer.setQuestionId(questionId);
-                answer.setOptionId((Long) answerValue);
-                answerMapper.insert(answer);
-            } else if (answerValue instanceof String) {
-                // 填空题：保存文本内容
-                Answer answer = new Answer();
-                answer.setResponseId(responseId);
-                answer.setQuestionId(questionId);
-                answer.setContent((String) answerValue);
-                answerMapper.insert(answer);
-            }
-        }
     }
 }
 

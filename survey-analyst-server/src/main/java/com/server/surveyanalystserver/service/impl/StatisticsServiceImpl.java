@@ -26,16 +26,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
     private SurveyMapper surveyMapper;
 
     @Autowired
-    private QuestionMapper questionMapper;
-
-    @Autowired
-    private OptionMapper optionMapper;
-
-    @Autowired
     private ResponseMapper responseMapper;
-
-    @Autowired
-    private AnswerMapper answerMapper;
 
     @Override
     public Map<String, Object> getSurveyStatistics(Long surveyId) {
@@ -82,131 +73,14 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsCacheMapper, St
 
     @Override
     public Map<String, Object> getQuestionStatistics(Long questionId) {
-        Question question = questionMapper.selectById(questionId);
-        if (question == null) {
-            throw new RuntimeException("题目不存在");
-        }
-
-        // 先从缓存获取
-        StatisticsCache cache = getCache(question.getSurveyId(), questionId, "QUESTION_STAT");
-        if (cache != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(cache.getStatData(), Map.class);
-            } catch (Exception e) {
-                // 缓存数据解析失败，重新计算
-            }
-        }
-
-        Map<String, Object> statistics = new HashMap<>();
-        statistics.put("questionId", questionId);
-        statistics.put("questionTitle", question.getTitle());
-        statistics.put("questionType", question.getType());
-
-        // 获取该题目的所有答案
-        LambdaQueryWrapper<Answer> answerWrapper = new LambdaQueryWrapper<>();
-        answerWrapper.eq(Answer::getQuestionId, questionId);
-        List<Answer> answers = answerMapper.selectList(answerWrapper);
-
-        // 根据题型统计
-        if ("SINGLE_CHOICE".equals(question.getType()) || "MULTIPLE_CHOICE".equals(question.getType())) {
-            // 选择题：统计选项分布
-            Map<Long, Integer> optionCount = new HashMap<>();
-            for (Answer answer : answers) {
-                if (answer.getOptionId() != null) {
-                    optionCount.put(answer.getOptionId(), optionCount.getOrDefault(answer.getOptionId(), 0) + 1);
-                }
-            }
-
-            // 获取所有选项
-            List<Option> options = optionMapper.selectList(
-                    new LambdaQueryWrapper<Option>().eq(Option::getQuestionId, questionId)
-            );
-
-            List<Map<String, Object>> optionStats = new ArrayList<>();
-            int totalCount = answers.size();
-            for (Option option : options) {
-                int count = optionCount.getOrDefault(option.getId(), 0);
-                double percentage = totalCount > 0 ? (double) count / totalCount * 100 : 0;
-                
-                Map<String, Object> optionStat = new HashMap<>();
-                optionStat.put("optionId", option.getId());
-                optionStat.put("optionContent", option.getContent());
-                optionStat.put("count", count);
-                optionStat.put("percentage", Math.round(percentage * 100.0) / 100.0);
-                optionStats.add(optionStat);
-            }
-            statistics.put("optionStats", optionStats);
-            statistics.put("totalCount", totalCount);
-        } else if ("TEXT".equals(question.getType()) || "TEXTAREA".equals(question.getType())) {
-            // 填空题：统计有效答案数和词频
-            List<String> validContents = answers.stream()
-                    .filter(a -> a.getContent() != null && !a.getContent().trim().isEmpty())
-                    .map(a -> a.getContent().trim())
-                    .collect(Collectors.toList());
-            
-            statistics.put("validAnswers", validContents.size());
-            statistics.put("totalAnswers", answers.size());
-            
-            // 词频统计（简单实现，提取高频词）
-            if (!validContents.isEmpty()) {
-                Map<String, Integer> wordFrequency = new HashMap<>();
-                for (String content : validContents) {
-                    // 简单分词（按空格和标点符号分割）
-                    String[] words = content.split("[\\s\\p{Punct}]+");
-                    for (String word : words) {
-                        if (word.length() > 1) { // 过滤单字符
-                            wordFrequency.put(word, wordFrequency.getOrDefault(word, 0) + 1);
-                        }
-                    }
-                }
-                
-                // 取前20个高频词
-                List<Map<String, Object>> topWords = wordFrequency.entrySet().stream()
-                        .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
-                        .limit(20)
-                        .map(entry -> {
-                            Map<String, Object> wordData = new HashMap<>();
-                            wordData.put("word", entry.getKey());
-                            wordData.put("count", entry.getValue());
-                            return wordData;
-                        })
-                        .collect(Collectors.toList());
-                
-                statistics.put("wordFrequency", topWords);
-            }
-        } else if ("RATING".equals(question.getType())) {
-            // 评分题：计算平均分
-            List<Integer> ratings = answers.stream()
-                    .filter(a -> a.getContent() != null)
-                    .map(a -> {
-                        try {
-                            return Integer.parseInt(a.getContent());
-                        } catch (NumberFormatException e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            if (!ratings.isEmpty()) {
-                double avgRating = ratings.stream().mapToInt(Integer::intValue).average().orElse(0);
-                statistics.put("averageRating", Math.round(avgRating * 100.0) / 100.0);
-                statistics.put("maxRating", ratings.stream().mapToInt(Integer::intValue).max().orElse(0));
-                statistics.put("minRating", ratings.stream().mapToInt(Integer::intValue).min().orElse(0));
-            }
-            statistics.put("totalRatings", ratings.size());
-        }
-
-        // 保存到缓存
-        saveCache(question.getSurveyId(), questionId, "QUESTION_STAT", statistics);
-
-        return statistics;
+        // 传统问卷系统已废弃，该方法不再支持
+        throw new RuntimeException("该方法已废弃，系统已迁移到表单系统，请使用基于form_item的统计方法");
     }
 
     @Override
     public Map<String, Object> getOptionStatistics(Long questionId) {
-        return getQuestionStatistics(questionId);
+        // 传统问卷系统已废弃，该方法不再支持
+        throw new RuntimeException("该方法已废弃，系统已迁移到表单系统，请使用基于form_item的统计方法");
     }
 
     @Override
