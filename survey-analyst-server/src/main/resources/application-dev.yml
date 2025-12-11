@@ -61,6 +61,18 @@ spring:
           timeout: 30000
           writetimeout: 30000
 
+  # Jackson配置
+  jackson:
+    # 日期时间格式
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 时区
+    time-zone: GMT+8
+    # 禁用将日期时间写为时间戳
+    serialization:
+      write-dates-as-timestamps: false
+    # 注册Java 8时间模块
+    default-property-inclusion: non_null
+
 # MyBatis Plus配置
 mybatis-plus:
   configuration:

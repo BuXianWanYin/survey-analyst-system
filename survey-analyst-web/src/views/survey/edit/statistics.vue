@@ -374,17 +374,17 @@ const loadStatistics = async () => {
       } catch (error) {
         console.error(`获取题目 ${item.formItemId} 统计失败:`, error)
         // 如果API失败，使用前端计算作为降级方案
-        const dataRes = await formApi.getFormDataList(formKey.value, {
-          pageNum: 1,
-          pageSize: 1000
-        })
-        if (dataRes.code === 200 && dataRes.data) {
-          const dataList = dataRes.data.records || []
-          if (isChoiceType(item.type)) {
-            statisticsData.value[item.formItemId] = calculateChoiceStat(item, dataList)
-          } else if (isTextType(item.type)) {
-            statisticsData.value[item.formItemId] = calculateTextStat(item, dataList)
-          }
+    const dataRes = await formApi.getFormDataList(formKey.value, {
+      pageNum: 1,
+      pageSize: 1000
+    })
+    if (dataRes.code === 200 && dataRes.data) {
+      const dataList = dataRes.data.records || []
+        if (isChoiceType(item.type)) {
+          statisticsData.value[item.formItemId] = calculateChoiceStat(item, dataList)
+        } else if (isTextType(item.type)) {
+          statisticsData.value[item.formItemId] = calculateTextStat(item, dataList)
+        }
         }
       }
     }
@@ -807,8 +807,8 @@ const loadTrendData = async () => {
           itemStyle: { color: '#409EFF' }
         }]
       }
-    }
-    
+      }
+      
     // 2. 使用后端API获取设备统计
     const deviceRes = await statisticsApi.getDeviceStatistics(surveyId.value)
     if (deviceRes.code === 200 && deviceRes.data) {
@@ -838,8 +838,8 @@ const loadTrendData = async () => {
           }
         }]
       }
-    }
-    
+      }
+      
     // 3. 使用后端API获取填写来源
     const sourceRes = await statisticsApi.getResponseSource(surveyId.value)
     if (sourceRes.code === 200 && sourceRes.data) {

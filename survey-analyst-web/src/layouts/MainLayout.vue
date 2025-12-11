@@ -10,7 +10,7 @@
             class="mobile-menu-toggle"
             @click="toggleMobileMenu"
           />
-          <h2 class="logo">在线问卷调查系统</h2>
+          <h2 class="logo">在线问卷调查与数据分析系统</h2>
         </div>
         <div class="header-right">
           <el-dropdown @command="handleCommand">

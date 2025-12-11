@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="login-title">在线问卷调查系统</h2>
+      <h2 class="login-title">在线问卷调查与数据分析系统</h2>
       <el-form
         ref="loginFormRef"
         :model="loginForm"
@@ -101,14 +101,28 @@ const handleLogin = async () => {
           const redirect = route.query.redirect
           if (redirect && typeof redirect === 'string') {
             // 跳转回原来的页面
-            router.push(redirect)
-          } else {
-            // 根据用户角色跳转到不同页面
+            router.push(redirect).catch(err => {
+              // 忽略重复导航错误
+              if (err.name !== 'NavigationDuplicated') {
+                console.error('路由跳转错误:', err)
+                // 如果重定向失败，跳转到默认页面
             if (res.data.user && res.data.user.role === 'ADMIN') {
               router.push('/system/user')
             } else {
               router.push('/survey/list')
             }
+              }
+            })
+          } else {
+            // 根据用户角色跳转到不同页面
+            const targetPath = res.data.user && res.data.user.role === 'ADMIN' ? '/system/user' : '/survey/list'
+            router.push(targetPath).catch(err => {
+              // 忽略重复导航错误
+              if (err.name !== 'NavigationDuplicated') {
+                console.error('路由跳转错误:', err)
+                ElMessage.error('页面跳转失败，请刷新页面')
+              }
+            })
           }
         }
       } catch (error) {
