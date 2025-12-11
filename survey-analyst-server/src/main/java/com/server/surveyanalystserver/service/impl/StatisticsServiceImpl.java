@@ -213,18 +213,39 @@ public class StatisticsServiceImpl implements StatisticsService {
         } else if (isTextType(type)) {
             // 文本题：统计有效答案数
             int validAnswers = 0;
+            List<String> textAnswers = new ArrayList<>(); // 用于词云分析
+            
             for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
                     if (value != null && !String.valueOf(value).trim().isEmpty()) {
                         validAnswers++;
+                        // 收集文本答案用于词云分析（仅 INPUT 和 TEXTAREA）
+                        if ("INPUT".equals(type) || "TEXTAREA".equals(type)) {
+                            textAnswers.add(String.valueOf(value).trim());
+                        }
                     }
                 }
             }
             
             statistics.put("validAnswers", validAnswers);
             statistics.put("totalAnswers", formDataList.size());
+            
+            // 生成词云数据（仅 INPUT 和 TEXTAREA）
+            if (("INPUT".equals(type) || "TEXTAREA".equals(type)) && !textAnswers.isEmpty()) {
+                Map<String, Integer> wordFrequency = generateWordFrequency(textAnswers);
+                List<Map<String, Object>> wordCloudData = new ArrayList<>();
+                for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
+                    Map<String, Object> word = new HashMap<>();
+                    word.put("name", entry.getKey());
+                    word.put("value", entry.getValue());
+                    word.put("word", entry.getKey());
+                    word.put("count", entry.getValue());
+                    wordCloudData.add(word);
+                }
+                statistics.put("wordCloudData", wordCloudData);
+            }
         } else if ("RATE".equals(type) || "SLIDER".equals(type)) {
             // 评分题/滑块：计算平均分
             List<Double> ratings = new ArrayList<>();
@@ -573,18 +594,39 @@ public class StatisticsServiceImpl implements StatisticsService {
         } else if (isTextType(type)) {
             // 文本题：统计有效答案数
             int validAnswers = 0;
+            List<String> textAnswers = new ArrayList<>(); // 用于词云分析
+            
             for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
                     if (value != null && !String.valueOf(value).trim().isEmpty()) {
                         validAnswers++;
+                        // 收集文本答案用于词云分析（仅 INPUT 和 TEXTAREA）
+                        if ("INPUT".equals(type) || "TEXTAREA".equals(type)) {
+                            textAnswers.add(String.valueOf(value).trim());
+                        }
                     }
                 }
             }
             
             statistics.put("validAnswers", validAnswers);
             statistics.put("totalAnswers", formDataList.size());
+            
+            // 生成词云数据（仅 INPUT 和 TEXTAREA）
+            if (("INPUT".equals(type) || "TEXTAREA".equals(type)) && !textAnswers.isEmpty()) {
+                Map<String, Integer> wordFrequency = generateWordFrequency(textAnswers);
+                List<Map<String, Object>> wordCloudData = new ArrayList<>();
+                for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
+                    Map<String, Object> word = new HashMap<>();
+                    word.put("name", entry.getKey());
+                    word.put("value", entry.getValue());
+                    word.put("word", entry.getKey());
+                    word.put("count", entry.getValue());
+                    wordCloudData.add(word);
+                }
+                statistics.put("wordCloudData", wordCloudData);
+            }
         } else if ("RATE".equals(type) || "SLIDER".equals(type)) {
             // 评分题/滑块：计算平均分
             List<Double> ratings = new ArrayList<>();
@@ -610,9 +652,301 @@ public class StatisticsServiceImpl implements StatisticsService {
                 statistics.put("minRating", ratings.stream().mapToDouble(Double::doubleValue).min().orElse(0));
             }
             statistics.put("totalRatings", ratings.size());
+        } else if ("UPLOAD".equals(type)) {
+            // 文件上传：统计上传数量和文件信息
+            int validUploads = 0;
+            int totalFiles = 0;
+            long totalSize = 0;
+            long maxSize = 0;
+            long minSize = Long.MAX_VALUE;
+            Map<String, Integer> fileTypeCount = new HashMap<>();
+            List<Map<String, Object>> fileList = new ArrayList<>();
+            
+            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+                Map<String, Object> originalData = data.getOriginalData();
+                if (originalData != null && originalData.containsKey(formItemId)) {
+                    Object value = originalData.get(formItemId);
+                    if (value != null) {
+                        List<?> files = null;
+                        if (value instanceof List) {
+                            files = (List<?>) value;
+                        } else {
+                            // 单个文件，转为列表
+                            files = java.util.Arrays.asList(value);
+                        }
+                        
+                        if (files != null && !files.isEmpty()) {
+                            validUploads++;
+                            
+                            for (Object fileObj : files) {
+                                if (fileObj instanceof Map) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> file = (Map<String, Object>) fileObj;
+                                    totalFiles++;
+                                    
+                                    // 文件大小
+                                    Object sizeObj = file.get("size");
+                                    long fileSize = 0;
+                                    if (sizeObj instanceof Number) {
+                                        fileSize = ((Number) sizeObj).longValue();
+                                    }
+                                    totalSize += fileSize;
+                                    if (fileSize > maxSize) maxSize = fileSize;
+                                    if (fileSize < minSize && fileSize > 0) minSize = fileSize;
+                                    
+                                    // 文件类型
+                                    String fileName = String.valueOf(file.get("name") != null ? file.get("name") : "");
+                                    String fileType = getFileExtension(fileName);
+                                    if (!fileType.isEmpty()) {
+                                        fileTypeCount.put(fileType, fileTypeCount.getOrDefault(fileType, 0) + 1);
+                                    }
+                                    
+                                    // 添加到文件列表
+                                    fileList.add(file);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (minSize == Long.MAX_VALUE) minSize = 0;
+            
+            // 构建文件类型统计
+            List<Map<String, Object>> fileTypeStats = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : fileTypeCount.entrySet()) {
+                Map<String, Object> stat = new HashMap<>();
+                stat.put("type", entry.getKey().toUpperCase());
+                stat.put("count", entry.getValue());
+                double percentage = totalFiles > 0 ? (double) entry.getValue() / totalFiles * 100 : 0;
+                stat.put("percentage", Math.round(percentage * 100.0) / 100.0);
+                fileTypeStats.add(stat);
+            }
+            
+            statistics.put("validUploads", validUploads);
+            statistics.put("totalAnswers", formDataList.size());
+            double uploadRate = formDataList.size() > 0 ? (double) validUploads / formDataList.size() * 100 : 0;
+            statistics.put("uploadRate", Math.round(uploadRate * 100.0) / 100.0);
+            statistics.put("totalFiles", totalFiles);
+            double averageFiles = validUploads > 0 ? (double) totalFiles / validUploads : 0;
+            statistics.put("averageFiles", Math.round(averageFiles * 100.0) / 100.0);
+            statistics.put("fileTypeStats", fileTypeStats);
+            statistics.put("totalSize", totalSize);
+            double averageSize = totalFiles > 0 ? (double) totalSize / totalFiles : 0;
+            statistics.put("averageSize", Math.round(averageSize * 100.0) / 100.0);
+            statistics.put("maxSize", maxSize);
+            statistics.put("minSize", minSize);
+            statistics.put("fileList", fileList);
+        } else if ("IMAGE_UPLOAD".equals(type)) {
+            // 图片上传：统计上传数量和图片信息
+            int validUploads = 0;
+            int totalImages = 0;
+            long totalSize = 0;
+            long maxSize = 0;
+            long minSize = Long.MAX_VALUE;
+            List<Map<String, Object>> imageList = new ArrayList<>();
+            
+            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+                Map<String, Object> originalData = data.getOriginalData();
+                if (originalData != null && originalData.containsKey(formItemId)) {
+                    Object value = originalData.get(formItemId);
+                    if (value != null) {
+                        List<?> images = null;
+                        if (value instanceof List) {
+                            images = (List<?>) value;
+                        } else {
+                            // 单个图片，转为列表
+                            images = java.util.Arrays.asList(value);
+                        }
+                        
+                        if (images != null && !images.isEmpty()) {
+                            validUploads++;
+                            
+                            for (Object imageObj : images) {
+                                if (imageObj instanceof Map) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> image = (Map<String, Object>) imageObj;
+                                    totalImages++;
+                                    
+                                    // 图片大小
+                                    Object sizeObj = image.get("size");
+                                    long imageSize = 0;
+                                    if (sizeObj instanceof Number) {
+                                        imageSize = ((Number) sizeObj).longValue();
+                                    }
+                                    totalSize += imageSize;
+                                    if (imageSize > maxSize) maxSize = imageSize;
+                                    if (imageSize < minSize && imageSize > 0) minSize = imageSize;
+                                    
+                                    // 添加到图片列表
+                                    imageList.add(image);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (minSize == Long.MAX_VALUE) minSize = 0;
+            
+            statistics.put("validUploads", validUploads);
+            statistics.put("totalAnswers", formDataList.size());
+            double uploadRate = formDataList.size() > 0 ? (double) validUploads / formDataList.size() * 100 : 0;
+            statistics.put("uploadRate", Math.round(uploadRate * 100.0) / 100.0);
+            statistics.put("totalImages", totalImages);
+            double averageImages = validUploads > 0 ? (double) totalImages / validUploads : 0;
+            statistics.put("averageImages", Math.round(averageImages * 100.0) / 100.0);
+            statistics.put("totalSize", totalSize);
+            double averageSize = totalImages > 0 ? (double) totalSize / totalImages : 0;
+            statistics.put("averageSize", Math.round(averageSize * 100.0) / 100.0);
+            statistics.put("maxSize", maxSize);
+            statistics.put("minSize", minSize);
+            statistics.put("imageList", imageList);
         }
 
         return statistics;
+    }
+    
+    /**
+     * 获取文件扩展名
+     * @param fileName 文件名
+     * @return 扩展名（不含点号）
+     */
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
+            return fileName.substring(lastDotIndex + 1).toLowerCase();
+        }
+        return "";
+    }
+
+    @Override
+    public Map<String, Object> getFilteredStatistics(Long surveyId, java.util.List<Map<String, Object>> filters) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 获取表单配置
+        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        if (formConfig == null) {
+            throw new RuntimeException("表单配置不存在");
+        }
+        String formKey = formConfig.getFormKey();
+
+        // 2. 获取所有表单项
+        List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
+
+        // 3. 获取所有表单数据
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            formDataService.getFormDataList(page, formKey);
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+
+        // 4. 根据筛选条件过滤数据
+        List<com.server.surveyanalystserver.entity.FormData> filteredDataList = formDataList;
+        if (filters != null && !filters.isEmpty()) {
+            filteredDataList = formDataList.stream()
+                .filter(data -> {
+                    Map<String, Object> originalData = data.getOriginalData();
+                    if (originalData == null) return false;
+                    
+                    // 检查是否满足所有筛选条件（AND关系）
+                    for (Map<String, Object> filter : filters) {
+                        String formItemId = (String) filter.get("formItemId");
+                        String optionValue = (String) filter.get("optionValue");
+                        
+                        if (formItemId == null || optionValue == null) continue;
+                        
+                        Object value = originalData.get(formItemId);
+                        if (value == null) return false;
+                        
+                        // 处理单选和多选
+                        boolean matches = false;
+                        if (value instanceof List) {
+                            // 多选题
+                            List<?> values = (List<?>) value;
+                            matches = values.contains(optionValue);
+                        } else {
+                            // 单选题
+                            matches = optionValue.equals(String.valueOf(value));
+                        }
+                        
+                        if (!matches) return false;
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+        }
+
+        // 5. 计算问卷整体统计（基于筛选后的数据）
+        long totalResponses = filteredDataList.size();
+        long completedResponses = filteredDataList.size(); // FormData都是已完成的
+        Map<String, Object> surveyStatistics = new HashMap<>();
+        surveyStatistics.put("totalResponses", totalResponses);
+        surveyStatistics.put("completedResponses", completedResponses);
+        surveyStatistics.put("draftResponses", 0L);
+        surveyStatistics.put("validRate", totalResponses > 0 ? 100.0 : 0.0);
+        result.put("surveyStatistics", surveyStatistics);
+
+        // 6. 统计每个题目的数据
+        Map<String, Map<String, Object>> questionStatistics = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
+            try {
+                String formItemId = formItem.getFormItemId();
+                Map<String, Object> stat = calculateQuestionStatistics(formItem, filteredDataList, objectMapper);
+                questionStatistics.put(formItemId, stat);
+            } catch (Exception e) {
+                // 单个题目统计失败不影响整体
+                System.err.println("统计题目失败: " + formItem.getFormItemId() + ", " + e.getMessage());
+            }
+        }
+
+        result.put("questionStatistics", questionStatistics);
+
+        return result;
+    }
+
+    /**
+     * 生成词频统计（用于词云图）
+     * @param textAnswers 文本答案列表
+     * @return 词频Map（词 -> 频次）
+     */
+    private Map<String, Integer> generateWordFrequency(List<String> textAnswers) {
+        Map<String, Integer> wordFrequency = new HashMap<>();
+        
+        // 停用词列表（常见无意义词汇）
+        Set<String> stopWords = new HashSet<>(java.util.Arrays.asList(
+            "的", "了", "是", "在", "有", "和", "就", "不", "人", "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去", "你", "会", "着", "没有", "看", "好", "自己", "这"
+        ));
+        
+        for (String answer : textAnswers) {
+            // 简单的中文分词（按字符分割，后续可优化为专业分词）
+            // 这里使用简单的方法：按单个字符或常见词组分割
+            String[] words = answer.split("[\\s，。、；：！？,.;:!?\\n\\r]+");
+            
+            for (String word : words) {
+                word = word.trim();
+                // 过滤空字符串、单个字符、停用词
+                if (word.length() > 1 && !stopWords.contains(word)) {
+                    wordFrequency.put(word, wordFrequency.getOrDefault(word, 0) + 1);
+                }
+            }
+        }
+        
+        // 按频次排序，返回前50个高频词
+        return wordFrequency.entrySet().stream()
+            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+            .limit(50)
+            .collect(java.util.stream.Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (e1, e2) -> e1,
+                java.util.LinkedHashMap::new
+            ));
     }
 
     /**

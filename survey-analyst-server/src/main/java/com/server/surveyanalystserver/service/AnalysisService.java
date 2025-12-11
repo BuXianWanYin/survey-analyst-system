@@ -39,5 +39,13 @@ public interface AnalysisService {
      * @return 筛选后的分析结果
      */
     Map<String, Object> filterAnalysis(Long surveyId, Map<String, Object> filter);
+
+    /**
+     * 对比分析
+     * @param surveyId 问卷ID
+     * @param compareVariable 对比变量（表单项ID）
+     * @return 对比分析结果
+     */
+    Map<String, Object> compareAnalysis(Long surveyId, String compareVariable);
 }
 

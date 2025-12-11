@@ -85,6 +85,19 @@ export const statisticsApi = {
       includeDevice: options.includeDevice || false
     }
     return request.get(`/statistics/all/${surveyId}`, { params })
+  },
+
+  /**
+   * 获取筛选后的统计数据（分类统计）
+   * @param {Number} surveyId 问卷ID
+   * @param {Array} filters 筛选条件数组 [{ formItemId, optionValue }, ...]
+   * @returns {Promise} 筛选后的统计数据
+   */
+  getFilteredStatistics(surveyId, filters) {
+    return request.post(`/statistics/filter`, {
+      surveyId,
+      filters
+    })
   }
 }
 

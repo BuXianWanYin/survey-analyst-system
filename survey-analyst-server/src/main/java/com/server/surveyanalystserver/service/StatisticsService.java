@@ -67,5 +67,13 @@ public interface StatisticsService {
      * @return 所有统计数据
      */
     Map<String, Object> getAllStatistics(Long surveyId, boolean includeTrend, boolean includeSource, boolean includeDevice);
+
+    /**
+     * 获取筛选后的统计数据（分类统计）
+     * @param surveyId 问卷ID
+     * @param filters 筛选条件列表 [{ formItemId, optionValue }, ...]
+     * @return 筛选后的统计数据
+     */
+    Map<String, Object> getFilteredStatistics(Long surveyId, java.util.List<Map<String, Object>> filters);
 }
 

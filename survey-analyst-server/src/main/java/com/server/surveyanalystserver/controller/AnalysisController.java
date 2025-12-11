@@ -62,5 +62,16 @@ public class AnalysisController {
         Map<String, Object> result = analysisService.filterAnalysis(surveyId, filter);
         return Result.success("分析成功", result);
     }
+
+    @ApiOperation(value = "对比分析", notes = "对比不同群体在各题目上的分布差异")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/compare")
+    public Result<Map<String, Object>> compareAnalysis(@RequestBody Map<String, Object> params) {
+        Long surveyId = Long.valueOf(params.get("surveyId").toString());
+        String compareVariable = params.get("compareVariable").toString();
+        
+        Map<String, Object> result = analysisService.compareAnalysis(surveyId, compareVariable);
+        return Result.success("分析成功", result);
+    }
 }
 

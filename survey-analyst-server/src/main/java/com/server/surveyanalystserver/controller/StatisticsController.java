@@ -92,5 +92,16 @@ public class StatisticsController {
         Map<String, Object> statistics = statisticsService.getAllStatistics(surveyId, includeTrend, includeSource, includeDevice);
         return Result.success("获取成功", statistics);
     }
+
+    @ApiOperation(value = "获取筛选后的统计数据", notes = "根据筛选条件获取统计数据（分类统计）")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/filter")
+    public Result<Map<String, Object>> getFilteredStatistics(@RequestBody Map<String, Object> request) {
+        Long surveyId = Long.valueOf(request.get("surveyId").toString());
+        @SuppressWarnings("unchecked")
+        java.util.List<Map<String, Object>> filters = (java.util.List<Map<String, Object>>) request.get("filters");
+        Map<String, Object> statistics = statisticsService.getFilteredStatistics(surveyId, filters);
+        return Result.success("获取成功", statistics);
+    }
 }
 

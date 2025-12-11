@@ -39,6 +39,15 @@ export const analysisApi = {
    */
   filterAnalysis(surveyId, filter) {
     return request.post(`/analysis/filter/${surveyId}`, filter)
+  },
+
+  /**
+   * 对比分析
+   * @param {Object} data 分析参数 { surveyId, compareVariable }
+   * @returns {Promise} 对比分析结果
+   */
+  compareAnalysis(data) {
+    return request.post('/analysis/compare', data)
   }
 }
 

@@ -499,5 +499,174 @@ public class AnalysisServiceImpl implements AnalysisService {
         return 0;
     }
 
+    @Override
+    public Map<String, Object> compareAnalysis(Long surveyId, String compareVariable) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 获取表单配置
+        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        if (formConfig == null) {
+            throw new RuntimeException("表单配置不存在");
+        }
+        String formKey = formConfig.getFormKey();
+
+        // 2. 获取对比变量的表单项
+        LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> compareItemWrapper = 
+            new LambdaQueryWrapper<>();
+        compareItemWrapper.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, compareVariable)
+                         .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+                         .last("LIMIT 1");
+        com.server.surveyanalystserver.entity.FormItem compareItem = formItemMapper.selectOne(compareItemWrapper);
+        if (compareItem == null) {
+            throw new RuntimeException("对比变量不存在");
+        }
+
+        // 3. 获取所有表单项（除了对比变量）
+        List<com.server.surveyanalystserver.entity.FormItem> allItems = formItemMapper.selectList(
+            new LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem>()
+                .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+        );
+
+        // 4. 获取所有表单数据
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            formDataService.getFormDataList(page, formKey);
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+
+        // 5. 解析对比变量的选项
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        Map<String, Object> compareScheme = null;
+        try {
+            if (compareItem.getScheme() != null) {
+                compareScheme = objectMapper.readValue(compareItem.getScheme(), Map.class);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("解析对比变量配置失败", e);
+        }
+
+        List<String> compareGroups = new ArrayList<>();
+        if (compareScheme != null && compareScheme.containsKey("config")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> config = (Map<String, Object>) compareScheme.get("config");
+            if (config != null && config.containsKey("options")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> options = (List<Map<String, Object>>) config.get("options");
+                if (options != null) {
+                    for (Map<String, Object> opt : options) {
+                        String label = (String) opt.get("label");
+                        if (label != null) {
+                            compareGroups.add(label);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. 按对比变量分组数据
+        Map<String, List<com.server.surveyanalystserver.entity.FormData>> groupedData = new HashMap<>();
+        for (String group : compareGroups) {
+            groupedData.put(group, new ArrayList<>());
+        }
+
+        for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            Map<String, Object> originalData = data.getOriginalData();
+            if (originalData != null && originalData.containsKey(compareVariable)) {
+                Object value = originalData.get(compareVariable);
+                String groupKey = getAnswerKey(value, compareItem);
+                if (groupedData.containsKey(groupKey)) {
+                    groupedData.get(groupKey).add(data);
+                }
+            }
+        }
+
+        // 7. 对每个其他题目进行对比分析
+        List<Map<String, Object>> compareResults = new ArrayList<>();
+        for (com.server.surveyanalystserver.entity.FormItem item : allItems) {
+            if (item.getFormItemId().equals(compareVariable)) {
+                continue; // 跳过对比变量本身
+            }
+
+            if (!isChoiceType(item.getType())) {
+                continue; // 只对比选择题
+            }
+
+            Map<String, Object> compareResult = new HashMap<>();
+            compareResult.put("questionTitle", item.getLabel());
+            compareResult.put("formItemId", item.getFormItemId());
+            compareResult.put("groups", compareGroups);
+
+            // 解析题目选项
+            Map<String, Object> itemScheme = null;
+            try {
+                if (item.getScheme() != null) {
+                    itemScheme = objectMapper.readValue(item.getScheme(), Map.class);
+                }
+            } catch (Exception e) {
+                continue;
+            }
+
+            List<Map<String, Object>> itemOptions = new ArrayList<>();
+            if (itemScheme != null && itemScheme.containsKey("config")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> config = (Map<String, Object>) itemScheme.get("config");
+                if (config != null && config.containsKey("options")) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> options = (List<Map<String, Object>>) config.get("options");
+                    if (options != null) {
+                        itemOptions = options;
+                    }
+                }
+            }
+
+            // 对每个选项，统计各组的分布
+            List<Map<String, Object>> compareData = new ArrayList<>();
+            for (Map<String, Object> opt : itemOptions) {
+                String optionLabel = (String) opt.get("label");
+                String optionValue = String.valueOf(opt.get("value"));
+                Map<String, Object> rowData = new HashMap<>();
+                rowData.put("optionLabel", optionLabel);
+
+                // 统计每个组的分布
+                for (String group : compareGroups) {
+                    List<com.server.surveyanalystserver.entity.FormData> groupData = groupedData.get(group);
+                    int count = 0;
+                    for (com.server.surveyanalystserver.entity.FormData data : groupData) {
+                        Map<String, Object> originalData = data.getOriginalData();
+                        if (originalData != null && originalData.containsKey(item.getFormItemId())) {
+                            Object value = originalData.get(item.getFormItemId());
+                            if (value != null) {
+                                if (value instanceof List) {
+                                    if (((List<?>) value).contains(optionValue)) {
+                                        count++;
+                                    }
+                                } else {
+                                    if (optionValue.equals(String.valueOf(value))) {
+                                        count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    int total = groupData.size();
+                    double percentage = total > 0 ? (count * 100.0 / total) : 0.0;
+                    Map<String, Object> groupStat = new HashMap<>();
+                    groupStat.put("count", count);
+                    groupStat.put("percentage", Math.round(percentage * 100) / 100.0);
+                    rowData.put(group, groupStat);
+                }
+                compareData.add(rowData);
+            }
+            compareResult.put("compareData", compareData);
+            compareResults.add(compareResult);
+        }
+
+        result.put("compareVariable", compareVariable);
+        result.put("compareVariableTitle", compareItem.getLabel());
+        result.put("results", compareResults);
+
+        return result;
+    }
+
 }
 
