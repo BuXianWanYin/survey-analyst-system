@@ -874,7 +874,7 @@
               </el-col>
             </el-row>
             
-            <!-- 浏览器类型、题目完成率 -->
+            <!-- 浏览器类型分布 -->
             <el-row :gutter="20" style="margin-top: 20px">
               <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
                 <el-card>
@@ -892,44 +892,7 @@
                   </div>
                 </el-card>
               </el-col>
-              
-              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
-                <el-card>
-                  <template #header>
-                    <span>题目完成率</span>
-                  </template>
-                  <div style="height: 300px; min-height: 300px">
-                    <v-chart
-                      v-if="completionRateChartOption && activeTab === 'analysis'"
-                      :option="completionRateChartOption"
-                      style="width: 100%; height: 100%"
-                      autoresize
-                    />
-                    <el-empty v-else description="暂无数据" />
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
-            
-            <!-- 填写质量分布、选项热度对比 -->
-            <el-row :gutter="20" style="margin-top: 20px">
-              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
-                <el-card>
-                  <template #header>
-                    <span>填写质量分布</span>
-                  </template>
-                  <div style="height: 300px; min-height: 300px">
-                    <v-chart
-                      v-if="qualityChartOption && activeTab === 'analysis'"
-                      :option="qualityChartOption"
-                      style="width: 100%; height: 100%"
-                      autoresize
-                    />
-                    <el-empty v-else description="暂无数据" />
-                  </div>
-                </el-card>
-              </el-col>
-              
+            <!-- 选项热度对比 -->
               <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
                 <el-card>
                   <template #header>
@@ -1037,9 +1000,7 @@ const trendChartOption = ref(null)
 const deviceChartOption = ref(null)
 const hourChartOption = ref(null)
 const durationChartOption = ref(null) // 填写时长分布
-const completionRateChartOption = ref(null) // 题目完成率
 const browserChartOption = ref(null) // 浏览器类型分布
-const qualityChartOption = ref(null) // 填写质量分布
 const optionHeatChartOption = ref(null) // 选项热度对比
 
 // 配色方案对话框
@@ -2125,11 +2086,6 @@ const getCompareChartOption = (compareItem, resultIndex) => {
   })
 }
 
-// 已移除：buildCompareBarChart、buildCompareHorizontalBarChart、buildCompareLineChart（已由 generateCompareChartOption 替代）
-
-// 已移除：buildComparePieChart（对比分析不使用饼图）
-
-// 已移除：getColorByIndex（已由 generateCompareChartOption 内部处理）
 
 // 计算对比分析表格行的总计
 const getCompareRowTotal = (row, groups) => {
@@ -2172,6 +2128,18 @@ const loadTrendData = async () => {
   
   analysisLoading.value = true
   try {
+    // 获取配色方案颜色
+    const colors = currentColorScheme.value?.colors || ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399']
+    const primaryColor = colors[0] || '#409EFF'
+    
+    // 将颜色转换为rgba格式（用于渐变）
+    const hexToRgba = (hex, alpha) => {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`
+    }
+    
     // 1. 使用后端API获取填写趋势
     const trendRes = await statisticsApi.getResponseTrend(surveyId.value, timeRange.value)
     if (trendRes.code === 200 && trendRes.data) {
@@ -2197,12 +2165,12 @@ const loadTrendData = async () => {
               x2: 0,
               y2: 1,
               colorStops: [
-                { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-                { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
+                { offset: 0, color: hexToRgba(primaryColor, 0.3) },
+                { offset: 1, color: hexToRgba(primaryColor, 0.1) }
               ]
             }
           },
-          itemStyle: { color: '#409EFF' }
+          itemStyle: { color: primaryColor }
         }]
       }
       }
@@ -2222,6 +2190,7 @@ const loadTrendData = async () => {
           orient: 'vertical',
           left: 'left'
         },
+        color: colors,
         series: [{
           name: '设备类型',
           type: 'pie',
@@ -2261,7 +2230,11 @@ const loadTrendData = async () => {
           name: '填写数量',
           type: 'bar',
           data: hourData.counts,
-          itemStyle: { color: '#409EFF' }
+          itemStyle: {
+            color: function(params) {
+              return colors[params.dataIndex % colors.length]
+            }
+          }
         }]
       }
       
@@ -2287,7 +2260,11 @@ const loadTrendData = async () => {
             name: '填写数量',
             type: 'bar',
             data: durationData.counts,
-            itemStyle: { color: '#67C23A' }
+            itemStyle: {
+              color: function(params) {
+                return colors[params.dataIndex % colors.length]
+              }
+            }
           }]
         }
       }
@@ -2302,83 +2279,12 @@ const loadTrendData = async () => {
             orient: 'vertical',
             left: 'left'
           },
+          color: colors,
           series: [{
             name: '浏览器类型',
             type: 'pie',
             radius: '60%',
             data: browserData,
-            emphasis: {
-              itemStyle: {
-                shadowBlur: 10,
-                shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
-              }
-            }
-          }]
-        }
-      }
-      
-      // 题目完成率
-      const completionData = calculateCompletionRate(dataList)
-      if (completionData && completionData.length > 0) {
-        completionRateChartOption.value = {
-          title: { text: '题目完成率', left: 'center' },
-          tooltip: { 
-            trigger: 'axis',
-            formatter: (params) => {
-              const param = params[0]
-              return `${param.name}<br/>完成率: ${param.value}%`
-            }
-          },
-          xAxis: {
-            type: 'category',
-            data: completionData.map(item => item.questionTitle.length > 8 ? item.questionTitle.substring(0, 8) + '...' : item.questionTitle),
-            axisLabel: {
-              rotate: 45,
-              interval: 0
-            }
-          },
-          yAxis: { 
-            type: 'value', 
-            name: '完成率(%)',
-            max: 100
-          },
-          series: [{
-            name: '完成率',
-            type: 'bar',
-            data: completionData.map(item => item.rate),
-            itemStyle: { 
-              color: (params) => {
-                const rate = params.value
-                if (rate >= 90) return '#67C23A'
-                if (rate >= 70) return '#E6A23C'
-                return '#F56C6C'
-              }
-            },
-            label: {
-              show: true,
-              position: 'top',
-              formatter: '{c}%'
-            }
-          }]
-        }
-      }
-      
-      // 填写质量分布
-      const qualityData = calculateQualityData(dataList)
-      if (qualityData) {
-        qualityChartOption.value = {
-          title: { text: '填写质量分布', left: 'center' },
-          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-          legend: {
-            orient: 'vertical',
-            left: 'left'
-          },
-          series: [{
-            name: '填写质量',
-            type: 'pie',
-            radius: '60%',
-            data: qualityData,
             emphasis: {
               itemStyle: {
                 shadowBlur: 10,
@@ -2413,7 +2319,9 @@ const loadTrendData = async () => {
           yAxis: {
             type: 'category',
             // 从高到低排序，显示排名序号（1-10）
-            data: optionHeatData.map((item, index) => `${optionHeatData.length - index}`).reverse(),
+            // optionHeatData已经按count从高到低排序，所以第一个是排名1，最后一个是排名10
+            // 条形图从下往上显示，所以需要reverse让排名1在顶部
+            data: optionHeatData.map((item, index) => `${index + 1}`).reverse(),
             axisLabel: {
               interval: 0,
               formatter: (value, index) => {
@@ -2428,7 +2336,11 @@ const loadTrendData = async () => {
             type: 'bar',
             // 从高到低排序，需要reverse因为条形图是从下往上显示
             data: optionHeatData.map(item => item.count).reverse(),
-            itemStyle: { color: '#F56C6C' }
+            itemStyle: {
+              color: function(params) {
+                return colors[params.dataIndex % colors.length]
+              }
+            }
           }]
         }
       }
@@ -2550,79 +2462,6 @@ const calculateBrowserData = (dataList) => {
     .sort((a, b) => b.value - a.value)
 }
 
-// 计算题目完成率
-const calculateCompletionRate = (dataList) => {
-  if (!formItems.value || formItems.value.length === 0) return []
-  
-  const totalResponses = dataList.length
-  if (totalResponses === 0) return []
-  
-  const completionRates = formItems.value.map(item => {
-    let filledCount = 0
-    dataList.forEach(data => {
-      const originalData = data.originalData || {}
-      const value = originalData[item.formItemId]
-      if (value !== null && value !== undefined && value !== '') {
-        // 如果是数组，检查是否为空数组
-        if (Array.isArray(value)) {
-          if (value.length > 0) filledCount++
-        } else {
-          filledCount++
-        }
-      }
-    })
-    
-    const rate = totalResponses > 0 ? (filledCount / totalResponses * 100).toFixed(2) : 0
-    return {
-      questionTitle: item.label,
-      filledCount,
-      totalCount: totalResponses,
-      rate: parseFloat(rate)
-    }
-  })
-  
-  return completionRates.sort((a, b) => a.rate - b.rate) // 按完成率从低到高排序
-}
-
-// 计算填写质量分布
-const calculateQualityData = (dataList) => {
-  if (!formItems.value || formItems.value.length === 0) return null
-  
-  const totalQuestions = formItems.value.length
-  const qualityMap = {
-    '优秀 (90%以上)': 0,
-    '良好 (70%-90%)': 0,
-    '一般 (50%-70%)': 0,
-    '较差 (50%以下)': 0
-  }
-  
-  dataList.forEach(data => {
-    const originalData = data.originalData || {}
-    let filledCount = 0
-    
-    formItems.value.forEach(item => {
-      const value = originalData[item.formItemId]
-      if (value !== null && value !== undefined && value !== '') {
-        if (Array.isArray(value)) {
-          if (value.length > 0) filledCount++
-        } else {
-          filledCount++
-        }
-      }
-    })
-    
-    const rate = totalQuestions > 0 ? (filledCount / totalQuestions * 100) : 0
-    if (rate >= 90) qualityMap['优秀 (90%以上)']++
-    else if (rate >= 70) qualityMap['良好 (70%-90%)']++
-    else if (rate >= 50) qualityMap['一般 (50%-70%)']++
-    else qualityMap['较差 (50%以下)']++
-  })
-  
-  return Object.entries(qualityMap)
-    .map(([name, value]) => ({ name, value }))
-    .filter(item => item.value > 0)
-}
-
 // 计算选项热度对比
 const calculateOptionHeat = (dataList) => {
   const optionCountMap = {}
@@ -2693,6 +2532,10 @@ const handleColorSchemeChange = (schemeId) => {
     currentColorScheme.value = scheme
     saveColorScheme(schemeId)
     ElMessage.success('配色方案已更新')
+    // 如果当前在数据分析页面，重新加载图表以应用新配色
+    if (activeTab.value === 'analysis') {
+      loadTrendData()
+    }
   }
 }
 

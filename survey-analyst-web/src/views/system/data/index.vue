@@ -12,6 +12,21 @@
               class="search-input"
               @keyup.enter="handleSearch"
             />
+            <el-select
+              v-model="publisherIdFilter"
+              placeholder="发布用户筛选"
+              clearable
+              filterable
+              class="filter-select"
+              @change="handleSearch"
+            >
+              <el-option
+                v-for="user in userList"
+                :key="user.id"
+                :label="user.username"
+                :value="user.id"
+              />
+            </el-select>
             <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
           </div>
         </div>
@@ -117,6 +132,8 @@ const { width } = useWindowSize()
 const loading = ref(false)
 const responseList = ref([])
 const surveyIdFilter = ref('')
+const publisherIdFilter = ref(null)
+const userList = ref([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -141,14 +158,39 @@ const paginationLayout = computed(() => {
   }
 })
 
+// 加载用户列表
+const loadUserList = async () => {
+  try {
+    const res = await adminApi.getUserList({ pageNum: 1, pageSize: 1000 })
+    if (res.code === 200) {
+      userList.value = res.data.records || []
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+  }
+}
+
 const loadResponseList = async () => {
   loading.value = true
   try {
     const params = {
       pageNum: currentPage.value,
-      pageSize: pageSize.value,
-      surveyId: surveyIdFilter.value || undefined
+      pageSize: pageSize.value
     }
+    
+    // 问卷ID筛选
+    if (surveyIdFilter.value) {
+      const surveyId = parseInt(surveyIdFilter.value)
+      if (!isNaN(surveyId)) {
+        params.surveyId = surveyId
+      }
+    }
+    
+    // 发布用户筛选
+    if (publisherIdFilter.value) {
+      params.publisherId = publisherIdFilter.value
+    }
+    
     const res = await adminApi.getResponseList(params)
     if (res.code === 200) {
       responseList.value = res.data.records || []
@@ -300,6 +342,7 @@ const handleDelete = async (row) => {
 }
 
 onMounted(() => {
+  loadUserList()
   loadResponseList()
 })
 </script>
@@ -331,9 +374,16 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 300px;
+  width: 200px;
   min-width: 150px;
-  max-width: 300px;
+  max-width: 200px;
+  flex: 0 0 auto;
+}
+
+.filter-select {
+  width: 200px;
+  min-width: 150px;
+  max-width: 200px;
   flex: 0 0 auto;
 }
 
@@ -409,12 +459,21 @@ onMounted(() => {
     width: 100%;
   }
 
+  .filter-select {
+    width: 100%;
+  }
+
   .search-section {
     flex-direction: row;
     gap: 8px;
   }
 
   .search-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filter-select {
     flex: 1;
     min-width: 0;
   }

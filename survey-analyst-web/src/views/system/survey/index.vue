@@ -19,6 +19,21 @@
               <el-option label="已发布" value="PUBLISHED" />
               <el-option label="已结束" value="ENDED" />
             </el-select>
+            <el-select
+              v-model="userIdFilter"
+              placeholder="用户筛选"
+              clearable
+              filterable
+              class="user-select"
+              @change="handleSearch"
+            >
+              <el-option
+                v-for="user in userList"
+                :key="user.id"
+                :label="user.username"
+                :value="user.id"
+              />
+            </el-select>
             <el-button :icon="Search" type="primary" @click="handleSearch" class="search-button">查询</el-button>
           </div>
         </div>
@@ -148,6 +163,8 @@ const viewMode = ref('card') // 'card' 卡片视图, 'table' 表格视图
 const surveyList = ref([])
 const searchKeyword = ref('')
 const statusFilter = ref('')
+const userIdFilter = ref(null)
+const userList = ref([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -163,6 +180,18 @@ const paginationLayout = computed(() => {
   }
 })
 
+// 加载用户列表
+const loadUserList = async () => {
+  try {
+    const res = await adminApi.getUserList({ pageNum: 1, pageSize: 1000 })
+    if (res.code === 200) {
+      userList.value = res.data.records || []
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+  }
+}
+
 const loadSurveyList = async () => {
   loading.value = true
   try {
@@ -170,7 +199,8 @@ const loadSurveyList = async () => {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       keyword: searchKeyword.value || undefined,
-      status: statusFilter.value || undefined
+      status: statusFilter.value || undefined,
+      userId: userIdFilter.value || undefined
     }
     const res = await adminApi.getSurveyList(params)
     if (res.code === 200) {
@@ -261,6 +291,7 @@ const getAccessTypeText = (accessType) => {
 }
 
 onMounted(() => {
+  loadUserList()
   loadSurveyList()
 })
 </script>
@@ -302,6 +333,11 @@ onMounted(() => {
 .status-select {
   width: 150px;
   min-width: 120px;
+}
+
+.user-select {
+  width: 200px;
+  min-width: 150px;
 }
 
 .search-button {
@@ -380,6 +416,7 @@ onMounted(() => {
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -508,6 +545,10 @@ onMounted(() => {
   }
 
   .status-select {
+    width: 100%;
+  }
+
+  .user-select {
     width: 100%;
   }
 

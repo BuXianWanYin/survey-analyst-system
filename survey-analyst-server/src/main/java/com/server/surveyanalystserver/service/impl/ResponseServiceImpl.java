@@ -75,25 +75,78 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
 
     @Override
     public Page<ResponseVO> getResponseListWithDetails(Page<ResponseVO> page, Long surveyId, 
-            String surveyTitle, String publisherName, String userName) {
-        // 判断是否有需要在内存中筛选的条件
-        boolean needMemoryFilter = (surveyTitle != null && !surveyTitle.isEmpty()) 
-            || (publisherName != null && !publisherName.isEmpty())
-            || (userName != null && !userName.isEmpty());
+            String surveyTitle, String publisherName, Long publisherId, String userName) {
+        // 先通过数据库层面筛选符合条件的问卷ID
+        List<Long> surveyIdList = null;
         
-        // 如果需要在内存中筛选，查询更多数据（最多1000条）
-        int querySize = needMemoryFilter ? 1000 : (int) page.getSize();
-        long queryPage = needMemoryFilter ? 1 : page.getCurrent();
+        // 如果有问卷标题、发布用户名称或发布用户ID筛选，先查询符合条件的问卷
+        if ((surveyTitle != null && !surveyTitle.isEmpty()) || (publisherName != null && !publisherName.isEmpty()) || publisherId != null) {
+            LambdaQueryWrapper<Survey> surveyWrapper = new LambdaQueryWrapper<>();
+            
+            if (surveyId != null) {
+                surveyWrapper.eq(Survey::getId, surveyId);
+            }
+            
+            if (surveyTitle != null && !surveyTitle.isEmpty()) {
+                surveyWrapper.like(Survey::getTitle, surveyTitle);
+            }
+            
+            if (publisherId != null) {
+                // 通过发布用户ID筛选
+                surveyWrapper.eq(Survey::getUserId, publisherId);
+            } else if (publisherName != null && !publisherName.isEmpty()) {
+                // 先查询符合条件的用户ID
+                LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+                userWrapper.like(User::getUsername, publisherName);
+                List<User> users = userMapper.selectList(userWrapper);
+                if (users.isEmpty()) {
+                    // 如果没有匹配的用户，返回空结果
+                    Page<ResponseVO> emptyPage = new Page<>(page.getCurrent(), page.getSize(), 0);
+                    emptyPage.setRecords(new ArrayList<>());
+                    return emptyPage;
+                }
+                List<Long> userIds = users.stream().map(User::getId).collect(Collectors.toList());
+                surveyWrapper.in(Survey::getUserId, userIds);
+            }
+            
+            List<Survey> surveys = surveyMapper.selectList(surveyWrapper);
+            surveyIdList = surveys.stream().map(Survey::getId).collect(Collectors.toList());
+            
+            if (surveyIdList.isEmpty()) {
+                // 如果没有匹配的问卷，返回空结果
+                Page<ResponseVO> emptyPage = new Page<>(page.getCurrent(), page.getSize(), 0);
+                emptyPage.setRecords(new ArrayList<>());
+                return emptyPage;
+            }
+        } else if (surveyId != null) {
+            surveyIdList = new ArrayList<>();
+            surveyIdList.add(surveyId);
+        }
         
-        // 先查询Response
+        // 查询Response
         LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
         
-        if (surveyId != null) {
-            wrapper.eq(Response::getSurveyId, surveyId);
+        if (surveyIdList != null && !surveyIdList.isEmpty()) {
+            wrapper.in(Response::getSurveyId, surveyIdList);
+        }
+        
+        // 如果有填写用户名称筛选，先查询符合条件的用户ID
+        if (userName != null && !userName.isEmpty()) {
+            LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+            userWrapper.like(User::getUsername, userName);
+            List<User> users = userMapper.selectList(userWrapper);
+            if (users.isEmpty()) {
+                // 如果没有匹配的用户，返回空结果
+                Page<ResponseVO> emptyPage = new Page<>(page.getCurrent(), page.getSize(), 0);
+                emptyPage.setRecords(new ArrayList<>());
+                return emptyPage;
+            }
+            List<Long> userIds = users.stream().map(User::getId).collect(Collectors.toList());
+            wrapper.in(Response::getUserId, userIds);
         }
         
         wrapper.orderByDesc(Response::getCreateTime);
-        Page<Response> responsePage = new Page<>(queryPage, querySize);
+        Page<Response> responsePage = new Page<>(page.getCurrent(), page.getSize());
         Page<Response> result = this.page(responsePage, wrapper);
         
         // 转换为VO并填充关联信息
@@ -110,7 +163,7 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             vo.setStatus(response.getStatus());
             vo.setCreateTime(response.getCreateTime());
             
-            // 查询问卷信息（直接使用Mapper，避免循环依赖）
+            // 查询问卷信息
             if (response.getSurveyId() != null) {
                 Survey survey = surveyMapper.selectById(response.getSurveyId());
                 if (survey != null) {
@@ -138,31 +191,8 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
             return vo;
         }).collect(Collectors.toList());
         
-        // 应用筛选条件（问卷名称、发布用户名称、填写用户名称）
-        if (surveyTitle != null && !surveyTitle.isEmpty()) {
-            voList = voList.stream()
-                .filter(vo -> vo.getSurveyTitle() != null && vo.getSurveyTitle().contains(surveyTitle))
-                .collect(Collectors.toList());
-        }
-        if (publisherName != null && !publisherName.isEmpty()) {
-            voList = voList.stream()
-                .filter(vo -> vo.getPublisherName() != null && vo.getPublisherName().contains(publisherName))
-                .collect(Collectors.toList());
-        }
-        if (userName != null && !userName.isEmpty()) {
-            voList = voList.stream()
-                .filter(vo -> vo.getUserName() != null && vo.getUserName().contains(userName))
-                .collect(Collectors.toList());
-        }
-        
-        // 手动分页
-        int total = voList.size();
-        int start = (int) ((page.getCurrent() - 1) * page.getSize());
-        int end = Math.min(start + (int) page.getSize(), total);
-        List<ResponseVO> pagedList = start < total ? voList.subList(start, end) : new ArrayList<>();
-        
-        Page<ResponseVO> voPage = new Page<>(page.getCurrent(), page.getSize(), total);
-        voPage.setRecords(pagedList);
+        Page<ResponseVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        voPage.setRecords(voList);
         return voPage;
     }
 }

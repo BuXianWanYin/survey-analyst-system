@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +29,23 @@ public class EmailServiceImpl implements EmailService {
 
     @Value("${survey.access.url}")
     private String frontendUrl;
+    
+    // 邮箱格式验证正则表达式
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+        "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    );
+    
+    /**
+     * 验证邮箱格式是否有效
+     * @param email 邮箱地址
+     * @return 是否有效
+     */
+    private boolean isValidEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return false;
+        }
+        return EMAIL_PATTERN.matcher(email.trim()).matches();
+    }
 
     @Override
     public void sendSurveySubmitNotification(String toEmails, String surveyTitle, Long surveyId) {
@@ -53,7 +71,9 @@ public class EmailServiceImpl implements EmailService {
                 return;
             }
 
-            String surveyLink = frontendUrl + "/user/survey/data/" + surveyId;
+            // 使用正确的数据页面路径格式：/survey/edit/data?id=xxx
+            // 如果用户未登录，登录页面会自动添加redirect参数，登录成功后跳转回此页面
+            String surveyLink = frontendUrl + "/survey/edit/data?id=" + surveyId;
             String subject = "问卷提交通知 - " + surveyTitle;
             String content = String.format(
                     "您好！\n\n" +
@@ -67,6 +87,12 @@ public class EmailServiceImpl implements EmailService {
             // 发送邮件给每个邮箱
             for (String email : emailList) {
                 try {
+                    // 验证邮箱格式
+                    if (!isValidEmail(email)) {
+                        log.warn("邮箱格式无效，跳过发送: {}", email);
+                        continue;
+                    }
+                    
                     SimpleMailMessage message = new SimpleMailMessage();
                     message.setFrom(fromEmail);
                     message.setTo(email);
@@ -76,7 +102,17 @@ public class EmailServiceImpl implements EmailService {
                     mailSender.send(message);
                     log.info("问卷提交通知邮件已发送到: {}", email);
                 } catch (Exception e) {
-                    log.error("发送邮件到 {} 失败: {}", email, e.getMessage());
+                    // 详细记录错误信息
+                    String errorMsg = e.getMessage();
+                    if (e.getCause() != null) {
+                        errorMsg += " (原因: " + e.getCause().getMessage() + ")";
+                    }
+                    log.error("发送邮件到 {} 失败: {}", email, errorMsg);
+                    
+                    // 如果是邮箱不存在或无效的错误，记录更详细的信息
+                    if (errorMsg != null && (errorMsg.contains("550") || errorMsg.contains("non-existent") || errorMsg.contains("invalid"))) {
+                        log.warn("邮箱 {} 可能不存在或无效，请检查邮箱地址是否正确", email);
+                    }
                 }
             }
         } catch (Exception e) {

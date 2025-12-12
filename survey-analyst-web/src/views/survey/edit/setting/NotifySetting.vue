@@ -164,7 +164,7 @@ const isEmailInList = (email) => {
 }
 
 // 从下拉框添加邮箱
-const handleAddEmailFromSelect = (email) => {
+const handleAddEmailFromSelect = async (email) => {
   if (!email || email === '__add_email__') {
     showAddEmailDialog.value = true
     return
@@ -178,6 +178,8 @@ const handleAddEmailFromSelect = (email) => {
   emailList.value.push(email)
   form.value.selectedEmail = email
   ElMessage.success('添加成功')
+  // 自动保存设置
+  await autoSaveSettings()
 }
 
 // 加载设置
@@ -275,6 +277,31 @@ const resetEmailForm = () => {
   emailForm.value.email = ''
   if (emailFormRef.value) {
     emailFormRef.value.clearValidate()
+  }
+}
+
+// 自动保存设置（不显示成功提示，因为操作本身已有提示）
+const autoSaveSettings = async () => {
+  if (!surveyId.value) return
+  
+  try {
+    const settings = {
+      emailNotify: emailList.value.length > 0,
+      newWriteNotifyEmail: emailList.value.length > 0 ? emailList.value.join(';') : ''
+    }
+    
+    console.log('自动保存通知设置:', settings) // 调试日志
+    
+    const res = await formApi.saveFormSetting(surveyId.value, settings)
+    if (res.code === 200) {
+      console.log('自动保存成功')
+    } else {
+      console.error('自动保存失败:', res.message)
+      ElMessage.error('自动保存失败，请手动保存')
+    }
+  } catch (error) {
+    console.error('自动保存通知设置失败:', error)
+    ElMessage.error('自动保存失败，请手动保存')
   }
 }
 

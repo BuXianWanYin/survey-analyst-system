@@ -35,11 +35,12 @@ public class AdminDataController {
             @ApiParam(value = "问卷ID（可选）") @RequestParam(required = false) Long surveyId,
             @ApiParam(value = "问卷名称（可选，模糊查询）") @RequestParam(required = false) String surveyTitle,
             @ApiParam(value = "发布用户名称（可选，模糊查询）") @RequestParam(required = false) String publisherName,
+            @ApiParam(value = "发布用户ID（可选，精确查询）") @RequestParam(required = false) Long publisherId,
             @ApiParam(value = "填写用户名称（可选，模糊查询）") @RequestParam(required = false) String userName) {
         Page<com.server.surveyanalystserver.entity.dto.ResponseVO> page = 
             new Page<>(pageNum, pageSize);
         Page<com.server.surveyanalystserver.entity.dto.ResponseVO> result = 
-            responseService.getResponseListWithDetails(page, surveyId, surveyTitle, publisherName, userName);
+            responseService.getResponseListWithDetails(page, surveyId, surveyTitle, publisherName, publisherId, userName);
         return Result.success("查询成功", result);
     }
 

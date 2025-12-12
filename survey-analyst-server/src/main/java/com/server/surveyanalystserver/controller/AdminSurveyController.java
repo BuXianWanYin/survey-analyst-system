@@ -39,7 +39,8 @@ public class AdminSurveyController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long userId) {
         Page<Survey> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Survey> wrapper = new LambdaQueryWrapper<>();
         
@@ -49,6 +50,10 @@ public class AdminSurveyController {
         
         if (status != null && !status.isEmpty()) {
             wrapper.eq(Survey::getStatus, status);
+        }
+        
+        if (userId != null) {
+            wrapper.eq(Survey::getUserId, userId);
         }
         
         wrapper.orderByDesc(Survey::getCreateTime);

@@ -37,11 +37,12 @@ public interface ResponseService extends IService<Response> {
      * @param surveyId 问卷ID（可选）
      * @param surveyTitle 问卷名称（可选，模糊查询）
      * @param publisherName 发布用户名称（可选，模糊查询）
+     * @param publisherId 发布用户ID（可选，精确查询）
      * @param userName 填写用户名称（可选，模糊查询）
      * @return 填写记录分页列表（包含关联信息）
      */
     com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.dto.ResponseVO> getResponseListWithDetails(
             com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.dto.ResponseVO> page,
-            Long surveyId, String surveyTitle, String publisherName, String userName);
+            Long surveyId, String surveyTitle, String publisherName, Long publisherId, String userName);
 }
 
