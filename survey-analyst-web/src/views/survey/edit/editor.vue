@@ -3337,6 +3337,18 @@ const loadFormData = async () => {
                 image: opt.image ? getImageUrl(opt.image) : opt.image
               }))
             }
+            // 为单选、多选、下拉、级联组件设置默认 size（如果不存在或为null/undefined）
+            if (scheme.type === 'RADIO' || scheme.type === 'CHECKBOX' || 
+                scheme.type === 'SELECT' || scheme.type === 'CASCADER') {
+              // 确保config对象存在
+              if (!scheme.config) {
+                scheme.config = {}
+              }
+              // 如果size不存在、为null或undefined，设置为'default'
+              if (!scheme.config.size || scheme.config.size === null || scheme.config.size === undefined) {
+                scheme.config.size = 'default'
+              }
+            }
           }
           
           // 解析 regList
@@ -3451,6 +3463,18 @@ const loadFormData = async () => {
                 ...opt,
                 image: opt.image ? getImageUrl(opt.image) : opt.image
               }))
+            }
+            // 为单选、多选、下拉、级联组件设置默认 size（如果不存在或为null/undefined）
+            if (scheme.type === 'RADIO' || scheme.type === 'CHECKBOX' || 
+                scheme.type === 'SELECT' || scheme.type === 'CASCADER') {
+              // 确保config对象存在
+              if (!scheme.config) {
+                scheme.config = {}
+              }
+              // 如果size不存在、为null或undefined，设置为'default'
+              if (!scheme.config.size || scheme.config.size === null || scheme.config.size === undefined) {
+                scheme.config.size = 'default'
+              }
             }
           }
           

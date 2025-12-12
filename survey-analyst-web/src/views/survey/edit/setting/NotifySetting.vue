@@ -33,7 +33,6 @@
               :value="currentUserEmail"
             >
               <span>{{ currentUserEmail }}</span>
-              <span class="email-tag">我的邮箱</span>
               <span
                 class="add-email-icon"
                 @click.stop="handleAddEmailFromSelect(currentUserEmail)"
@@ -190,18 +189,37 @@ const loadSetting = async () => {
 
   try {
     const res = await formApi.getFormSetting(surveyId.value)
+    console.log('加载通知设置:', res) // 调试日志
+    
     if (res.code === 200 && res.data && res.data.settings) {
       const settings = res.data.settings
-      if (settings.newWriteNotifyEmail) {
-        // 将邮箱字符串转换为数组
-        emailList.value = settings.newWriteNotifyEmail.split(';').filter(e => e.trim())
-        if (emailList.value.length > 0) {
-          form.value.selectedEmail = emailList.value[0]
+      console.log('通知设置内容:', settings) // 调试日志
+      
+      // 初始化邮箱列表
+      emailList.value = []
+      form.value.selectedEmail = ''
+      
+      // 加载邮箱列表
+      if (settings.newWriteNotifyEmail && typeof settings.newWriteNotifyEmail === 'string') {
+        const emailStr = settings.newWriteNotifyEmail.trim()
+        if (emailStr) {
+          // 将邮箱字符串转换为数组
+          emailList.value = emailStr.split(';').filter(e => e.trim())
+          if (emailList.value.length > 0) {
+            form.value.selectedEmail = emailList.value[0]
+          }
         }
       }
+    } else {
+      // 如果没有设置，初始化为空
+      emailList.value = []
+      form.value.selectedEmail = ''
     }
   } catch (error) {
+    console.error('加载通知设置失败:', error) // 调试日志
     // 如果不存在，使用默认值
+    emailList.value = []
+    form.value.selectedEmail = ''
   }
 }
 
@@ -221,12 +239,14 @@ const handleAddEmail = async () => {
       showAddEmailDialog.value = false
       resetEmailForm()
       ElMessage.success('添加成功')
+      // 自动保存设置
+      await autoSaveSettings()
     }
   })
 }
 
 // 删除邮箱
-const removeEmail = (index) => {
+const removeEmail = async (index) => {
   emailList.value.splice(index, 1)
   if (emailList.value.length > 0) {
     form.value.selectedEmail = emailList.value[0]
@@ -234,6 +254,8 @@ const removeEmail = (index) => {
     form.value.selectedEmail = ''
   }
   ElMessage.success('删除成功')
+  // 自动保存设置
+  await autoSaveSettings()
 }
 
 // 邮箱选择变化
@@ -261,17 +283,25 @@ const handleSave = async () => {
   if (!formRef.value) return
 
   try {
+    // 确保保存时包含所有必要的字段
     const settings = {
       emailNotify: emailList.value.length > 0,
-      newWriteNotifyEmail: emailList.value.join(';')
+      newWriteNotifyEmail: emailList.value.length > 0 ? emailList.value.join(';') : ''
     }
+    
+    console.log('保存通知设置:', settings) // 调试日志
+    
     const res = await formApi.saveFormSetting(surveyId.value, settings)
     if (res.code === 200) {
       ElMessage.success('保存成功')
+      // 重新加载设置以确保数据同步
       await loadSetting()
+    } else {
+      ElMessage.error(res.message || '保存失败')
     }
   } catch (error) {
-    ElMessage.error('保存失败')
+    console.error('保存通知设置失败:', error) // 调试日志
+    ElMessage.error(error.response?.data?.message || error.message || '保存失败')
   }
 }
 
