@@ -45,7 +45,7 @@ public class Survey implements Serializable {
     private String status;
 
     @TableField("access_type")
-    @ApiModelProperty(value = "访问类型：PUBLIC-公开，PASSWORD-密码访问，PRIVATE-私有")
+    @ApiModelProperty(value = "访问类型：PUBLIC-公开，PASSWORD-密码访问")
     private String accessType;
 
     @TableField("password")

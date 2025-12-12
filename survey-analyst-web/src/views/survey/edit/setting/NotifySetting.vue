@@ -13,22 +13,47 @@
             placeholder="请选择邮箱"
             class="email-select"
             @change="handleEmailChange"
+            filterable
           >
+            <!-- 已添加的邮箱列表 -->
             <el-option
               v-for="email in emailList"
               :key="email"
               :label="email"
               :value="email"
-            />
+            >
+              <span>{{ email }}</span>
+              <span class="email-status">已添加</span>
+            </el-option>
+            <!-- 用户邮箱（如果不在列表中） -->
+            <el-option
+              v-if="currentUserEmail && !isEmailInList(currentUserEmail)"
+              :key="'user-' + currentUserEmail"
+              :label="currentUserEmail"
+              :value="currentUserEmail"
+            >
+              <span>{{ currentUserEmail }}</span>
+              <span class="email-tag">我的邮箱</span>
+              <span
+                class="add-email-icon"
+                @click.stop="handleAddEmailFromSelect(currentUserEmail)"
+              >
+                +
+              </span>
+            </el-option>
+            <!-- 添加邮箱选项 -->
+            <el-option
+              key="add-email"
+              label="添加邮箱"
+              value="__add_email__"
+              class="add-email-option"
+            >
+              <span class="add-email-text">
+                <el-icon><Plus /></el-icon>
+                添加邮箱
+              </span>
+            </el-option>
           </el-select>
-          <el-button
-            :icon="Plus"
-            type="primary"
-            class="add-email-btn"
-            @click="showAddEmailDialog = true"
-          >
-            添加邮箱
-          </el-button>
         </div>
       </div>
       
@@ -91,7 +116,7 @@ import { useWindowSize } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Delete, Check, Close } from '@element-plus/icons-vue'
-import { formApi } from '@/api'
+import { formApi, userApi } from '@/api'
 
 const route = useRoute()
 
@@ -100,6 +125,7 @@ const emailFormRef = ref(null)
 const surveyId = ref(null)
 const showAddEmailDialog = ref(false)
 const emailList = ref([])
+const currentUserEmail = ref('')
 const form = ref({
   selectedEmail: ''
 })
@@ -120,6 +146,40 @@ const emailRules = {
 }
 
 const rules = {}
+
+// 加载当前用户信息
+const loadCurrentUser = async () => {
+  try {
+    const res = await userApi.getCurrentUser()
+    if (res.code === 200 && res.data && res.data.email) {
+      currentUserEmail.value = res.data.email
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+  }
+}
+
+// 检查邮箱是否在列表中
+const isEmailInList = (email) => {
+  return emailList.value.includes(email)
+}
+
+// 从下拉框添加邮箱
+const handleAddEmailFromSelect = (email) => {
+  if (!email || email === '__add_email__') {
+    showAddEmailDialog.value = true
+    return
+  }
+  
+  if (isEmailInList(email)) {
+    ElMessage.warning('该邮箱已在通知列表中')
+    return
+  }
+  
+  emailList.value.push(email)
+  form.value.selectedEmail = email
+  ElMessage.success('添加成功')
+}
 
 // 加载设置
 const loadSetting = async () => {
@@ -178,7 +238,14 @@ const removeEmail = (index) => {
 
 // 邮箱选择变化
 const handleEmailChange = (value) => {
-  // 可以在这里处理选择变化
+  if (value === '__add_email__') {
+    // 选择"添加邮箱"选项时，打开对话框
+    showAddEmailDialog.value = true
+    form.value.selectedEmail = ''
+  } else if (value && !isEmailInList(value)) {
+    // 如果选择的是未添加的邮箱（如用户邮箱），自动添加
+    handleAddEmailFromSelect(value)
+  }
 }
 
 // 重置邮箱表单
@@ -208,8 +275,10 @@ const handleSave = async () => {
   }
 }
 
-onMounted(() => {
-  loadSetting()
+onMounted(async () => {
+  // 先加载用户信息，再加载设置
+  await loadCurrentUser()
+  await loadSetting()
 })
 </script>
 
@@ -257,6 +326,67 @@ onMounted(() => {
   flex: 1;
   min-width: 200px;
   max-width: 400px;
+}
+
+:deep(.el-select-dropdown__item) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  
+  .add-email-icon {
+    margin-left: auto;
+    padding: 2px 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #409eff;
+    min-width: 24px;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      color: #66b1ff;
+      background-color: #ecf5ff;
+      border-radius: 4px;
+    }
+  }
+  
+  .email-tag {
+    margin-left: 8px;
+    padding: 2px 6px;
+    background-color: #ecf5ff;
+    color: #409eff;
+    border-radius: 2px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  .email-status {
+    margin-left: auto;
+    padding: 2px 6px;
+    background-color: #f0f9ff;
+    color: #67c23a;
+    border-radius: 2px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  &.add-email-option {
+    .add-email-text {
+      color: #409eff;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    &:hover {
+      background-color: #ecf5ff;
+    }
+  }
 }
 
 :deep(.el-button) {

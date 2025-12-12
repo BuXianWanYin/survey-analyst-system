@@ -117,6 +117,7 @@
             <!-- 表单渲染 -->
             <SurveyFormRender
               v-if="formItems.length > 0"
+              ref="surveyFormRef"
               :form-items="formItems"
               :form-model="formModel"
               :preview-mode="false"
@@ -177,6 +178,7 @@ const formItems = ref([])
 const formModel = reactive({})
 const formLogic = ref([])
 const survey = ref(null)
+const surveyFormRef = ref(null)
 const errorMessage = ref('')
 const canFill = ref(false)
 const passwordDialogVisible = ref(false)
@@ -711,13 +713,167 @@ const loadTheme = async () => {
   }
 }
 
+// 评估逻辑条件（用于验证时判断字段是否可见）
+const evaluateCondition = (condition, formModel, formItems) => {
+  const { formItemId, expression, optionValue } = condition
+  if (!formItemId || !expression) return true
+  
+  const item = formItems.find(i => i.formItemId === formItemId)
+  if (!item) return true
+  
+  const value = formModel[item.vModel]
+  
+  switch (expression) {
+    case 'eq': // 等于/选中
+      if (item.type === 'CHECKBOX') {
+        return Array.isArray(value) && value.includes(optionValue)
+      }
+      return value === optionValue
+    case 'ne': // 不等于/未选中
+      if (item.type === 'CHECKBOX') {
+        return !Array.isArray(value) || !value.includes(optionValue)
+      }
+      return value !== optionValue
+    case 'gt': // 大于
+      return Number(value) > Number(optionValue)
+    case 'ge': // 大于等于
+      return Number(value) >= Number(optionValue)
+    case 'lt': // 小于
+      return Number(value) < Number(optionValue)
+    case 'le': // 小于等于
+      return Number(value) <= Number(optionValue)
+    default:
+      return true
+  }
+}
+
+// 评估逻辑规则（用于验证时判断字段是否可见）
+const evaluateLogicRule = (rule, formModel, formItems) => {
+  const conditionList = rule.conditionList || []
+  if (conditionList.length === 0) {
+    return true
+  }
+  
+  // 评估所有条件
+  let result = true
+  for (let i = 0; i < conditionList.length; i++) {
+    const condition = conditionList[i]
+    const conditionResult = evaluateCondition(condition, formModel, formItems)
+    
+    if (i === 0) {
+      result = conditionResult
+    } else {
+      // 使用第一个条件的relation（所有条件使用相同的relation）
+      const relation = conditionList[0]?.relation || condition.relation || 'AND'
+      if (relation === 'AND') {
+        result = result && conditionResult
+      } else if (relation === 'OR') {
+        result = result || conditionResult
+      }
+    }
+  }
+  
+  return result
+}
+
+// 判断字段是否可见（用于验证时，逻辑与SurveyFormRender组件保持一致）
+const isItemVisible = (item, formModel, formItems, formLogic) => {
+  // 如果字段的hideType为true，则不可见
+  if (item.hideType) {
+    return false
+  }
+  
+  // 如果没有逻辑规则，默认可见
+  if (!formLogic || formLogic.length === 0) {
+    return true
+  }
+  
+  // 初始化可见性为true（默认显示）
+  let isVisible = true
+  
+  // 收集所有被逻辑规则控制的表单项ID
+  const controlledItems = new Set()
+  
+  // 遍历所有逻辑规则（与SurveyFormRender中的逻辑保持一致）
+  formLogic.forEach(rule => {
+    if (!rule.conditionList || !rule.triggerList) return
+    
+    // 将Set转换为数组（如果必要）
+    const conditionList = Array.isArray(rule.conditionList) 
+      ? rule.conditionList 
+      : (rule.conditionList instanceof Set ? Array.from(rule.conditionList) : [])
+    const triggerList = Array.isArray(rule.triggerList) 
+      ? rule.triggerList 
+      : (rule.triggerList instanceof Set ? Array.from(rule.triggerList) : [])
+    
+    // 记录被控制的项
+    triggerList.forEach(trigger => {
+      if (trigger.formItemId) {
+        controlledItems.add(trigger.formItemId)
+      }
+    })
+    
+    const conditionMet = evaluateLogicRule({ ...rule, conditionList }, formModel, formItems)
+    
+    // 如果当前字段被这个规则控制，更新可见性
+    const trigger = triggerList.find(t => t.formItemId === item.formItemId)
+    if (trigger) {
+      if (conditionMet) {
+        // 条件满足时，执行show/hide操作
+        if (trigger.type === 'show') {
+          isVisible = true
+        } else if (trigger.type === 'hide') {
+          isVisible = false
+        }
+      } else {
+        // 条件不满足时，执行相反的操作
+        if (trigger.type === 'show') {
+          isVisible = false
+        } else if (trigger.type === 'hide') {
+          isVisible = true
+        }
+      }
+    }
+  })
+  
+  // 对于没有被逻辑规则控制的项，保持默认显示状态
+  if (!controlledItems.has(item.formItemId)) {
+    isVisible = true
+  }
+  
+  return isVisible
+}
+
 // 验证表单
-const validateForm = () => {
-  // 不需要验证的组件类型
+const validateForm = async () => {
+  // 使用 SurveyFormRender 组件的完整验证规则
+  if (surveyFormRef.value) {
+    try {
+      await surveyFormRef.value.validate()
+      return true
+    } catch (error) {
+      // 验证失败，Element Plus 会自动显示错误信息
+      // 这里可以添加额外的处理逻辑
+      return false
+    }
+  }
+  
+  // 如果组件未加载，使用简单的验证逻辑作为后备
   const excludeTypes = ['DIVIDER', 'IMAGE', 'IMAGE_CAROUSEL', 'DESC_TEXT']
   
   for (const item of formItems.value) {
-    if (item.required && !excludeTypes.includes(item.type)) {
+    // 跳过不需要验证的组件类型
+    if (excludeTypes.includes(item.type)) {
+      continue
+    }
+    
+    // 跳过隐藏的字段（包括hideType为true和逻辑隐藏的字段）
+    if (!isItemVisible(item, formModel, formItems.value, formLogic.value)) {
+      continue
+    }
+    
+    // 只验证必填项
+    if (item.required) {
       const value = formModel[item.vModel]
       if (value === null || value === undefined || value === '' || 
           (Array.isArray(value) && value.length === 0)) {
@@ -737,7 +893,8 @@ const handleSubmit = async () => {
     return
   }
   
-  if (!validateForm()) {
+  const isValid = await validateForm()
+  if (!isValid) {
     return
   }
 

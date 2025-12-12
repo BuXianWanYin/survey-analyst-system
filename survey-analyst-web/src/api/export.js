@@ -50,34 +50,6 @@ export const exportApi = {
   },
 
   /**
-   * 导出统计数据（Excel）
-   * @param {Number} surveyId 问卷ID
-   * @returns {Promise} 文件下载
-   */
-  async exportStatistics(surveyId) {
-    try {
-      const exportUrl = buildExportUrl(`/survey/${surveyId}/statistics`)
-      const response = await axios({
-        url: exportUrl,
-        method: 'get',
-        responseType: 'blob',
-        headers: {
-          'Authorization': `Bearer ${getToken()}`
-        }
-      })
-      
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      })
-      saveAs(blob, `统计数据_${surveyId}_${new Date().getTime()}.xlsx`)
-      return { success: true }
-    } catch (error) {
-      console.error('导出失败:', error)
-      throw error
-    }
-  },
-
-  /**
    * 导出分析报告（PDF）
    * @param {Number} surveyId 问卷ID
    * @returns {Promise} 文件下载

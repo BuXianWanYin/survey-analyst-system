@@ -15,13 +15,6 @@ public interface ExportService {
     void exportSurveyData(Long surveyId, HttpServletResponse response);
 
     /**
-     * 导出统计数据（Excel格式）
-     * @param surveyId 问卷ID
-     * @param response HTTP响应
-     */
-    void exportStatistics(Long surveyId, HttpServletResponse response);
-
-    /**
      * 导出分析报告（PDF格式）
      * @param surveyId 问卷ID
      * @param response HTTP响应

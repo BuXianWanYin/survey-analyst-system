@@ -934,14 +934,18 @@ const getUploadTipText = (element) => {
 
 const formRef = ref(null)
 
-// 生成表单验证规则
+// 生成表单验证规则（只对可见的组件生成验证规则）
 const formRules = computed(() => {
   const rules = {}
-  props.formItems.forEach(item => {
+  // 使用 visibleFormItems 确保只对可见的组件生成验证规则
+  visibleFormItems.value.forEach(item => {
     const itemRules = []
     
-    // 必填规则
-    if (item.required) {
+    // 需要特殊处理的组件类型（这些组件有专门的必填验证规则）
+    const specialRequiredTypes = ['UPLOAD', 'IMAGE_UPLOAD', 'SIGN_PAD', 'RADIO', 'SELECT', 'CASCADER', 'SLIDER']
+    
+    // 必填规则（通用规则，不适用于需要特殊处理的组件）
+    if (item.required && !specialRequiredTypes.includes(item.type)) {
       itemRules.push({
         required: true,
         message: `${item.label}不能为空`,
@@ -1227,6 +1231,74 @@ const formRules = computed(() => {
       })
     }
     
+    // RADIO 组件必填验证
+    if (item.type === 'RADIO' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          if (value === null || value === undefined || value === '') {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // SELECT 组件必填验证
+    if (item.type === 'SELECT' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          if (item.config?.multiple) {
+            // 多选模式：检查数组是否为空
+            const selectedArray = Array.isArray(value) ? value : []
+            if (selectedArray.length === 0) {
+              callback(new Error(`${item.label}不能为空`))
+            } else {
+              callback()
+            }
+          } else {
+            // 单选模式：检查值是否为空
+            if (value === null || value === undefined || value === '') {
+              callback(new Error(`${item.label}不能为空`))
+            } else {
+              callback()
+            }
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // CASCADER 组件必填验证
+    if (item.type === 'CASCADER' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          const selectedArray = Array.isArray(value) ? value : []
+          if (selectedArray.length === 0) {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
+    // SLIDER 组件必填验证
+    if (item.type === 'SLIDER' && item.required) {
+      itemRules.push({
+        validator: (rule, value, callback) => {
+          if (value === null || value === undefined || value === '') {
+            callback(new Error(`${item.label}不能为空`))
+          } else {
+            callback()
+          }
+        },
+        trigger: ['change']
+      })
+    }
+    
     // DATE 组件的正则表达式验证
     if (item.type === 'DATE' && item.regList && Array.isArray(item.regList) && item.regList.length > 0) {
       item.regList.forEach(reg => {
@@ -1291,6 +1363,26 @@ const getActiveBgColor = () => {
   }
   return '#ecf5ff'
 }
+
+// 暴露验证方法给父组件
+defineExpose({
+  validate: () => {
+    if (!formRef.value) return Promise.resolve(true)
+    return formRef.value.validate()
+  },
+  validateField: (props) => {
+    if (!formRef.value) return Promise.resolve(true)
+    return formRef.value.validateField(props)
+  },
+  resetFields: () => {
+    if (!formRef.value) return
+    formRef.value.resetFields()
+  },
+  clearValidate: (props) => {
+    if (!formRef.value) return
+    formRef.value.clearValidate(props)
+  }
+})
 
 // 验证输入（正则验证和长度验证）
 const validateInput = (element) => {

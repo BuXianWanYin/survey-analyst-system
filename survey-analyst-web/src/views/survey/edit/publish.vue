@@ -3,7 +3,18 @@
     <div class="cards-row">
       <el-card class="recovery-limits-card">
         <template #header>
+          <div class="card-header">
           <span>回收设置</span>
+            <el-button 
+              v-if="survey.id"
+              :icon="Check" 
+              type="primary" 
+              @click="handleSaveRecoverySettings" 
+              :loading="savingRecovery"
+            >
+              保存设置
+            </el-button>
+          </div>
         </template>
 
         <el-form :model="recoveryForm" label-width="180px" class="recovery-form">
@@ -11,7 +22,7 @@
             <template #label>
               <span>最大填写数</span>
               <el-tooltip
-                content="0表示不限制"
+                content="开启后可以设置最大填写数限制"
                 placement="top"
               >
                 <el-icon class="hint-icon">
@@ -19,21 +30,27 @@
                 </el-icon>
               </el-tooltip>
             </template>
+            <div class="limit-control">
+              <el-switch
+                v-model="recoveryForm.maxResponsesEnabled"
+                @change="handleMaxResponsesChange"
+              />
+              <span class="limit-label" :class="{ 'limit-label-hidden': recoveryForm.maxResponsesEnabled }">无限制</span>
             <el-input-number
+                v-if="recoveryForm.maxResponsesEnabled"
               v-model="recoveryForm.maxResponses"
-              :min="0"
-              :formatter="formatLimitValue"
-              :parser="parseLimitValue"
-              placeholder="不限制"
-              style="width: 300px"
+                :min="1"
+                style="width: 200px; margin-left: 10px"
+                placeholder="请输入最大填写数"
             />
+            </div>
           </el-form-item>
 
           <el-form-item>
             <template #label>
               <span>每个IP答题次数限制</span>
               <el-tooltip
-                content="0表示不限制"
+                content="开启后可以设置每个IP的答题次数限制"
                 placement="top"
               >
                 <el-icon class="hint-icon">
@@ -41,21 +58,27 @@
                 </el-icon>
               </el-tooltip>
             </template>
+            <div class="limit-control">
+              <el-switch
+                v-model="recoveryForm.ipWriteCountLimitEnabled"
+                @change="handleIpLimitChange"
+              />
+              <span class="limit-label" :class="{ 'limit-label-hidden': recoveryForm.ipWriteCountLimitEnabled }">无限制</span>
             <el-input-number
+                v-if="recoveryForm.ipWriteCountLimitEnabled"
               v-model="recoveryForm.ipWriteCountLimit"
-              :min="0"
-              :formatter="formatLimitValue"
-              :parser="parseLimitValue"
-              placeholder="不限制"
-              style="width: 300px"
+                :min="1"
+                style="width: 200px; margin-left: 10px"
+                placeholder="请输入限制次数"
             />
+            </div>
           </el-form-item>
 
           <el-form-item>
             <template #label>
               <span>每个设备答题次数限制</span>
               <el-tooltip
-                content="0表示不限制"
+                content="开启后可以设置每个设备的答题次数限制"
                 placement="top"
               >
                 <el-icon class="hint-icon">
@@ -63,21 +86,27 @@
                 </el-icon>
               </el-tooltip>
             </template>
+            <div class="limit-control">
+              <el-switch
+                v-model="recoveryForm.deviceWriteCountLimitEnabled"
+                @change="handleDeviceLimitChange"
+              />
+              <span class="limit-label" :class="{ 'limit-label-hidden': recoveryForm.deviceWriteCountLimitEnabled }">无限制</span>
             <el-input-number
+                v-if="recoveryForm.deviceWriteCountLimitEnabled"
               v-model="recoveryForm.deviceWriteCountLimit"
-              :min="0"
-              :formatter="formatLimitValue"
-              :parser="parseLimitValue"
-              placeholder="不限制"
-              style="width: 300px"
+                :min="1"
+                style="width: 200px; margin-left: 10px"
+                placeholder="请输入限制次数"
             />
+            </div>
           </el-form-item>
 
           <el-form-item>
             <template #label>
               <span>每个用户答题次数限制</span>
               <el-tooltip
-                content="0表示不限制"
+                content="开启后可以设置每个用户的答题次数限制"
                 placement="top"
               >
                 <el-icon class="hint-icon">
@@ -85,14 +114,20 @@
                 </el-icon>
               </el-tooltip>
             </template>
+            <div class="limit-control">
+              <el-switch
+                v-model="recoveryForm.accountWriteCountLimitEnabled"
+                @change="handleAccountLimitChange"
+              />
+              <span class="limit-label" :class="{ 'limit-label-hidden': recoveryForm.accountWriteCountLimitEnabled }">无限制</span>
             <el-input-number
+                v-if="recoveryForm.accountWriteCountLimitEnabled"
               v-model="recoveryForm.accountWriteCountLimit"
-              :min="0"
-              :formatter="formatLimitValue"
-              :parser="parseLimitValue"
-              placeholder="不限制"
-              style="width: 300px"
+                :min="1"
+                style="width: 200px; margin-left: 10px"
+                placeholder="请输入限制次数"
             />
+            </div>
           </el-form-item>
         </el-form>
       </el-card>
@@ -101,6 +136,17 @@
         <template #header>
           <div class="card-header">
             <span>发布设置</span>
+            <div class="header-buttons">
+              <el-button 
+                v-if="survey.id && survey.status === 'PUBLISHED'"
+                :icon="Check" 
+                type="primary" 
+                @click="handleSavePublishSettings" 
+                :loading="savingPublish"
+                style="margin-right: 10px"
+              >
+                保存设置
+              </el-button>
             <el-button 
               v-if="survey.status !== 'PUBLISHED'"
               :icon="Promotion" 
@@ -119,6 +165,7 @@
             >
               停止发布
             </el-button>
+            </div>
           </div>
         </template>
 
@@ -216,7 +263,7 @@
 import { ref, reactive, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Promotion, Link, Download, Close, DocumentCopy, QuestionFilled } from '@element-plus/icons-vue'
+import { Promotion, Link, Download, Close, DocumentCopy, QuestionFilled, Check } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 
@@ -243,27 +290,46 @@ const publishForm = reactive({
 
 const recoveryForm = reactive({
   maxResponses: 0,
+  maxResponsesEnabled: false,
   ipWriteCountLimit: 0,
+  ipWriteCountLimitEnabled: false,
   deviceWriteCountLimit: 0,
-  accountWriteCountLimit: 0
+  deviceWriteCountLimitEnabled: false,
+  accountWriteCountLimit: 0,
+  accountWriteCountLimitEnabled: false
 })
 
-// 格式化函数：0显示为"不限制"
-const formatLimitValue = (value) => {
-  if (value === null || value === undefined || value === 0 || value === '0') {
-    return '不限制'
+// 开关变化处理函数
+const handleMaxResponsesChange = (enabled) => {
+  if (!enabled) {
+    recoveryForm.maxResponses = 0
+  } else if (recoveryForm.maxResponses === 0) {
+    recoveryForm.maxResponses = 1
   }
-  const num = Number(value)
-  return isNaN(num) ? '不限制' : String(num)
 }
 
-// 解析函数："不限制"转换为0
-const parseLimitValue = (value) => {
-  if (value === '不限制' || value === '' || value === null || value === undefined) {
-    return 0
+const handleIpLimitChange = (enabled) => {
+  if (!enabled) {
+    recoveryForm.ipWriteCountLimit = 0
+  } else if (recoveryForm.ipWriteCountLimit === 0) {
+    recoveryForm.ipWriteCountLimit = 1
   }
-  const num = Number(value)
-  return isNaN(num) ? 0 : num
+}
+
+const handleDeviceLimitChange = (enabled) => {
+  if (!enabled) {
+    recoveryForm.deviceWriteCountLimit = 0
+  } else if (recoveryForm.deviceWriteCountLimit === 0) {
+    recoveryForm.deviceWriteCountLimit = 1
+  }
+}
+
+const handleAccountLimitChange = (enabled) => {
+  if (!enabled) {
+    recoveryForm.accountWriteCountLimit = 0
+  } else if (recoveryForm.accountWriteCountLimit === 0) {
+    recoveryForm.accountWriteCountLimit = 1
+  }
 }
 
 const surveyLink = ref('')
@@ -271,6 +337,8 @@ const qrCodeBase64 = ref('')
 const loadingQRCode = ref(false)
 const publishing = ref(false)
 const unpublishing = ref(false)
+const savingRecovery = ref(false)
+const savingPublish = ref(false)
 const linkInputWidth = ref('auto')
 const measureSpan = ref(null)
 
@@ -333,51 +401,49 @@ const loadRecoverySettings = async (surveyId) => {
     if (res.code === 200 && res.data && res.data.settings) {
       const settings = res.data.settings
       
-      // 从问卷数据或设置中获取最大填写数
-      recoveryForm.maxResponses = survey.value.maxResponses ?? settings.maxResponses ?? 0
+      // 最大填写数
+      const maxResponses = survey.value.maxResponses ?? settings.maxResponses ?? 0
+      recoveryForm.maxResponses = maxResponses
+      recoveryForm.maxResponsesEnabled = maxResponses > 0
       
       // IP限制
-      if (settings.ipWriteCountLimitStatus === false) {
-        // 开关为false，表示未启用限制
-        recoveryForm.ipWriteCountLimit = 0
-      } else if (settings.ipWriteCountLimitStatus === true && settings.ipWriteCountLimit !== undefined && settings.ipWriteCountLimit !== null) {
-        // 开关为true，使用实际限制值
-        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit
-      } else if (settings.ipWriteCountLimit !== undefined && settings.ipWriteCountLimit !== null) {
-        // 没有开关状态，但有值：如果值为1（旧默认值），转换为0；否则使用实际值
-        recoveryForm.ipWriteCountLimit = settings.ipWriteCountLimit === 1 ? 0 : settings.ipWriteCountLimit
-      } else {
-        recoveryForm.ipWriteCountLimit = 0
-      }
+      const ipLimit = settings.ipWriteCountLimit ?? 0
+      recoveryForm.ipWriteCountLimit = ipLimit
+      recoveryForm.ipWriteCountLimitEnabled = ipLimit > 0 || settings.ipWriteCountLimitStatus === true
       
       // 设备限制
-      if (settings.deviceWriteCountLimitStatus === false) {
-        recoveryForm.deviceWriteCountLimit = 0
-      } else if (settings.deviceWriteCountLimitStatus === true && settings.deviceWriteCountLimit !== undefined && settings.deviceWriteCountLimit !== null) {
-        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit
-      } else if (settings.deviceWriteCountLimit !== undefined && settings.deviceWriteCountLimit !== null) {
-        recoveryForm.deviceWriteCountLimit = settings.deviceWriteCountLimit === 1 ? 0 : settings.deviceWriteCountLimit
-      } else {
-        recoveryForm.deviceWriteCountLimit = 0
-      }
+      const deviceLimit = settings.deviceWriteCountLimit ?? 0
+      recoveryForm.deviceWriteCountLimit = deviceLimit
+      recoveryForm.deviceWriteCountLimitEnabled = deviceLimit > 0 || settings.deviceWriteCountLimitStatus === true
       
       // 用户限制
-      if (settings.accountWriteCountLimitStatus === false) {
-        recoveryForm.accountWriteCountLimit = 0
-      } else if (settings.accountWriteCountLimitStatus === true && settings.accountWriteCountLimit !== undefined && settings.accountWriteCountLimit !== null) {
-        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit
-      } else if (settings.accountWriteCountLimit !== undefined && settings.accountWriteCountLimit !== null) {
-        recoveryForm.accountWriteCountLimit = settings.accountWriteCountLimit === 1 ? 0 : settings.accountWriteCountLimit
+      const accountLimit = settings.accountWriteCountLimit ?? 0
+      recoveryForm.accountWriteCountLimit = accountLimit
+      recoveryForm.accountWriteCountLimitEnabled = accountLimit > 0 || settings.accountWriteCountLimitStatus === true
       } else {
-        recoveryForm.accountWriteCountLimit = 0
-      }
-    } else {
       // 如果没有设置，尝试从问卷数据中获取最大填写数
-      recoveryForm.maxResponses = survey.value.maxResponses ?? 0
+      const maxResponses = survey.value.maxResponses ?? 0
+      recoveryForm.maxResponses = maxResponses
+      recoveryForm.maxResponsesEnabled = maxResponses > 0
+      // 其他限制字段保持默认值0，开关关闭
+      recoveryForm.ipWriteCountLimit = 0
+      recoveryForm.ipWriteCountLimitEnabled = false
+      recoveryForm.deviceWriteCountLimit = 0
+      recoveryForm.deviceWriteCountLimitEnabled = false
+        recoveryForm.accountWriteCountLimit = 0
+      recoveryForm.accountWriteCountLimitEnabled = false
     }
   } catch (error) {
     // 如果接口不存在，使用默认值
-    recoveryForm.maxResponses = survey.value.maxResponses ?? 0
+    const maxResponses = survey.value.maxResponses ?? 0
+    recoveryForm.maxResponses = maxResponses
+    recoveryForm.maxResponsesEnabled = maxResponses > 0
+    recoveryForm.ipWriteCountLimit = 0
+    recoveryForm.ipWriteCountLimitEnabled = false
+    recoveryForm.deviceWriteCountLimit = 0
+    recoveryForm.deviceWriteCountLimitEnabled = false
+    recoveryForm.accountWriteCountLimit = 0
+    recoveryForm.accountWriteCountLimitEnabled = false
   }
 }
 
@@ -515,6 +581,90 @@ const handleUnpublish = async () => {
   }
 }
 
+// 保存回收设置
+const handleSaveRecoverySettings = async () => {
+  savingRecovery.value = true
+  try {
+    const surveyId = route.query.id
+    if (!surveyId) {
+      ElMessage.warning('问卷ID不存在')
+      return
+    }
+    
+    // 保存回收限制设置
+    // 根据开关状态决定保存的值：开关关闭保存0，开关打开保存实际值
+    const recoverySettings = {
+      maxResponses: recoveryForm.maxResponsesEnabled ? (recoveryForm.maxResponses ?? 1) : 0,
+      ipWriteCountLimit: recoveryForm.ipWriteCountLimitEnabled ? (recoveryForm.ipWriteCountLimit ?? 1) : 0,
+      deviceWriteCountLimit: recoveryForm.deviceWriteCountLimitEnabled ? (recoveryForm.deviceWriteCountLimit ?? 1) : 0,
+      accountWriteCountLimit: recoveryForm.accountWriteCountLimitEnabled ? (recoveryForm.accountWriteCountLimit ?? 1) : 0,
+      // 保存开关状态
+      ipWriteCountLimitStatus: recoveryForm.ipWriteCountLimitEnabled,
+      deviceWriteCountLimitStatus: recoveryForm.deviceWriteCountLimitEnabled,
+      accountWriteCountLimitStatus: recoveryForm.accountWriteCountLimitEnabled
+    }
+    
+    // 同时更新问卷的最大填写数
+    const updateData = {
+      maxResponses: recoveryForm.maxResponsesEnabled ? (recoveryForm.maxResponses ?? 1) : 0
+    }
+    
+    try {
+      // 更新问卷基本信息
+      await surveyApi.updateSurvey(surveyId, updateData)
+      
+      // 保存回收限制设置
+      const res = await formApi.saveFormSetting(surveyId, recoverySettings)
+      if (res.code === 200) {
+        ElMessage.success('回收设置保存成功')
+        // 重新加载问卷数据以同步max_responses
+        await loadSurveyData()
+      } else {
+        ElMessage.error(res.message || '保存失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || error.message || '保存失败')
+    }
+  } catch (error) {
+    ElMessage.error('保存失败')
+  } finally {
+    savingRecovery.value = false
+  }
+}
+
+// 保存发布设置
+const handleSavePublishSettings = async () => {
+  savingPublish.value = true
+  try {
+    const surveyId = route.query.id
+    if (!surveyId) {
+      ElMessage.warning('问卷ID不存在')
+      return
+    }
+    
+    // 更新问卷基本信息（访问权限、密码、时间）
+    const updateData = {
+      accessType: publishForm.accessType,
+      password: publishForm.accessType === 'PASSWORD' ? publishForm.password : '',
+      startTime: publishForm.startTime || null,
+      endTime: publishForm.endTime || null
+    }
+    
+    const res = await surveyApi.updateSurvey(surveyId, updateData)
+    if (res.code === 200) {
+      ElMessage.success('发布设置保存成功')
+      // 重新加载数据以确保数据同步
+      await loadSurveyData()
+    } else {
+      ElMessage.error(res.message || '保存失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message || '保存失败')
+  } finally {
+    savingPublish.value = false
+  }
+}
+
 
 onMounted(() => {
   checkMobile()
@@ -572,6 +722,14 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* 二维码和链接卡片内容 */
@@ -677,6 +835,25 @@ onUnmounted(() => {
   padding-right: 12px;
 }
 
+.limit-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.limit-label {
+  color: #909399;
+  font-size: 14px;
+  min-width: 60px;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+
+.limit-label-hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
 .card-header span {
   white-space: nowrap;
   overflow: hidden;
@@ -713,6 +890,21 @@ onUnmounted(() => {
     width: 100% !important;
   }
 
+  .limit-control {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .limit-control .el-switch {
+    margin-bottom: 5px;
+  }
+
+  .limit-control .el-input-number {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
 
   .cards-row {
     flex-direction: column;
@@ -730,8 +922,15 @@ onUnmounted(() => {
     gap: 10px;
   }
 
-  .card-header .el-button {
+  .header-buttons {
     width: 100%;
+    flex-direction: column;
+  }
+
+  .card-header .el-button,
+  .header-buttons .el-button {
+    width: 100%;
+    margin-right: 0 !important;
   }
 
   .publish-success-card {

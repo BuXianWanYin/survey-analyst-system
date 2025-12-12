@@ -255,8 +255,7 @@ const getStatusType = (status) => {
 const getAccessTypeText = (accessType) => {
   const typeMap = {
     PUBLIC: '公开',
-    PASSWORD: '密码',
-    PRIVATE: '私有'
+    PASSWORD: '密码'
   }
   return typeMap[accessType] || '未知'
 }

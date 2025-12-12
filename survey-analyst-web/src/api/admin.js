@@ -71,6 +71,31 @@ export const adminApi = {
     return request.get('/admin/system/overview')
   },
 
+  // 获取今日新增问卷数
+  getTodaySurveys() {
+    return request.get('/admin/system/today-surveys')
+  },
+
+  // 获取问卷创建趋势
+  getSurveyCreateTrend(timeRange = '30d') {
+    return request.get('/admin/system/survey-create-trend', { params: { timeRange } })
+  },
+
+  // 获取问卷填写趋势
+  getResponseTrend(timeRange = '30d') {
+    return request.get('/admin/system/response-trend', { params: { timeRange } })
+  },
+
+  // 获取平均填写时长趋势
+  getResponseDurationTrend(timeRange = '30d') {
+    return request.get('/admin/system/response-duration-trend', { params: { timeRange } })
+  },
+
+  // 获取登录趋势
+  getLoginTrend(timeRange = '30d') {
+    return request.get('/admin/system/login-trend', { params: { timeRange } })
+  },
+
   // 公共模板管理
   getTemplateList(params) {
     return request.get('/admin/template/page', { params })

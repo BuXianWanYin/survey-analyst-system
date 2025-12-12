@@ -976,9 +976,16 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handleRequiredChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1063,9 +1070,16 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handleRequiredChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1135,9 +1149,16 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handleRequiredChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1245,9 +1266,16 @@
                       </el-radio>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handleRequiredChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
@@ -1399,9 +1427,16 @@
                       @change="handlePropertyChange"
                     />
                   </el-form-item>
+                  <el-form-item label="是否必填">
+                    <el-switch
+                      v-model="activeData.required"
+                      @change="handleRequiredChange"
+                    />
+                  </el-form-item>
                   <el-form-item label="是否禁用">
                     <el-switch
                       v-model="activeData.disabled"
+                      :disabled="activeData.required"
                       @change="handlePropertyChange"
                     />
                   </el-form-item>

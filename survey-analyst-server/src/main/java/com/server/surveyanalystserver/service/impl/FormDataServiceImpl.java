@@ -11,6 +11,7 @@ import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.mapper.FormDataMapper;
 import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.mapper.SurveyMapper;
+import com.server.surveyanalystserver.service.EmailService;
 import com.server.surveyanalystserver.service.FileService;
 import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormDataService;
@@ -49,6 +50,9 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     
     @Autowired
     private FileService fileService;
+    
+    @Autowired(required = false)
+    private EmailService emailService;
     
     @Override
     public void validateBeforeFill(String formKey, HttpServletRequest request, String deviceId, Long userId) {
@@ -477,6 +481,47 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
                 }
                 
                 result.put("submitSettings", submitSettings);
+                
+                // 发送邮件通知（如果启用了邮件通知）
+                if (emailService != null) {
+                    try {
+                        // 检查是否启用了邮件通知
+                        Object emailNotifyObj = settings.get("emailNotify");
+                        boolean emailNotify = false;
+                        if (emailNotifyObj instanceof Boolean) {
+                            emailNotify = (Boolean) emailNotifyObj;
+                        } else if (emailNotifyObj != null) {
+                            emailNotify = Boolean.parseBoolean(emailNotifyObj.toString());
+                        }
+                        
+                        // 如果启用了邮件通知，获取邮箱列表并发送
+                        if (emailNotify) {
+                            Object emailListObj = settings.get("newWriteNotifyEmail");
+                            if (emailListObj != null && !emailListObj.toString().trim().isEmpty()) {
+                                String emailList = emailListObj.toString();
+                                
+                                // 获取问卷标题
+                                Survey survey = surveyMapper.selectById(formConfig.getSurveyId());
+                                String surveyTitle = survey != null ? survey.getTitle() : "未命名问卷";
+                                
+                                // 发送邮件通知（异步发送，不阻塞主流程）
+                                try {
+                                    emailService.sendSurveySubmitNotification(
+                                        emailList, 
+                                        surveyTitle, 
+                                        formConfig.getSurveyId()
+                                    );
+                                } catch (Exception e) {
+                                    // 邮件发送失败不影响主流程，只记录日志
+                                    System.err.println("发送邮件通知失败: " + e.getMessage());
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // 邮件通知处理失败不影响主流程
+                        System.err.println("处理邮件通知时出错: " + e.getMessage());
+                    }
+                }
             }
         }
         

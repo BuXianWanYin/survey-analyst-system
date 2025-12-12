@@ -27,13 +27,6 @@ public class ExportController {
         exportService.exportSurveyData(surveyId, response);
     }
 
-    @ApiOperation(value = "导出统计数据", notes = "导出问卷的统计数据（Excel格式）")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping("/survey/{surveyId}/statistics")
-    public void exportStatistics(@PathVariable Long surveyId, HttpServletResponse response) {
-        exportService.exportStatistics(surveyId, response);
-    }
-
     @ApiOperation(value = "导出分析报告", notes = "导出问卷的分析报告（PDF格式）")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/survey/{surveyId}/report")

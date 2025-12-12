@@ -603,99 +603,6 @@ public class ExportServiceImpl implements ExportService {
     }
 
     @Override
-    public void exportStatistics(Long surveyId, HttpServletResponse response) {
-        try {
-            Survey survey = surveyMapper.selectById(surveyId);
-            if (survey == null) {
-                throw new RuntimeException("问卷不存在");
-            }
-
-            // 设置响应头
-            String fileName = URLEncoder.encode(survey.getTitle() + "_统计数据", "UTF-8")
-                    .replaceAll("\\+", "%20");
-            response.reset();
-            response.resetBuffer(); // 重置缓冲区，确保没有数据被写入
-            response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            response.setHeader("Pragma", "no-cache");
-            response.setDateHeader("Expires", 0);
-            
-            OutputStream outputStream = response.getOutputStream();
-
-            // 获取问卷统计
-            Map<String, Object> surveyStats = statisticsService.getSurveyStatistics(surveyId);
-
-            // 构建统计数据
-            List<Map<String, Object>> exportData = new ArrayList<>();
-
-            // 问卷概览
-            Map<String, Object> overview = new HashMap<>();
-            overview.put("统计项", "问卷概览");
-            overview.put("总填写数", surveyStats.get("totalResponses"));
-            overview.put("已完成", surveyStats.get("completedResponses"));
-            overview.put("草稿数", surveyStats.get("draftResponses"));
-            overview.put("有效率(%)", surveyStats.get("validRate"));
-            exportData.add(overview);
-
-            // 题目统计（基于form_item）
-            try {
-                // 获取formKey
-                com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
-                if (formConfig != null && formConfig.getFormKey() != null) {
-                    // 获取所有表单项
-                    List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formConfig.getFormKey());
-                    
-                    for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
-                        if (formItem.getFormItemId() == null) continue;
-                        
-                        try {
-                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId(), surveyId);
-                            
-                            Map<String, Object> row = new HashMap<>();
-                            row.put("统计项", "题目统计");
-                            row.put("题目", formItem.getLabel());
-                            row.put("题型", formItem.getType());
-
-                            if (questionStat.containsKey("optionStats")) {
-                                @SuppressWarnings("unchecked")
-                                List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
-                                for (Map<String, Object> optionStat : optionStats) {
-                                    Map<String, Object> optionRow = new HashMap<>(row);
-                                    optionRow.put("选项", optionStat.get("optionLabel"));
-                                    optionRow.put("选择人数", optionStat.get("count"));
-                                    optionRow.put("比例(%)", optionStat.get("percentage"));
-                                    exportData.add(optionRow);
-                                }
-                            } else {
-                                row.put("有效答案数", questionStat.get("validAnswers"));
-                                row.put("总答案数", questionStat.get("totalAnswers"));
-                                exportData.add(row);
-                            }
-                        } catch (Exception e) {
-                            // 如果某个题目统计失败，跳过
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // 如果获取题目统计失败，只导出问卷概览
-            }
-
-            // 使用EasyExcel导出
-            EasyExcel.write(outputStream, Map.class)
-                    .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
-                    .sheet("统计数据")
-                    .doWrite(exportData);
-            
-            // 确保数据刷新到输出流
-            outputStream.flush();
-
-        } catch (IOException e) {
-            throw new RuntimeException("导出失败", e);
-        }
-    }
-
-    @Override
     public void exportAnalysisReport(Long surveyId, HttpServletResponse response) {
         try {
             Survey survey = surveyMapper.selectById(surveyId);
@@ -722,6 +629,8 @@ public class ExportServiceImpl implements ExportService {
             PdfWriter writer = new PdfWriter(outputStream);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
+            // 设置页面边距，确保内容能正常显示
+            document.setMargins(36, 36, 36, 36);
 
             // 标题
             Paragraph title = new Paragraph(survey.getTitle() + " - 分析报告")
@@ -760,6 +669,13 @@ public class ExportServiceImpl implements ExportService {
             document.add(statsTable);
 
             // 题目统计（基于form_item）
+            Paragraph questionsTitle = new Paragraph("二、题目统计")
+                    .setFontSize(16)
+                    .setBold()
+                    .setMarginTop(20)
+                    .setMarginBottom(10);
+            document.add(questionsTitle);
+            
             try {
                 // 获取formKey
                 com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
@@ -767,51 +683,172 @@ public class ExportServiceImpl implements ExportService {
                     // 获取所有表单项
                     List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formConfig.getFormKey());
                     
-                    int index = 1;
-                    for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
-                        if (formItem.getFormItemId() == null) continue;
-                        
-                        try {
-                            Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId(), surveyId);
-
-                            Paragraph qTitle = new Paragraph(index + ". " + formItem.getLabel())
-                                    .setFontSize(14)
-                                    .setBold()
-                                    .setMarginTop(15)
-                                    .setMarginBottom(5);
-                            document.add(qTitle);
-
-                            if (questionStat.containsKey("optionStats")) {
-                                @SuppressWarnings("unchecked")
-                                List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
-                                float[] optionColumnWidths = {40, 30, 30};
-                                Table optionTable = new Table(optionColumnWidths);
-                                optionTable.addCell(createCell("选项", true));
-                                optionTable.addCell(createCell("选择人数", true));
-                                optionTable.addCell(createCell("比例(%)", true));
-                                
-                                for (Map<String, Object> optionStat : optionStats) {
-                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("optionLabel")), false));
-                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("count")), false));
-                                    optionTable.addCell(createCell(String.valueOf(optionStat.get("percentage")), false));
-                                }
-                                document.add(optionTable);
-                            } else {
-                                Paragraph statText = new Paragraph("有效答案数：" + questionStat.get("validAnswers") + 
-                                                               "，总答案数：" + questionStat.get("totalAnswers"))
-                                        .setFontSize(12)
-                                        .setMarginBottom(10);
-                                document.add(statText);
+                    // 过滤掉展示类组件（与Excel导出保持一致）
+                    List<com.server.surveyanalystserver.entity.FormItem> inputFormItems = formItems.stream()
+                            .filter(item -> {
+                                String type = item.getType();
+                                return !"DIVIDER".equals(type) && 
+                                       !"IMAGE".equals(type) && 
+                                       !"IMAGE_CAROUSEL".equals(type) && 
+                                       !"DESC_TEXT".equals(type);
+                            })
+                            .sorted(Comparator.comparing(com.server.surveyanalystserver.entity.FormItem::getSort, Comparator.nullsLast(Long::compareTo)))
+                            .collect(Collectors.toList());
+                    
+                    if (inputFormItems.isEmpty()) {
+                        Paragraph noQuestionsText = new Paragraph("暂无题目数据")
+                                .setFontSize(12)
+                                .setMarginBottom(10);
+                        document.add(noQuestionsText);
+                    } else {
+                        int index = 1;
+                        System.out.println("开始处理题目统计，共 " + inputFormItems.size() + " 个题目");
+                        for (com.server.surveyanalystserver.entity.FormItem formItem : inputFormItems) {
+                            if (formItem.getFormItemId() == null) {
+                                System.out.println("跳过formItemId为空的题目: " + index);
+                                continue;
                             }
                             
-                            index++;
-                        } catch (Exception e) {
-                            // 如果某个题目统计失败，跳过
+                            System.out.println("正在处理第 " + index + " 题: " + formItem.getLabel() + " (ID: " + formItem.getFormItemId() + ")");
+                            
+                            try {
+                                Map<String, Object> questionStat = statisticsService.getQuestionStatistics(formItem.getFormItemId(), surveyId);
+
+                                try {
+                                    Paragraph qTitle = new Paragraph(index + ". " + formItem.getLabel() + " (" + formItem.getType() + ")")
+                                            .setFontSize(14)
+                                            .setBold()
+                                            .setMarginTop(15)
+                                            .setMarginBottom(5);
+                                    document.add(qTitle);
+                                    System.out.println("已添加题目标题: " + index);
+                                } catch (Exception titleEx) {
+                                    System.err.println("添加题目标题失败: " + formItem.getFormItemId() + ", 错误: " + titleEx.getMessage());
+                                    titleEx.printStackTrace();
+                                }
+
+                                try {
+                                    if (questionStat.containsKey("optionStats")) {
+                                        @SuppressWarnings("unchecked")
+                                        List<Map<String, Object>> optionStats = (List<Map<String, Object>>) questionStat.get("optionStats");
+                                        
+                                        if (optionStats != null && !optionStats.isEmpty()) {
+                                            float[] optionColumnWidths = {40, 30, 30};
+                                            Table optionTable = new Table(optionColumnWidths);
+                                            optionTable.addCell(createCell("选项", true));
+                                            optionTable.addCell(createCell("选择人数", true));
+                                            optionTable.addCell(createCell("比例(%)", true));
+                                            
+                                            for (Map<String, Object> optionStat : optionStats) {
+                                                try {
+                                                    optionTable.addCell(createCell(String.valueOf(optionStat.getOrDefault("optionLabel", "")), false));
+                                                    optionTable.addCell(createCell(String.valueOf(optionStat.getOrDefault("count", 0)), false));
+                                                    optionTable.addCell(createCell(String.valueOf(optionStat.getOrDefault("percentage", 0)) + "%", false));
+                                                } catch (Exception cellEx) {
+                                                    System.err.println("添加选项单元格失败: " + cellEx.getMessage());
+                                                    cellEx.printStackTrace();
+                                                }
+                                            }
+                                            try {
+                                                document.add(optionTable);
+                                                System.out.println("已添加选项表格，共 " + optionStats.size() + " 个选项");
+                                            } catch (Exception addTableEx) {
+                                                System.err.println("添加选项表格到文档失败: " + addTableEx.getMessage());
+                                                addTableEx.printStackTrace();
+                                                throw addTableEx; // 重新抛出，让外层catch处理
+                                            }
+                                        } else {
+                                            try {
+                                                Paragraph noDataText = new Paragraph("暂无选项统计数据")
+                                                        .setFontSize(12)
+                                                        .setMarginBottom(10);
+                                                document.add(noDataText);
+                                                System.out.println("该题目无选项统计数据");
+                                            } catch (Exception addNoDataEx) {
+                                                System.err.println("添加无数据文本失败: " + addNoDataEx.getMessage());
+                                                addNoDataEx.printStackTrace();
+                                            }
+                                        }
+                                    } else {
+                                        try {
+                                            Object validAnswers = questionStat.getOrDefault("validAnswers", 0);
+                                            Object totalAnswers = questionStat.getOrDefault("totalAnswers", 0);
+                                            Paragraph statText = new Paragraph("有效答案数：" + validAnswers + 
+                                                                           "，总答案数：" + totalAnswers)
+                                                    .setFontSize(12)
+                                                    .setMarginBottom(10);
+                                            document.add(statText);
+                                            System.out.println("已添加文本题统计数据");
+                                        } catch (Exception addStatEx) {
+                                            System.err.println("添加文本题统计数据失败: " + addStatEx.getMessage());
+                                            addStatEx.printStackTrace();
+                                        }
+                                    }
+                                } catch (Exception tableEx) {
+                                    System.err.println("添加题目表格失败: " + formItem.getFormItemId() + ", 错误: " + tableEx.getMessage());
+                                    tableEx.printStackTrace();
+                                    
+                                    try {
+                                        Paragraph errorText = new Paragraph("添加统计表格失败: " + (tableEx.getMessage() != null ? tableEx.getMessage() : "未知错误"))
+                                                .setFontSize(12)
+                                                .setMarginBottom(10);
+                                        document.add(errorText);
+                                    } catch (Exception addErrorEx) {
+                                        System.err.println("添加错误信息失败: " + addErrorEx.getMessage());
+                                        addErrorEx.printStackTrace();
+                                    }
+                                }
+                                
+                                index++;
+                                System.out.println("题目 " + (index - 1) + " 处理完成");
+                            } catch (Exception e) {
+                                // 如果某个题目统计失败，记录错误但仍添加题目标题
+                                System.err.println("题目统计失败: " + formItem.getFormItemId() + ", 错误: " + e.getMessage());
+                                e.printStackTrace();
+                                
+                                try {
+                                    Paragraph qTitle = new Paragraph(index + ". " + formItem.getLabel() + " (" + formItem.getType() + ")")
+                                            .setFontSize(14)
+                                            .setBold()
+                                            .setMarginTop(15)
+                                            .setMarginBottom(5);
+                                    document.add(qTitle);
+                                } catch (Exception addTitleEx) {
+                                    System.err.println("添加错误题目标题失败: " + addTitleEx.getMessage());
+                                    addTitleEx.printStackTrace();
+                                }
+                                
+                                try {
+                                    Paragraph errorText = new Paragraph("统计数据获取失败: " + (e.getMessage() != null ? e.getMessage() : "未知错误"))
+                                            .setFontSize(12)
+                                            .setMarginBottom(10);
+                                    document.add(errorText);
+                                } catch (Exception addErrorEx) {
+                                    System.err.println("添加错误信息失败: " + addErrorEx.getMessage());
+                                    addErrorEx.printStackTrace();
+                                }
+                                
+                                index++;
+                                System.out.println("题目 " + (index - 1) + " 处理失败，但已添加错误信息");
+                            }
                         }
+                        System.out.println("所有题目处理完成，共处理 " + (index - 1) + " 个题目");
                     }
+                } else {
+                    Paragraph noConfigText = new Paragraph("表单配置不存在")
+                            .setFontSize(12)
+                            .setMarginBottom(10);
+                    document.add(noConfigText);
                 }
             } catch (Exception e) {
-                // 如果获取题目统计失败，只导出问卷概览
+                // 如果获取题目统计失败，记录错误信息
+                System.err.println("获取题目统计失败: " + e.getMessage());
+                e.printStackTrace();
+                
+                Paragraph errorText = new Paragraph("获取题目统计失败: " + e.getMessage())
+                        .setFontSize(12)
+                        .setMarginBottom(10);
+                document.add(errorText);
             }
 
             // 关闭文档

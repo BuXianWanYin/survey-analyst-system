@@ -312,8 +312,6 @@ public class OperationLogAspect {
         // 用户-数据导出
         else if (url.contains("/export/survey/") && url.contains("/data")) {
             return "用户导出问卷数据";
-        } else if (url.contains("/export/survey/") && url.contains("/statistics")) {
-            return "用户导出统计数据";
         } else if (url.contains("/export/survey/") && url.contains("/report")) {
             return "用户导出分析报告";
         }
