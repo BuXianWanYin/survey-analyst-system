@@ -2,16 +2,34 @@
   <div class="statistics-container">
     <el-card>
       <template #header>
-        <div class="card-header">
-          <span>统计分析</span>
-          <div class="header-actions">
-            <el-button-group>
-              <el-button size="small" @click="handleShare" :icon="Share">分享</el-button>
-              <el-button size="small" @click="handleExportPDF" :icon="Document">PDF</el-button>
-              <el-button size="small" @click="handleExportExcel" :icon="Download">Excel</el-button>
-              <el-button size="small" @click="showSettingsDialog = true" :icon="Tools">设置</el-button>
-            </el-button-group>
-            <el-button @click="handleRefresh" style="margin-left: 10px">刷新数据</el-button>
+        <div class="card-header" :class="{ 'mobile-header': isMobile }">
+          <span class="header-title">统计分析</span>
+          <div class="header-actions" :class="{ 'mobile-actions': isMobile }">
+            <!-- 移动端：下拉菜单 -->
+            <el-dropdown v-if="isMobile" trigger="click" @command="handleActionCommand">
+              <el-button size="small" type="primary">
+                更多操作 <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="share" :icon="Share">分享</el-dropdown-item>
+                  <el-dropdown-item command="pdf" :icon="Document">导出PDF</el-dropdown-item>
+                  <el-dropdown-item command="excel" :icon="Download">导出Excel</el-dropdown-item>
+                  <el-dropdown-item command="settings" :icon="Tools">设置</el-dropdown-item>
+                  <el-dropdown-item command="refresh">刷新数据</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <!-- 桌面端：按钮组 -->
+            <template v-else>
+              <el-button-group>
+                <el-button size="small" @click="handleShare" :icon="Share">分享</el-button>
+                <el-button size="small" @click="handleExportPDF" :icon="Document">PDF</el-button>
+                <el-button size="small" @click="handleExportExcel" :icon="Download">Excel</el-button>
+                <el-button size="small" @click="showSettingsDialog = true" :icon="Tools">设置</el-button>
+              </el-button-group>
+              <el-button @click="handleRefresh" style="margin-left: 10px">刷新数据</el-button>
+            </template>
           </div>
         </div>
       </template>
@@ -25,16 +43,16 @@
                 <span>问卷整体统计</span>
               </template>
               <el-row :gutter="20">
-                <el-col :span="6">
+                <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
                   <el-statistic title="总填写数" :value="surveyStatistics.totalResponses || 0" />
                 </el-col>
-                <el-col :span="6">
+                <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
                   <el-statistic title="已完成数" :value="surveyStatistics.completedResponses || 0" />
                 </el-col>
-                <el-col :span="6">
+                <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
                   <el-statistic title="草稿数" :value="surveyStatistics.draftResponses || 0" />
                 </el-col>
-                <el-col :span="6">
+                <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
                   <el-statistic title="有效率" :value="surveyStatistics.validRate || 0" suffix="%" :precision="2" />
                 </el-col>
               </el-row>
@@ -58,8 +76,8 @@
                     <el-tag size="small" style="margin-left: 10px">{{ getTypeLabel(item.type) }}</el-tag>
                   </div>
                   <!-- 图表类型切换（仅选择题显示） -->
-                  <div v-if="isChoiceType(item.type)" class="chart-type-switcher">
-                    <el-button-group size="small">
+                  <div v-if="isChoiceType(item.type)" class="chart-type-switcher" :class="{ 'mobile-switcher': isMobile }">
+                    <el-button-group :size="isMobile ? 'default' : 'small'">
                       <el-button
                         v-for="chartType in chartTypes"
                         :key="chartType.value"
@@ -163,10 +181,14 @@
               
               <!-- 文本题统计 -->
               <div v-else-if="isTextType(item.type)" class="stat-text">
-                <div class="text-stat-info">
-                  <el-statistic title="有效答案数" :value="getTextStat(item.formItemId, 'count') || 0" />
-                  <el-statistic title="总答案数" :value="getTextStat(item.formItemId, 'total') || 0" />
-                </div>
+                <el-row :gutter="20" class="text-stat-info">
+                  <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-statistic title="有效答案数" :value="getTextStat(item.formItemId, 'count') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-statistic title="总答案数" :value="getTextStat(item.formItemId, 'total') || 0" />
+                  </el-col>
+                </el-row>
                 <!-- 词云图（仅 INPUT 和 TEXTAREA 显示） -->
                 <div v-if="(item.type === 'INPUT' || item.type === 'TEXTAREA') && getWordCloudOption(item.formItemId)" class="wordcloud-wrapper">
                   <h4 style="margin-bottom: 15px">高频词分析</h4>
@@ -180,10 +202,14 @@
               
               <!-- 签名组件统计 -->
               <div v-else-if="item.type === 'SIGN_PAD'" class="stat-signature">
-                <div class="signature-stat-info">
-                  <el-statistic title="有效签名数" :value="getSignatureStat(item.formItemId, 'count') || 0" />
-                  <el-statistic title="总填写数" :value="getSignatureStat(item.formItemId, 'total') || 0" />
-                </div>
+                <el-row :gutter="20" class="signature-stat-info">
+                  <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-statistic title="有效签名数" :value="getSignatureStat(item.formItemId, 'count') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-statistic title="总填写数" :value="getSignatureStat(item.formItemId, 'total') || 0" />
+                  </el-col>
+                </el-row>
                 <!-- 签名预览列表 -->
                 <div v-if="getSignaturePreviewList(item.formItemId).length > 0" class="signature-preview-list">
                   <h4 style="margin-bottom: 15px">签名预览（{{ getSignaturePreviewList(item.formItemId).length }} 个签名）</h4>
@@ -207,11 +233,17 @@
               
               <!-- 文件上传统计 -->
               <div v-else-if="item.type === 'UPLOAD'" class="stat-upload">
-                <div class="upload-stat-info">
-                  <el-statistic title="有效上传数" :value="getUploadStat(item.formItemId, 'validUploads') || 0" />
-                  <el-statistic title="总答案数" :value="getUploadStat(item.formItemId, 'totalAnswers') || 0" />
-                  <el-statistic title="上传率" :value="getUploadStat(item.formItemId, 'uploadRate') || 0" suffix="%" :precision="2" />
-                </div>
+                <el-row :gutter="20" class="upload-stat-info">
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="有效上传数" :value="getUploadStat(item.formItemId, 'validUploads') || 0" />
+                  </el-col>
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="总答案数" :value="getUploadStat(item.formItemId, 'totalAnswers') || 0" />
+                  </el-col>
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="上传率" :value="getUploadStat(item.formItemId, 'uploadRate') || 0" suffix="%" :precision="2" />
+                  </el-col>
+                </el-row>
                 
                 <div class="upload-detail-info">
                   <div class="detail-row">
@@ -255,11 +287,17 @@
               
               <!-- 图片上传统计 -->
               <div v-else-if="item.type === 'IMAGE_UPLOAD'" class="stat-image-upload">
-                <div class="upload-stat-info">
-                  <el-statistic title="有效上传数" :value="getUploadStat(item.formItemId, 'validUploads') || 0" />
-                  <el-statistic title="总答案数" :value="getUploadStat(item.formItemId, 'totalAnswers') || 0" />
-                  <el-statistic title="上传率" :value="getUploadStat(item.formItemId, 'uploadRate') || 0" suffix="%" :precision="2" />
-                </div>
+                <el-row :gutter="20" class="upload-stat-info">
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="有效上传数" :value="getUploadStat(item.formItemId, 'validUploads') || 0" />
+                  </el-col>
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="总答案数" :value="getUploadStat(item.formItemId, 'totalAnswers') || 0" />
+                  </el-col>
+                  <el-col :xs="8" :sm="8" :md="8" :lg="8" :xl="8">
+                    <el-statistic title="上传率" :value="getUploadStat(item.formItemId, 'uploadRate') || 0" suffix="%" :precision="2" />
+                  </el-col>
+                </el-row>
                 
                 <div class="upload-detail-info">
                   <div class="detail-row">
@@ -302,12 +340,20 @@
               
               <!-- 评分题统计 -->
               <div v-else-if="isRatingType(item.type)" class="stat-rating">
-                <div class="rating-stat-info">
-                  <el-statistic title="平均分" :value="getRatingStat(item.formItemId, 'averageRating') || 0" :precision="2" />
-                  <el-statistic title="最高分" :value="getRatingStat(item.formItemId, 'maxRating') || 0" />
-                  <el-statistic title="最低分" :value="getRatingStat(item.formItemId, 'minRating') || 0" />
-                  <el-statistic title="评分人数" :value="getRatingStat(item.formItemId, 'totalRatings') || 0" />
-                </div>
+                <el-row :gutter="20" class="rating-stat-info">
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="平均分" :value="getRatingStat(item.formItemId, 'averageRating') || 0" :precision="2" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="最高分" :value="getRatingStat(item.formItemId, 'maxRating') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="最低分" :value="getRatingStat(item.formItemId, 'minRating') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="评分人数" :value="getRatingStat(item.formItemId, 'totalRatings') || 0" />
+                  </el-col>
+                </el-row>
                 <!-- 评分分布图 -->
                 <div v-if="getRatingChartOption(item.formItemId)" class="chart-wrapper">
                   <v-chart
@@ -320,188 +366,22 @@
               
               <!-- 数字题统计 -->
               <div v-else-if="item.type === 'NUMBER'" class="stat-number">
-                <div class="number-stat-info">
-                  <el-statistic title="平均值" :value="getNumberStat(item.formItemId, 'average') || 0" :precision="2" />
-                  <el-statistic title="最大值" :value="getNumberStat(item.formItemId, 'max') || 0" />
-                  <el-statistic title="最小值" :value="getNumberStat(item.formItemId, 'min') || 0" />
-                  <el-statistic title="有效数据数" :value="getNumberStat(item.formItemId, 'count') || 0" />
-                </div>
+                <el-row :gutter="20" class="number-stat-info">
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="平均值" :value="getNumberStat(item.formItemId, 'average') || 0" :precision="2" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="最大值" :value="getNumberStat(item.formItemId, 'max') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="最小值" :value="getNumberStat(item.formItemId, 'min') || 0" />
+                  </el-col>
+                  <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
+                    <el-statistic title="有效数据数" :value="getNumberStat(item.formItemId, 'count') || 0" />
+                  </el-col>
+                </el-row>
               </div>
             </el-card>
-          </div>
-        </el-tab-pane>
-        
-        <el-tab-pane label="分类统计" name="filter">
-          <div v-loading="filterLoading" class="filter-statistics-content">
-            <el-card>
-              <template #header>
-                <div class="filter-header">
-                  <span>分类筛选</span>
-                  <div>
-                    <el-button size="small" type="primary" @click="handleFilterApply" :loading="filterLoading">
-                      应用筛选
-                    </el-button>
-                    <el-button size="small" @click="handleFilterReset" style="margin-left: 10px">重置</el-button>
-                  </div>
-                </div>
-              </template>
-              
-              <el-form :model="filterForm" label-width="120px">
-                <el-form-item label="筛选条件1">
-                  <el-select
-                    v-model="filterForm.condition1.questionId"
-                    placeholder="请选择题目"
-                    style="width: 300px"
-                    @change="handleFilterQuestion1Change"
-                  >
-                    <el-option
-                      v-for="item in filterQuestionOptions"
-                      :key="item.formItemId"
-                      :label="item.label"
-                      :value="item.formItemId"
-                    />
-                  </el-select>
-                  <el-select
-                    v-if="filterForm.condition1.questionId"
-                    v-model="filterForm.condition1.optionValue"
-                    placeholder="请选择选项"
-                    style="width: 300px; margin-left: 10px"
-                  >
-                    <el-option
-                      v-for="opt in getFilterOptions(filterForm.condition1.questionId)"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
-                </el-form-item>
-                
-                <el-form-item label="筛选条件2（可选）">
-                  <el-select
-                    v-model="filterForm.condition2.questionId"
-                    placeholder="请选择题目"
-                    style="width: 300px"
-                    clearable
-                    @change="handleFilterQuestion2Change"
-                  >
-                    <el-option
-                      v-for="item in filterQuestionOptions2"
-                      :key="item.formItemId"
-                      :label="item.label"
-                      :value="item.formItemId"
-                    />
-                  </el-select>
-                  <el-select
-                    v-if="filterForm.condition2.questionId"
-                    v-model="filterForm.condition2.optionValue"
-                    placeholder="请选择选项"
-                    style="width: 300px; margin-left: 10px"
-                  >
-                    <el-option
-                      v-for="opt in getFilterOptions(filterForm.condition2.questionId)"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-form>
-            </el-card>
-
-            <!-- 筛选结果 -->
-            <div v-if="filteredStatistics" class="filtered-statistics">
-              <el-card style="margin-top: 20px">
-                <template #header>
-                  <span>筛选结果统计（共 {{ getFilteredTotalCount() }} 条数据）</span>
-                </template>
-                
-                <!-- 显示筛选后的题目统计 -->
-                <el-card
-                  v-for="(item, index) in formItems"
-                  :key="item.formItemId"
-                  style="margin-bottom: 20px"
-                >
-                  <template #header>
-                    <div class="question-header">
-                      <div class="question-title">
-                        <span class="question-number">第{{ index + 1 }}题：</span>
-                        <span>{{ item.label }}</span>
-                        <el-tag size="small" style="margin-left: 10px">{{ getTypeLabel(item.type) }}</el-tag>
-                      </div>
-                    </div>
-                  </template>
-                  
-                  <!-- 选择题统计 -->
-                  <div v-if="isChoiceType(item.type)" class="stat-chart">
-                    <div v-if="displaySettings.showTable" class="stat-table-wrapper">
-                      <el-table
-                        :data="getFilteredTableData(item.formItemId)"
-                        border
-                        style="width: 100%; margin-bottom: 20px"
-                      >
-                        <el-table-column prop="optionLabel" label="选项" width="200" />
-                        <el-table-column prop="count" label="小计" align="center" width="100" />
-                        <el-table-column label="比例" min-width="300">
-                          <template #default="{ row }">
-                            <div class="percentage-cell">
-                              <div v-if="displaySettings.showBar" class="bar-wrapper">
-                                <div class="bar-bg">
-                                  <div class="bar-fill" :style="{ width: row.percentage + '%' }"></div>
-                                </div>
-                              </div>
-                              <span class="percentage-text">{{ row.percentage }}%</span>
-                            </div>
-                          </template>
-                        </el-table-column>
-                      </el-table>
-                      <div class="table-footer">
-                        <strong>本题有效填写人次：{{ getFilteredTotalCount(item.formItemId) }}</strong>
-                      </div>
-                    </div>
-                    
-                    <!-- 图表 -->
-                    <div
-                      v-if="getCurrentChartType(item.formItemId) !== 'table' && getFilteredChartOption(item.formItemId)"
-                      class="chart-wrapper"
-                    >
-                      <v-chart
-                        :option="getFilteredChartOption(item.formItemId)"
-                        style="height: 300px"
-                        autoresize
-                      />
-                    </div>
-                  </div>
-                  
-                  <!-- 文本题统计 -->
-                  <div v-else-if="isTextType(item.type)" class="stat-text">
-                    <div class="text-stat-info">
-                      <el-statistic title="有效答案数" :value="getFilteredTextStat(item.formItemId, 'count') || 0" />
-                      <el-statistic title="总答案数" :value="getFilteredTextStat(item.formItemId, 'total') || 0" />
-                    </div>
-                  </div>
-                  
-                  <!-- 评分题统计 -->
-                  <div v-else-if="isRatingType(item.type)" class="stat-rating">
-                    <div class="rating-stat-info">
-                      <el-statistic title="平均分" :value="getFilteredRatingStat(item.formItemId, 'averageRating') || 0" :precision="2" />
-                      <el-statistic title="最高分" :value="getFilteredRatingStat(item.formItemId, 'maxRating') || 0" />
-                      <el-statistic title="最低分" :value="getFilteredRatingStat(item.formItemId, 'minRating') || 0" />
-                      <el-statistic title="评分人数" :value="getFilteredRatingStat(item.formItemId, 'totalRatings') || 0" />
-                    </div>
-                  </div>
-                  
-                  <!-- 数字题统计 -->
-                  <div v-else-if="item.type === 'NUMBER'" class="stat-number">
-                    <div class="number-stat-info">
-                      <el-statistic title="平均值" :value="getFilteredNumberStat(item.formItemId, 'average') || 0" :precision="2" />
-                      <el-statistic title="最大值" :value="getFilteredNumberStat(item.formItemId, 'max') || 0" />
-                      <el-statistic title="最小值" :value="getFilteredNumberStat(item.formItemId, 'min') || 0" />
-                      <el-statistic title="有效数据数" :value="getFilteredNumberStat(item.formItemId, 'count') || 0" />
-                    </div>
-                  </div>
-                </el-card>
-              </el-card>
-            </div>
           </div>
         </el-tab-pane>
         
@@ -516,89 +396,220 @@
             <!-- 交叉分析 -->
             <el-card v-if="analysisType === 'cross'" class="cross-analysis-card">
               <template #header>
-                <span>交叉分析</span>
-                <span style="font-size: 12px; color: #909399; margin-left: 10px">
-                  分析不同 X 值下，Y 的分布差异
-                </span>
+                <div class="card-header">
+                  <div>
+                    <span style="font-weight: 500">交叉分析</span>
+                    <el-tooltip content="交叉分析用于探索两个选择题之间的关系，例如：不同性别（题目1）在选择某个产品（题目2）上的分布差异。通过交叉表和热力图，可以直观地看出两个变量之间的关联性。" placement="right">
+                      <el-icon style="margin-left: 8px; cursor: help; color: #909399;"><QuestionFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
+                </div>
               </template>
+              
+              <!-- 功能说明 -->
+              <el-alert
+                type="info"
+                :closable="false"
+                style="margin-bottom: 20px"
+              >
+                <template #title>
+                  <span style="font-size: 13px">
+                    交叉分析用于分析两个选择题之间的关系。例如：分析"性别"与"产品偏好"之间的关系，查看不同性别人群在各个产品选择上的分布差异。
+                  </span>
+                </template>
+              </el-alert>
+              
               <el-form :model="crossAnalysisForm" label-width="120px">
-                <el-form-item label="题目1">
-                  <el-select
-                    v-model="crossAnalysisForm.formItemId1"
-                    placeholder="请选择题目1"
-                    style="width: 300px"
-                    @change="handleCrossQuestion1Change"
-                  >
-                    <el-option
-                      v-for="item in choiceFormItems"
-                      :key="item.formItemId"
-                      :label="item.label"
-                      :value="item.formItemId"
-                    />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="题目2">
-                  <el-select
-                    v-model="crossAnalysisForm.formItemId2"
-                    placeholder="请选择题目2"
-                    style="width: 300px"
-                    @change="handleCrossQuestion2Change"
-                  >
-                    <el-option
-                      v-for="item in crossQuestion2Options"
-                      :key="item.formItemId"
-                      :label="item.label"
-                      :value="item.formItemId"
-                    />
-                  </el-select>
-                </el-form-item>
+                <el-row :gutter="20">
+                  <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-form-item label="题目1（行）">
+                      <el-select
+                        v-model="crossAnalysisForm.formItemId1"
+                        placeholder="请选择第一个题目"
+                        style="width: 100%"
+                        @change="handleCrossQuestion1Change"
+                      >
+                        <el-option
+                          v-for="item in choiceFormItems"
+                          :key="item.formItemId"
+                          :label="`${item.label} (${getTypeLabel(item.type)})`"
+                          :value="item.formItemId"
+                        />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+                    <el-form-item label="题目2（列）">
+                      <el-select
+                        v-model="crossAnalysisForm.formItemId2"
+                        placeholder="请选择第二个题目"
+                        style="width: 100%"
+                        @change="handleCrossQuestion2Change"
+                      >
+                        <el-option
+                          v-for="item in crossQuestion2Options"
+                          :key="item.formItemId"
+                          :label="`${item.label} (${getTypeLabel(item.type)})`"
+                          :value="item.formItemId"
+                        />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
                 <el-form-item>
                   <el-button type="primary" @click="handleCrossAnalyze" :loading="crossAnalyzing">
-                    开始分析
+                    开始交叉分析
                   </el-button>
-                  <el-button type="info" @click="autoStartCrossAnalysis" :loading="crossAnalyzing" style="margin-left: 10px">
-                    自动分析（前两个题目）
+                  <el-button 
+                    type="info" 
+                    @click="autoStartCrossAnalysis" 
+                    :loading="crossAnalyzing" 
+                    :disabled="choiceFormItems.length < 2"
+                    style="margin-left: 10px"
+                  >
+                    <el-tooltip content="自动选择问卷中的前两个选择题进行交叉分析，无需手动选择" placement="top">
+                      <span>快速分析（前两个题目）</span>
+                    </el-tooltip>
+                  </el-button>
+                  <el-button 
+                    v-if="crossAnalysisResult" 
+                    @click="togglePercentageView" 
+                    style="margin-left: 10px"
+                  >
+                    {{ showPercentage ? '显示数量' : '显示百分比' }}
                   </el-button>
                 </el-form-item>
               </el-form>
 
               <!-- 交叉分析结果 -->
               <div v-if="crossAnalysisResult" class="cross-result-section">
+                <!-- 统计摘要 -->
+                <el-card style="margin-bottom: 20px">
+                  <template #header>
+                    <span style="font-weight: 500">统计摘要</span>
+                  </template>
+                  <el-row :gutter="20">
+                    <el-col :xs="12" :sm="8" :md="6" :lg="6" :xl="6">
+                      <el-statistic title="总样本数" :value="crossAnalysisSummary.total" />
+                    </el-col>
+                    <el-col :xs="12" :sm="8" :md="6" :lg="6" :xl="6">
+                      <el-statistic title="题目1选项数" :value="crossAnalysisSummary.rowsCount" />
+                    </el-col>
+                    <el-col :xs="12" :sm="8" :md="6" :lg="6" :xl="6">
+                      <el-statistic title="题目2选项数" :value="crossAnalysisSummary.colsCount" />
+                    </el-col>
+                    <el-col :xs="12" :sm="8" :md="6" :lg="6" :xl="6">
+                      <el-statistic title="有效回答数" :value="crossAnalysisSummary.validCount" />
+                    </el-col>
+                  </el-row>
+                </el-card>
+                
                 <!-- 交叉表 -->
-                <div class="cross-table-section">
-                  <h3>交叉表</h3>
-                  <el-table :data="crossTableData" border>
-                    <el-table-column prop="rowLabel" label="" width="150" fixed="left" />
-                    <el-table-column
-                      v-for="col in crossTableColumns"
-                      :key="col"
-                      :prop="col"
-                      :label="col"
-                      width="120"
-                    />
-                  </el-table>
-                </div>
+                <el-card style="margin-bottom: 20px">
+                  <template #header>
+                    <div class="card-header">
+                      <span style="font-weight: 500">交叉表</span>
+                      <span style="font-size: 12px; color: #909399; margin-left: 10px">
+                        {{ crossAnalysisResult.question1?.title || '' }} × {{ crossAnalysisResult.question2?.title || '' }}
+                      </span>
+                    </div>
+                  </template>
+                  <div class="cross-table-wrapper">
+                    <el-table :data="crossTableData" border style="width: 100%">
+                      <el-table-column prop="rowLabel" label="题目1 \ 题目2" width="150" fixed="left" />
+                      <el-table-column
+                        v-for="col in crossTableColumns"
+                        :key="col"
+                        :prop="col"
+                        :label="col"
+                        width="120"
+                        align="center"
+                      >
+                        <template #default="{ row }">
+                          <div v-if="showPercentage">
+                            <div style="font-weight: 500">{{ row[col]?.count || 0 }}</div>
+                            <div style="color: #909399; font-size: 12px">
+                              {{ row[col]?.rowPercentage ? row[col].rowPercentage.toFixed(1) + '%' : '0%' }}
+                            </div>
+                            <div style="color: #67C23A; font-size: 11px">
+                              ({{ row[col]?.colPercentage ? row[col].colPercentage.toFixed(1) + '%' : '0%' }})
+                            </div>
+                          </div>
+                          <span v-else>{{ row[col]?.count || 0 }}</span>
+                        </template>
+                      </el-table-column>
+                      <el-table-column 
+                        v-if="showPercentage"
+                        prop="rowTotal" 
+                        label="行合计" 
+                        width="100" 
+                        align="center"
+                        fixed="right"
+                      >
+                        <template #default="{ row }">
+                          <div style="font-weight: 500">{{ row.rowTotal || 0 }}</div>
+                          <div style="color: #909399; font-size: 12px">100%</div>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                    <!-- 列合计行 -->
+                    <div v-if="showPercentage && crossTableSummary" class="cross-table-summary">
+                      <div class="summary-label">列合计</div>
+                      <div 
+                        v-for="col in crossTableColumns" 
+                        :key="col"
+                        class="summary-cell"
+                      >
+                        <div style="font-weight: 500">{{ crossTableSummary[col]?.total || 0 }}</div>
+                        <div style="color: #909399; font-size: 12px">100%</div>
+                      </div>
+                      <div class="summary-cell summary-total">
+                        <div style="font-weight: 500">{{ crossAnalysisSummary.total }}</div>
+                        <div style="color: #909399; font-size: 12px">100%</div>
+                      </div>
+                    </div>
+                    <div v-if="showPercentage" class="percentage-legend" style="margin-top: 10px; font-size: 12px; color: #909399">
+                      <span>说明：</span>
+                      <span style="margin-left: 10px">数字 = 数量</span>
+                      <span style="margin-left: 10px">灰色 = 行百分比（占该行的比例）</span>
+                      <span style="margin-left: 10px">绿色 = 列百分比（占该列的比例）</span>
+                    </div>
+                  </div>
+                </el-card>
 
                 <!-- 热力图 -->
-                <div class="heatmap-section">
-                  <h3>热力图</h3>
+                <el-card>
+                  <template #header>
+                    <div class="card-header">
+                      <span style="font-weight: 500">热力图</span>
+                      <span style="font-size: 12px; color: #909399; margin-left: 10px">
+                        颜色越深表示数量越多
+                      </span>
+                    </div>
+                  </template>
                   <v-chart
                     v-if="heatmapChartOption"
                     :option="heatmapChartOption"
                     style="height: 400px"
                     autoresize
                   />
-                </div>
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
               </div>
+              <el-empty v-else-if="analysisType === 'cross' && !crossAnalyzing" description="请选择两个题目并开始分析" />
             </el-card>
             
             <!-- 对比分析 -->
             <el-card v-if="analysisType === 'compare'" class="compare-analysis-card">
               <template #header>
-                <span>对比分析</span>
-                <span style="font-size: 12px; color: #909399; margin-left: 10px">
-                  对比不同群体在各题目上的分布差异
-                </span>
+                <div class="card-header">
+                  <div>
+                    <span style="font-weight: 500">对比分析</span>
+                    <span style="font-size: 12px; color: #909399; margin-left: 10px">
+                      对比不同群体在各题目上的分布差异
+                    </span>
+                  </div>
+                </div>
               </template>
               <el-form :model="compareForm" label-width="120px">
                 <el-form-item label="对比变量">
@@ -631,36 +642,38 @@
                   style="margin-bottom: 20px"
                 >
                   <template #header>
-                    <span>{{ compareItem.questionTitle }}</span>
+                    <span style="font-weight: 500">{{ compareItem.questionTitle }}</span>
                   </template>
-                  <el-table :data="compareItem.compareData" border style="width: 100%">
-                    <el-table-column prop="optionLabel" label="选项" width="200" />
-                    <el-table-column
-                      v-for="group in compareItem.groups"
-                      :key="group"
-                      :prop="group"
-                      :label="group"
-                      align="center"
-                    >
-                      <template #default="{ row }">
-                        <div>
-                          <div>{{ row[group]?.count || 0 }}</div>
-                          <div style="color: #909399; font-size: 12px">
-                            {{ row[group]?.percentage || 0 }}%
+                  <div class="compare-table-wrapper">
+                    <el-table :data="compareItem.compareData" border style="width: 100%">
+                      <el-table-column prop="optionLabel" label="选项" width="200" />
+                      <el-table-column
+                        v-for="group in compareItem.groups"
+                        :key="group"
+                        :prop="group"
+                        :label="group"
+                        align="center"
+                      >
+                        <template #default="{ row }">
+                          <div>
+                            <div style="font-weight: 500">{{ row[group]?.count || 0 }}</div>
+                            <div style="color: #909399; font-size: 12px">
+                              {{ row[group]?.percentage || 0 }}%
+                            </div>
                           </div>
-                        </div>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
                 </el-card>
               </div>
               <el-empty v-else-if="analysisType === 'compare' && !compareAnalyzing" description="请选择对比变量并开始分析" />
             </el-card>
 
-            <!-- 数据分析的其他图表（趋势、来源、设备等） -->
+            <!-- 数据分析的其他图表（趋势、设备、时段等） -->
             <el-row v-if="analysisType === 'cross'" :gutter="20" style="margin-top: 20px">
               <!-- 填写趋势 -->
-              <el-col :span="12">
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
                 <el-card>
                   <template #header>
                     <div class="card-header">
@@ -683,7 +696,7 @@
               </el-col>
               
               <!-- 设备类型分布 -->
-              <el-col :span="12">
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
                 <el-card>
                   <template #header>
                     <span>设备类型分布</span>
@@ -699,25 +712,9 @@
               </el-col>
             </el-row>
             
-            <el-row :gutter="20" style="margin-top: 20px">
-              <!-- 填写来源 -->
-              <el-col :span="12">
-                <el-card>
-                  <template #header>
-                    <span>填写来源</span>
-                  </template>
-                  <v-chart
-                    v-if="sourceChartOption"
-                    :option="sourceChartOption"
-                    style="height: 300px"
-                    autoresize
-                  />
-                  <el-empty v-else description="暂无数据" />
-                </el-card>
-              </el-col>
-              
-              <!-- 填写时段 -->
-              <el-col :span="12">
+            <!-- 填写时段分布、填写时长分布 -->
+            <el-row v-if="analysisType === 'cross'" :gutter="20" style="margin-top: 20px">
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
                 <el-card>
                   <template #header>
                     <span>填写时段分布</span>
@@ -725,6 +722,87 @@
                   <v-chart
                     v-if="hourChartOption"
                     :option="hourChartOption"
+                    style="height: 300px"
+                    autoresize
+                  />
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
+              </el-col>
+              
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+                <el-card>
+                  <template #header>
+                    <span>填写时长分布</span>
+                  </template>
+                  <v-chart
+                    v-if="durationChartOption"
+                    :option="durationChartOption"
+                    style="height: 300px"
+                    autoresize
+                  />
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
+              </el-col>
+            </el-row>
+            
+            <!-- 浏览器类型、题目完成率 -->
+            <el-row v-if="analysisType === 'cross'" :gutter="20" style="margin-top: 20px">
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+                <el-card>
+                  <template #header>
+                    <span>浏览器类型分布</span>
+                  </template>
+                  <v-chart
+                    v-if="browserChartOption"
+                    :option="browserChartOption"
+                    style="height: 300px"
+                    autoresize
+                  />
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
+              </el-col>
+              
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+                <el-card>
+                  <template #header>
+                    <span>题目完成率</span>
+                  </template>
+                  <v-chart
+                    v-if="completionRateChartOption"
+                    :option="completionRateChartOption"
+                    style="height: 300px"
+                    autoresize
+                  />
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
+              </el-col>
+            </el-row>
+            
+            <!-- 填写质量分布、选项热度对比 -->
+            <el-row v-if="analysisType === 'cross'" :gutter="20" style="margin-top: 20px">
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+                <el-card>
+                  <template #header>
+                    <span>填写质量分布</span>
+                  </template>
+                  <v-chart
+                    v-if="qualityChartOption"
+                    :option="qualityChartOption"
+                    style="height: 300px"
+                    autoresize
+                  />
+                  <el-empty v-else description="暂无数据" />
+                </el-card>
+              </el-col>
+              
+              <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+                <el-card>
+                  <template #header>
+                    <span>选项热度对比（TOP 10）</span>
+                  </template>
+                  <v-chart
+                    v-if="optionHeatChartOption"
+                    :option="optionHeatChartOption"
                     style="height: 300px"
                     autoresize
                   />
@@ -785,6 +863,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useWindowSize } from '@vueuse/core'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { PieChart, BarChart, LineChart, HeatmapChart } from 'echarts/charts'
@@ -797,7 +876,7 @@ import {
 } from 'echarts/components'
 import 'echarts-wordcloud'
 import VChart from 'vue-echarts'
-import { Share, Document, Download, Tools } from '@element-plus/icons-vue'
+import { Share, Document, Download, Tools, ArrowDown, QuestionFilled } from '@element-plus/icons-vue'
 import { formApi, analysisApi, questionApi, statisticsApi, exportApi } from '@/api'
 import dayjs from 'dayjs'
 import { generateChartOption } from '@/utils/chartConfig'
@@ -806,6 +885,10 @@ import { loadDisplaySettings, saveDisplaySettings } from '@/utils/displaySetting
 import { getImageUrl } from '@/utils/image'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+
+// 响应式检测（用于移动端特殊处理，如下拉菜单）
+const { width } = useWindowSize()
+const isMobile = computed(() => width.value < 768)
 
 use([
   CanvasRenderer,
@@ -833,8 +916,12 @@ const surveyStatistics = ref(null) // 问卷整体统计
 const timeRange = ref('30d')
 const trendChartOption = ref(null)
 const deviceChartOption = ref(null)
-const sourceChartOption = ref(null)
 const hourChartOption = ref(null)
+const durationChartOption = ref(null) // 填写时长分布
+const completionRateChartOption = ref(null) // 题目完成率
+const browserChartOption = ref(null) // 浏览器类型分布
+const qualityChartOption = ref(null) // 填写质量分布
+const optionHeatChartOption = ref(null) // 选项热度对比
 
 // 显示设置
 const showSettingsDialog = ref(false)
@@ -842,45 +929,19 @@ const displaySettings = reactive(loadDisplaySettings())
 const currentColorScheme = ref(loadColorScheme())
 const currentColorSchemeId = ref(currentColorScheme.value.id)
 
-// 图表类型配置
+// 图表类型配置（表格放在最前面）
 const chartTypes = [
+  { value: 'table', label: '表格' },
   { value: 'pie', label: '饼状' },
   { value: 'ring', label: '圆环' },
   { value: 'bar', label: '柱状' },
   { value: 'line', label: '折线' },
-  { value: 'horizontalBar', label: '条形' },
-  { value: 'table', label: '表格' }
+  { value: 'horizontalBar', label: '条形' }
 ]
 
 // 每个题目的图表类型（存储在localStorage，用于响应式更新）
 const chartTypeMap = ref({})
 
-// 分类统计相关
-const filterLoading = ref(false)
-const filterForm = reactive({
-  condition1: {
-    questionId: null,
-    optionValue: null
-  },
-  condition2: {
-    questionId: null,
-    optionValue: null
-  }
-})
-const filteredStatistics = ref(null)
-
-// 分类统计题目选项（只显示选择题）
-const filterQuestionOptions = computed(() => {
-  return formItems.value.filter(item => isChoiceType(item.type))
-})
-
-// 分类统计题目2选项（排除题目1）
-const filterQuestionOptions2 = computed(() => {
-  if (!filterForm.condition1.questionId) {
-    return filterQuestionOptions.value
-  }
-  return filterQuestionOptions.value.filter(item => item.formItemId !== filterForm.condition1.questionId)
-})
 
 // 数据分析相关
 const analysisType = ref('cross') // cross: 交叉分析, compare: 对比分析
@@ -894,7 +955,10 @@ const crossAnalyzing = ref(false)
 const crossAnalysisResult = ref(null)
 const crossTableData = ref([])
 const crossTableColumns = ref([])
+const crossTableSummary = ref(null)
+const crossAnalysisSummary = ref({ total: 0, rowsCount: 0, colsCount: 0, validCount: 0 })
 const heatmapChartOption = ref(null)
+const showPercentage = ref(false)
 
 // 对比分析相关
 const compareForm = reactive({
@@ -1025,16 +1089,24 @@ const loadStatisticsFallback = async () => {
 }
 
 // 自动开始交叉分析
+// 快速分析：自动选择前两个选择题进行交叉分析
 const autoStartCrossAnalysis = () => {
   // 检查是否有选择题（至少2个）
   const choiceItems = formItems.value.filter(item => isChoiceType(item.type))
-  if (choiceItems.length >= 2) {
-    // 自动选择前两个选择题
-    crossAnalysisForm.formItemId1 = choiceItems[0].formItemId
-    crossAnalysisForm.formItemId2 = choiceItems[1].formItemId
-    // 自动执行分析（不显示提示信息）
-    handleCrossAnalyze(false)
+  if (choiceItems.length < 2) {
+    ElMessage.warning('至少需要2个选择题才能进行交叉分析')
+    return
   }
+  
+  // 自动选择前两个选择题
+  crossAnalysisForm.formItemId1 = choiceItems[0].formItemId
+  crossAnalysisForm.formItemId2 = choiceItems[1].formItemId
+  
+  // 显示提示信息
+  ElMessage.info(`正在分析：${choiceItems[0].label} × ${choiceItems[1].label}`)
+  
+  // 自动执行分析（不显示警告信息）
+  handleCrossAnalyze(false)
 }
 
 // 计算选择题统计
@@ -1380,6 +1452,27 @@ const formatFileSize = (bytes) => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
+// 处理移动端操作命令
+const handleActionCommand = (command) => {
+  switch (command) {
+    case 'share':
+      handleShare()
+      break
+    case 'pdf':
+      handleExportPDF()
+      break
+    case 'excel':
+      handleExportExcel()
+      break
+    case 'settings':
+      showSettingsDialog.value = true
+      break
+    case 'refresh':
+      handleRefresh()
+      break
+  }
+}
+
 // 获取评分统计
 const getRatingStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
@@ -1531,6 +1624,14 @@ const handleCrossAnalyze = async (showWarning = true) => {
   }
 }
 
+// 切换百分比视图
+const togglePercentageView = () => {
+  showPercentage.value = !showPercentage.value
+  if (crossAnalysisResult.value?.crossTable) {
+    buildCrossTable(crossAnalysisResult.value.crossTable)
+  }
+}
+
 // 构建交叉表
 const buildCrossTable = (crossTable) => {
   if (!crossTable) return
@@ -1542,14 +1643,59 @@ const buildCrossTable = (crossTable) => {
   })
 
   crossTableColumns.value = Array.from(cols)
+  
+  // 计算总计
+  const summary = {}
+  let total = 0
+  
+  // 计算列合计
+  crossTableColumns.value.forEach(col => {
+    summary[col] = { total: 0 }
+    rows.forEach(row => {
+      const count = crossTable[row][col] || 0
+      summary[col].total += count
+      total += count
+    })
+  })
+  
+  // 计算行合计和百分比
+  const rowTotals = {}
+  rows.forEach(row => {
+    rowTotals[row] = 0
+    crossTableColumns.value.forEach(col => {
+      rowTotals[row] += crossTable[row][col] || 0
+    })
+  })
 
   crossTableData.value = rows.map(row => {
-    const rowData = { rowLabel: row }
+    const rowTotal = rowTotals[row] || 0
+    const rowData = { rowLabel: row, rowTotal }
+    
     crossTableColumns.value.forEach(col => {
-      rowData[col] = crossTable[row][col] || 0
+      const count = crossTable[row][col] || 0
+      if (showPercentage.value) {
+        // 计算行百分比和列百分比
+        const rowPercentage = rowTotal > 0 ? (count / rowTotal * 100) : 0
+        const colPercentage = summary[col].total > 0 ? (count / summary[col].total * 100) : 0
+        rowData[col] = {
+          count,
+          rowPercentage,
+          colPercentage
+        }
+      } else {
+        rowData[col] = { count }
+      }
     })
     return rowData
   })
+  
+  crossTableSummary.value = summary
+  crossAnalysisSummary.value = {
+    total,
+    rowsCount: rows.length,
+    colsCount: crossTableColumns.value.length,
+    validCount: total
+  }
 }
 
 // 构建热力图
@@ -1565,34 +1711,57 @@ const buildHeatmap = (crossTable) => {
   const xAxisData = Array.from(cols)
   const yAxisData = rows
   const data = []
+  let maxValue = 0
+
+  // 计算总计用于百分比
+  const total = rows.reduce((sum, row) => {
+    return sum + xAxisData.reduce((s, col) => s + (crossTable[row][col] || 0), 0)
+  }, 0)
 
   rows.forEach((row, rowIndex) => {
     xAxisData.forEach((col, colIndex) => {
       const value = crossTable[row][col] || 0
-      data.push([colIndex, rowIndex, value])
+      // 使用百分比作为热力图的值，更易比较
+      const percentage = total > 0 ? (value / total * 100) : 0
+      data.push([colIndex, rowIndex, percentage])
+      maxValue = Math.max(maxValue, value)
     })
   })
 
   heatmapChartOption.value = {
     title: {
       text: '交叉分析热力图',
-      left: 'center'
+      left: 'center',
+      textStyle: {
+        fontSize: 16
+      }
     },
     tooltip: {
       position: 'top',
       formatter: function(params) {
-        return `${yAxisData[params.data[1]]} × ${xAxisData[params.data[0]]}<br/>数量: ${params.data[2]}`
+        const rowLabel = yAxisData[params.data[1]]
+        const colLabel = xAxisData[params.data[0]]
+        // 从原始数据获取实际数量
+        const actualValue = crossTable[rowLabel][colLabel] || 0
+        const percentage = params.data[2]
+        return `${rowLabel} × ${colLabel}<br/>数量: ${actualValue}<br/>占比: ${percentage.toFixed(2)}%`
       }
     },
     grid: {
-      height: '50%',
-      top: '10%'
+      height: '60%',
+      top: '15%',
+      left: '10%',
+      right: '10%'
     },
     xAxis: {
       type: 'category',
       data: xAxisData,
       splitArea: {
         show: true
+      },
+      axisLabel: {
+        rotate: 45,
+        interval: 0
       }
     },
     yAxis: {
@@ -1604,23 +1773,39 @@ const buildHeatmap = (crossTable) => {
     },
     visualMap: {
       min: 0,
-      max: Math.max(...data.map(d => d[2])),
+      max: Math.max(...data.map(d => d[2]), 1),
       calculable: true,
       orient: 'horizontal',
       left: 'center',
-      bottom: '15%'
+      bottom: '10%',
+      inRange: {
+        color: ['#E8F4F8', '#409EFF', '#67C23A', '#E6A23C', '#F56C6C']
+      },
+      text: ['高', '低'],
+      textStyle: {
+        color: '#333'
+      }
     },
     series: [{
       name: '交叉分析',
       type: 'heatmap',
       data: data,
       label: {
-        show: true
+        show: true,
+        formatter: function(params) {
+          // 显示实际数量而不是百分比
+          return crossTable[yAxisData[params.data[1]]][xAxisData[params.data[0]]] || 0
+        },
+        color: '#333',
+        fontSize: 12,
+        fontWeight: 'bold'
       },
       emphasis: {
         itemStyle: {
           shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+          shadowColor: 'rgba(0, 0, 0, 0.5)',
+          borderWidth: 2,
+          borderColor: '#409EFF'
         }
       }
     }]
@@ -1724,31 +1909,7 @@ const loadTrendData = async () => {
       }
       }
       
-    // 3. 使用后端API获取填写来源
-    const sourceRes = await statisticsApi.getResponseSource(surveyId.value)
-    if (sourceRes.code === 200 && sourceRes.data) {
-      const sourceCount = sourceRes.data.sourceCount || {}
-      const sourceData = Object.entries(sourceCount).map(([name, value]) => ({
-        name: name === 'direct' ? '直接访问' : name === 'share' ? '分享链接' : name,
-        value: value
-      }))
-      sourceChartOption.value = {
-        title: { text: '填写来源', left: 'center' },
-        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-        legend: {
-          orient: 'vertical',
-          left: 'left'
-        },
-        series: [{
-          name: '填写来源',
-          type: 'pie',
-          radius: '60%',
-          data: sourceData
-        }]
-      }
-    }
-    
-    // 4. 填写时段分布（需要从Response数据计算，暂时保留前端计算）
+    // 3. 填写时段分布（需要从Response数据计算，暂时保留前端计算）
     // 这里可以从后端获取Response列表来计算
     const dataRes = await formApi.getFormDataList(formKey.value, {
       pageNum: 1,
@@ -1756,6 +1917,8 @@ const loadTrendData = async () => {
     })
     if (dataRes.code === 200 && dataRes.data) {
       const dataList = dataRes.data.records || []
+      
+      // 填写时段分布
       const hourData = calculateHourData(dataList)
       hourChartOption.value = {
         title: { text: '填写时段分布', left: 'center' },
@@ -1771,6 +1934,166 @@ const loadTrendData = async () => {
           data: hourData.counts,
           itemStyle: { color: '#409EFF' }
         }]
+      }
+      
+      // 填写时长分布
+      const durationData = calculateDurationData(dataList)
+      if (durationData) {
+        durationChartOption.value = {
+          title: { text: '填写时长分布', left: 'center' },
+          tooltip: { 
+            trigger: 'axis',
+            formatter: (params) => {
+              const param = params[0]
+              return `${param.name}<br/>数量: ${param.value}`
+            }
+          },
+          xAxis: {
+            type: 'category',
+            data: durationData.labels,
+            name: '时长区间'
+          },
+          yAxis: { type: 'value', name: '填写数量' },
+          series: [{
+            name: '填写数量',
+            type: 'bar',
+            data: durationData.counts,
+            itemStyle: { color: '#67C23A' }
+          }]
+        }
+      }
+      
+      // 浏览器类型分布
+      const browserData = calculateBrowserData(dataList)
+      if (browserData && browserData.length > 0) {
+        browserChartOption.value = {
+          title: { text: '浏览器类型分布', left: 'center' },
+          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+          legend: {
+            orient: 'vertical',
+            left: 'left'
+          },
+          series: [{
+            name: '浏览器类型',
+            type: 'pie',
+            radius: '60%',
+            data: browserData,
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }]
+        }
+      }
+      
+      // 题目完成率
+      const completionData = calculateCompletionRate(dataList)
+      if (completionData && completionData.length > 0) {
+        completionRateChartOption.value = {
+          title: { text: '题目完成率', left: 'center' },
+          tooltip: { 
+            trigger: 'axis',
+            formatter: (params) => {
+              const param = params[0]
+              return `${param.name}<br/>完成率: ${param.value}%`
+            }
+          },
+          xAxis: {
+            type: 'category',
+            data: completionData.map(item => item.questionTitle.length > 8 ? item.questionTitle.substring(0, 8) + '...' : item.questionTitle),
+            axisLabel: {
+              rotate: 45,
+              interval: 0
+            }
+          },
+          yAxis: { 
+            type: 'value', 
+            name: '完成率(%)',
+            max: 100
+          },
+          series: [{
+            name: '完成率',
+            type: 'bar',
+            data: completionData.map(item => item.rate),
+            itemStyle: { 
+              color: (params) => {
+                const rate = params.value
+                if (rate >= 90) return '#67C23A'
+                if (rate >= 70) return '#E6A23C'
+                return '#F56C6C'
+              }
+            },
+            label: {
+              show: true,
+              position: 'top',
+              formatter: '{c}%'
+            }
+          }]
+        }
+      }
+      
+      // 填写质量分布
+      const qualityData = calculateQualityData(dataList)
+      if (qualityData) {
+        qualityChartOption.value = {
+          title: { text: '填写质量分布', left: 'center' },
+          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+          legend: {
+            orient: 'vertical',
+            left: 'left'
+          },
+          series: [{
+            name: '填写质量',
+            type: 'pie',
+            radius: '60%',
+            data: qualityData,
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }]
+        }
+      }
+      
+      // 选项热度对比
+      const optionHeatData = calculateOptionHeat(dataList)
+      if (optionHeatData && optionHeatData.length > 0) {
+        optionHeatChartOption.value = {
+          title: { text: '选项热度对比（TOP 10）', left: 'center' },
+          tooltip: { 
+            trigger: 'axis',
+            formatter: (params) => {
+              const param = params[0]
+              return `${param.name}<br/>选择次数: ${param.value}`
+            }
+          },
+          xAxis: {
+            type: 'value',
+            name: '选择次数'
+          },
+          yAxis: {
+            type: 'category',
+            data: optionHeatData.map(item => item.optionLabel),
+            axisLabel: {
+              interval: 0,
+              formatter: (value) => {
+                return value.length > 10 ? value.substring(0, 10) + '...' : value
+              }
+            }
+          },
+          series: [{
+            name: '选择次数',
+            type: 'bar',
+            data: optionHeatData.map(item => item.count),
+            itemStyle: { color: '#F56C6C' }
+          }]
+        }
       }
     }
   } catch (error) {
@@ -1837,6 +2160,164 @@ const calculateHourData = (dataList) => {
   
   const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`)
   return { hours, counts: hourCounts }
+}
+
+// 计算填写时长分布
+const calculateDurationData = (dataList) => {
+  const durations = []
+  dataList.forEach(item => {
+    if (item.completeTime && item.completeTime > 0) {
+      durations.push(item.completeTime) // 单位：秒
+    }
+  })
+  
+  if (durations.length === 0) return null
+  
+  // 将时长分为区间：0-30秒, 30-60秒, 1-3分钟, 3-5分钟, 5-10分钟, 10分钟以上
+  const ranges = [
+    { label: '0-30秒', min: 0, max: 30 },
+    { label: '30秒-1分钟', min: 30, max: 60 },
+    { label: '1-3分钟', min: 60, max: 180 },
+    { label: '3-5分钟', min: 180, max: 300 },
+    { label: '5-10分钟', min: 300, max: 600 },
+    { label: '10分钟以上', min: 600, max: Infinity }
+  ]
+  
+  const counts = ranges.map(range => {
+    return durations.filter(d => d >= range.min && d < range.max).length
+  })
+  
+  const labels = ranges.map(r => r.label)
+  return { labels, counts }
+}
+
+// 计算浏览器类型分布
+const calculateBrowserData = (dataList) => {
+  const browserMap = {}
+  dataList.forEach(item => {
+    const browser = item.submitBrowser || '未知'
+    // 简化浏览器名称
+    let browserName = browser
+    if (browser.includes('Chrome')) browserName = 'Chrome'
+    else if (browser.includes('Firefox')) browserName = 'Firefox'
+    else if (browser.includes('Safari')) browserName = 'Safari'
+    else if (browser.includes('Edge')) browserName = 'Edge'
+    else if (browser.includes('Opera')) browserName = 'Opera'
+    else if (browser.includes('IE')) browserName = 'IE'
+    
+    browserMap[browserName] = (browserMap[browserName] || 0) + 1
+  })
+  
+  return Object.entries(browserMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+}
+
+// 计算题目完成率
+const calculateCompletionRate = (dataList) => {
+  if (!formItems.value || formItems.value.length === 0) return []
+  
+  const totalResponses = dataList.length
+  if (totalResponses === 0) return []
+  
+  const completionRates = formItems.value.map(item => {
+    let filledCount = 0
+    dataList.forEach(data => {
+      const originalData = data.originalData || {}
+      const value = originalData[item.formItemId]
+      if (value !== null && value !== undefined && value !== '') {
+        // 如果是数组，检查是否为空数组
+        if (Array.isArray(value)) {
+          if (value.length > 0) filledCount++
+        } else {
+          filledCount++
+        }
+      }
+    })
+    
+    const rate = totalResponses > 0 ? (filledCount / totalResponses * 100).toFixed(2) : 0
+    return {
+      questionTitle: item.label,
+      filledCount,
+      totalCount: totalResponses,
+      rate: parseFloat(rate)
+    }
+  })
+  
+  return completionRates.sort((a, b) => a.rate - b.rate) // 按完成率从低到高排序
+}
+
+// 计算填写质量分布
+const calculateQualityData = (dataList) => {
+  if (!formItems.value || formItems.value.length === 0) return null
+  
+  const totalQuestions = formItems.value.length
+  const qualityMap = {
+    '优秀 (90%以上)': 0,
+    '良好 (70%-90%)': 0,
+    '一般 (50%-70%)': 0,
+    '较差 (50%以下)': 0
+  }
+  
+  dataList.forEach(data => {
+    const originalData = data.originalData || {}
+    let filledCount = 0
+    
+    formItems.value.forEach(item => {
+      const value = originalData[item.formItemId]
+      if (value !== null && value !== undefined && value !== '') {
+        if (Array.isArray(value)) {
+          if (value.length > 0) filledCount++
+        } else {
+          filledCount++
+        }
+      }
+    })
+    
+    const rate = totalQuestions > 0 ? (filledCount / totalQuestions * 100) : 0
+    if (rate >= 90) qualityMap['优秀 (90%以上)']++
+    else if (rate >= 70) qualityMap['良好 (70%-90%)']++
+    else if (rate >= 50) qualityMap['一般 (50%-70%)']++
+    else qualityMap['较差 (50%以下)']++
+  })
+  
+  return Object.entries(qualityMap)
+    .map(([name, value]) => ({ name, value }))
+    .filter(item => item.value > 0)
+}
+
+// 计算选项热度对比
+const calculateOptionHeat = (dataList) => {
+  const optionCountMap = {}
+  
+  formItems.value.forEach(item => {
+    if (!isChoiceType(item.type)) return
+    
+    const scheme = item.scheme || {}
+    const config = scheme.config || {}
+    const options = config.options || []
+    
+    dataList.forEach(data => {
+      const originalData = data.originalData || {}
+      const value = originalData[item.formItemId]
+      
+      if (value !== null && value !== undefined && value !== '') {
+        const values = Array.isArray(value) ? value : [value]
+        values.forEach(val => {
+          const option = options.find(opt => opt.value === val)
+          if (option) {
+            const key = `${item.label} - ${option.label || option.value}`
+            optionCountMap[key] = (optionCountMap[key] || 0) + 1
+          }
+        })
+      }
+    })
+  })
+  
+  return Object.entries(optionCountMap)
+    .map(([optionLabel, count]) => ({ optionLabel, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10) // 取TOP 10
 }
 
 // 刷新数据
@@ -1940,176 +2421,6 @@ const handleExportExcel = async () => {
   }
 }
 
-// 获取筛选题目的选项列表
-const getFilterOptions = (formItemId) => {
-  const item = formItems.value.find(i => i.formItemId === formItemId)
-  if (!item || !item.scheme?.config?.options) {
-    return []
-  }
-  return item.scheme.config.options.map(opt => ({
-    label: opt.label,
-    value: opt.value
-  }))
-}
-
-// 处理筛选题目1变化
-const handleFilterQuestion1Change = () => {
-  filterForm.condition1.optionValue = null
-  // 如果题目2和题目1相同，清空题目2
-  if (filterForm.condition2.questionId === filterForm.condition1.questionId) {
-    filterForm.condition2.questionId = null
-    filterForm.condition2.optionValue = null
-  }
-}
-
-// 处理筛选题目2变化
-const handleFilterQuestion2Change = () => {
-  filterForm.condition2.optionValue = null
-}
-
-// 应用筛选
-const handleFilterApply = async () => {
-  if (!filterForm.condition1.questionId || !filterForm.condition1.optionValue) {
-    ElMessage.warning('请至少选择筛选条件1')
-    return
-  }
-
-  if (!surveyId.value) {
-    ElMessage.warning('问卷ID不存在')
-    return
-  }
-
-  filterLoading.value = true
-  try {
-    const filters = []
-    
-    // 添加条件1
-    filters.push({
-      formItemId: filterForm.condition1.questionId,
-      optionValue: filterForm.condition1.optionValue
-    })
-    
-    // 添加条件2（如果存在）
-    if (filterForm.condition2.questionId && filterForm.condition2.optionValue) {
-      filters.push({
-        formItemId: filterForm.condition2.questionId,
-        optionValue: filterForm.condition2.optionValue
-      })
-    }
-
-    // 调用后端筛选接口
-    const res = await statisticsApi.getFilteredStatistics(surveyId.value, filters)
-    if (res.code === 200) {
-      filteredStatistics.value = res.data
-      ElMessage.success('筛选成功')
-    }
-  } catch (error) {
-    console.error('筛选失败:', error)
-    ElMessage.error('筛选失败')
-  } finally {
-    filterLoading.value = false
-  }
-}
-
-// 重置筛选
-const handleFilterReset = () => {
-  filterForm.condition1.questionId = null
-  filterForm.condition1.optionValue = null
-  filterForm.condition2.questionId = null
-  filterForm.condition2.optionValue = null
-  filteredStatistics.value = null
-}
-
-// 获取筛选后的表格数据
-const getFilteredTableData = (formItemId) => {
-  if (!filteredStatistics.value || !filteredStatistics.value.questionStatistics) {
-    return []
-  }
-  
-  const stat = filteredStatistics.value.questionStatistics[formItemId]
-  if (!stat || !stat.optionStats) return []
-  
-  let options = stat.optionStats
-  const total = stat.totalCount || 0
-  
-  // 过滤选项
-  if (displaySettings.hideEmpty) {
-    options = options.filter(opt => (opt.count || 0) > 0)
-  }
-  if (displaySettings.hideSkip) {
-    options = options.filter(opt => {
-      const label = (opt.optionLabel || opt.optionValue || '').toLowerCase()
-      return !label.includes('跳过') && !label.includes('skip')
-    })
-  }
-  
-  return options.map(opt => {
-    const count = opt.count || 0
-    const percentage = total > 0 ? ((count / total) * 100).toFixed(2) : 0
-    return {
-      optionLabel: opt.optionLabel || opt.optionValue,
-      count: count,
-      percentage: parseFloat(percentage)
-    }
-  })
-}
-
-// 获取筛选后的总人数
-const getFilteredTotalCount = (formItemId = null) => {
-  if (!filteredStatistics.value) return 0
-  if (formItemId) {
-    const stat = filteredStatistics.value.questionStatistics?.[formItemId]
-    return stat?.totalCount || 0
-  }
-  return filteredStatistics.value.surveyStatistics?.totalResponses || 0
-}
-
-// 获取筛选后的文本统计
-const getFilteredTextStat = (formItemId, key) => {
-  if (!filteredStatistics.value || !filteredStatistics.value.questionStatistics) {
-    return 0
-  }
-  const stat = filteredStatistics.value.questionStatistics[formItemId]
-  if (!stat) return 0
-  if (key === 'count') return stat.validAnswers || 0
-  if (key === 'total') return stat.totalAnswers || 0
-  return stat[key] || 0
-}
-
-// 获取筛选后的评分统计
-const getFilteredRatingStat = (formItemId, key) => {
-  if (!filteredStatistics.value || !filteredStatistics.value.questionStatistics) {
-    return 0
-  }
-  const stat = filteredStatistics.value.questionStatistics[formItemId]
-  return stat ? stat[key] : 0
-}
-
-// 获取筛选后的数字统计
-const getFilteredNumberStat = (formItemId, key) => {
-  if (!filteredStatistics.value || !filteredStatistics.value.questionStatistics) {
-    return 0
-  }
-  const stat = filteredStatistics.value.questionStatistics[formItemId]
-  if (!stat) return 0
-  if (key === 'average') return stat.average || 0
-  return stat[key] || 0
-}
-
-// 获取筛选后的图表配置
-const getFilteredChartOption = (formItemId) => {
-  if (!filteredStatistics.value || !filteredStatistics.value.questionStatistics) {
-    return null
-  }
-  const stat = filteredStatistics.value.questionStatistics[formItemId]
-  if (!stat || !stat.optionStats) return null
-  
-  const chartType = getCurrentChartType(formItemId)
-  if (chartType === 'table') return null
-  
-  return generateChartOption(chartType, stat, currentColorScheme.value)
-}
-
 // 处理对比变量变化
 const handleCompareVariableChange = () => {
   compareAnalysisResult.value = null
@@ -2162,6 +2473,10 @@ onMounted(() => {
   /* 自定义滚动条样式 */
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 }
 
 .statistics-container::-webkit-scrollbar {
@@ -2186,10 +2501,35 @@ onMounted(() => {
     display: flex;
     align-items: center;
   }
+  
+  &.mobile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .header-title {
+    font-size: 16px;
+    font-weight: 500;
+    
+    @media (max-width: 768px) {
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
+  
+  .mobile-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 .statistics-content {
   min-height: 400px;
+  
+  @media (max-width: 768px) {
+    padding: 15px 10px;
+  }
 }
 
 .empty-tip {
@@ -2198,6 +2538,18 @@ onMounted(() => {
 }
 
 .question-stat-card {
+  @media (max-width: 768px) {
+    margin-bottom: 15px;
+    
+    :deep(.el-card__header) {
+      padding: 15px;
+    }
+    
+    :deep(.el-card__body) {
+      padding: 15px;
+    }
+  }
+  
   .question-header {
     display: flex;
     justify-content: space-between;
@@ -2212,10 +2564,45 @@ onMounted(() => {
         color: #909399;
         margin-right: 5px;
       }
+      
+      @media (max-width: 768px) {
+        width: 100%;
+        font-size: 14px;
+        flex-wrap: wrap;
+        
+        .question-number {
+          font-size: 14px;
+        }
+      }
     }
 
     .chart-type-switcher {
       margin-left: 20px;
+      
+      @media (max-width: 768px) {
+        margin-left: 0;
+        margin-top: 10px;
+        width: 100%;
+        
+        &.mobile-switcher {
+          :deep(.el-button-group) {
+            display: flex;
+            width: 100%;
+            
+            .el-button {
+              flex: 1;
+              font-size: 12px;
+              padding: 8px 5px;
+            }
+          }
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
     }
   }
 }
@@ -2243,6 +2630,30 @@ onMounted(() => {
 .stat-chart {
   .stat-table-wrapper {
     margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    .el-table {
+      min-width: 100%;
+      
+      @media (max-width: 768px) {
+        font-size: 12px;
+        
+        :deep(.el-table__header) {
+          th {
+            padding: 8px 5px;
+            font-size: 12px;
+          }
+        }
+        
+        :deep(.el-table__body) {
+          td {
+            padding: 8px 5px;
+            font-size: 12px;
+          }
+        }
+      }
+    }
 
     .percentage-cell {
       display: flex;
@@ -2251,6 +2662,10 @@ onMounted(() => {
 
       .bar-wrapper {
         flex: 1;
+        
+        @media (max-width: 768px) {
+          min-width: 100px;
+        }
 
         .bar-bg {
           width: 100%;
@@ -2335,9 +2750,6 @@ onMounted(() => {
 .stat-upload,
 .stat-image-upload {
   .upload-stat-info {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
   }
 
@@ -2354,6 +2766,13 @@ onMounted(() => {
 
       span {
         white-space: nowrap;
+      }
+      
+      @media (max-width: 768px) {
+        gap: 15px;
+        font-size: 12px;
+        flex-direction: column;
+        gap: 10px;
       }
     }
 
@@ -2377,18 +2796,32 @@ onMounted(() => {
     background: #fff;
     padding: 20px;
     border-radius: 4px;
+    
+    @media (max-width: 768px) {
+      padding: 15px;
+    }
 
     h4 {
       margin: 0 0 15px 0;
       font-size: 16px;
       font-weight: 500;
       color: #303133;
+      
+      @media (max-width: 768px) {
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
     }
 
     .image-upload-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 15px;
+      
+      @media (max-width: 768px) {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+      }
 
       .image-upload-item {
         border: 1px solid #e4e7ed;
@@ -2417,9 +2850,6 @@ onMounted(() => {
 
 .stat-rating {
   .rating-stat-info {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
   }
   
@@ -2432,9 +2862,7 @@ onMounted(() => {
 
 .stat-number {
   .number-stat-info {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
+    // Element Plus 栅格系统自动处理布局
   }
 }
 
@@ -2452,20 +2880,6 @@ onMounted(() => {
   overflow-x: hidden;
 }
 
-.filter-statistics-content {
-  padding: 20px;
-  min-height: 400px;
-}
-
-.filter-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filtered-statistics {
-  margin-top: 20px;
-}
 
 .cross-analysis-card,
 .compare-analysis-card {
@@ -2566,11 +2980,77 @@ onMounted(() => {
       border-color: #409EFF;
       box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
     }
+    
+    @media (max-width: 768px) {
+      width: 40px;
+      height: 40px;
+    }
   }
 
   .option-label {
     flex: 1;
     word-break: break-word;
+    
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
+  }
+}
+
+// 全局响应式样式
+@media (max-width: 768px) {
+  // Tab标签页响应式
+  :deep(.el-tabs) {
+    .el-tabs__header {
+      margin-bottom: 15px;
+    }
+    
+    .el-tabs__item {
+      padding: 0 15px;
+      font-size: 14px;
+    }
+  }
+  
+  // 对话框响应式
+  :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 5vh auto;
+    
+    .el-dialog__header {
+      padding: 15px;
+    }
+    
+    .el-dialog__body {
+      padding: 15px;
+    }
+  }
+  
+  // 表格响应式
+  :deep(.el-table) {
+    font-size: 12px;
+    
+    .el-table__header th,
+    .el-table__body td {
+      padding: 8px 5px;
+    }
+  }
+  
+  // 统计数字响应式
+  :deep(.el-statistic) {
+    .el-statistic__head {
+      font-size: 12px;
+    }
+    
+    .el-statistic__number {
+      font-size: 24px;
+    }
+  }
+  
+  // 词云图响应式
+  .wordcloud-wrapper {
+    :deep(.echarts) {
+      height: 250px !important;
+    }
   }
 }
 
@@ -2655,16 +3135,157 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.cross-table-section,
-.heatmap-section {
-  margin-bottom: 30px;
+.cross-table-summary {
+  display: flex;
+  border: 1px solid #EBEEF5;
+  border-top: none;
+  background-color: #F5F7FA;
+  font-size: 14px;
+  
+  .summary-label {
+    width: 150px;
+    padding: 12px;
+    font-weight: 500;
+    text-align: center;
+    border-right: 1px solid #EBEEF5;
+    background-color: #FAFAFA;
+  }
+  
+  .summary-cell {
+    flex: 1;
+    width: 120px;
+    padding: 12px;
+    text-align: center;
+    border-right: 1px solid #EBEEF5;
+    
+    &:last-child {
+      border-right: none;
+    }
+    
+    &.summary-total {
+      background-color: #F0F9FF;
+      font-weight: 500;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 12px;
+    
+    .summary-label,
+    .summary-cell {
+      padding: 8px 5px;
+    }
+  }
 }
 
-.cross-table-section h3,
-.heatmap-section h3 {
-  margin-bottom: 15px;
-  font-size: 18px;
-  font-weight: 500;
-  color: #303133;
+.percentage-legend {
+  padding: 10px;
+  background-color: #F5F7FA;
+  border-radius: 4px;
+  
+  @media (max-width: 768px) {
+    font-size: 11px;
+    padding: 8px;
+    
+    span {
+      display: block;
+      margin: 5px 0;
+    }
+  }
+}
+
+.cross-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    :deep(.el-table) {
+      font-size: 12px;
+      
+      .el-table__header th,
+      .el-table__body td {
+        padding: 8px 5px;
+      }
+    }
+  }
+}
+
+.compare-result-section {
+  margin-top: 20px;
+}
+
+.compare-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    :deep(.el-table) {
+      font-size: 12px;
+      
+      .el-table__header th,
+      .el-table__body td {
+        padding: 8px 5px;
+      }
+    }
+  }
+}
+
+.cross-table-summary {
+  display: flex;
+  border: 1px solid #EBEEF5;
+  border-top: none;
+  background-color: #F5F7FA;
+  font-size: 14px;
+  
+  .summary-label {
+    width: 150px;
+    padding: 12px;
+    font-weight: 500;
+    text-align: center;
+    border-right: 1px solid #EBEEF5;
+    background-color: #FAFAFA;
+  }
+  
+  .summary-cell {
+    flex: 1;
+    width: 120px;
+    padding: 12px;
+    text-align: center;
+    border-right: 1px solid #EBEEF5;
+    
+    &:last-child {
+      border-right: none;
+    }
+    
+    &.summary-total {
+      background-color: #F0F9FF;
+      font-weight: 500;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 12px;
+    
+    .summary-label,
+    .summary-cell {
+      padding: 8px 5px;
+    }
+  }
+}
+
+.percentage-legend {
+  padding: 10px;
+  background-color: #F5F7FA;
+  border-radius: 4px;
+  
+  @media (max-width: 768px) {
+    font-size: 11px;
+    padding: 8px;
+    
+    span {
+      display: block;
+      margin: 5px 0;
+    }
+  }
 }
 </style>

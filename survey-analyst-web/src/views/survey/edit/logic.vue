@@ -140,7 +140,7 @@
                   style="width: 300px"
                 >
                   <el-option
-                    v-for="item in getTriggerItemList(logicItem)"
+                    v-for="item in getTriggerItemList(logicItem, trigger)"
                     :key="item.formItemId"
                     :label="item.label"
                     :value="item.formItemId"
@@ -418,13 +418,28 @@ const getConditionItemList = (logicItem) => {
   })
 }
 
-// 获取触发可选择的问题列表
-const getTriggerItemList = (logicItem) => {
-  const selectedFormItemIds = logicItem.conditionList.map(c => c.formItemId)
-  return allFormItemList.value.map(item => ({
-    ...item,
-    disabled: selectedFormItemIds.includes(item.formItemId)
-  }))
+// 获取触发可选择的问题列表（过滤已选择的题目）
+const getTriggerItemList = (logicItem, currentTrigger) => {
+  // 获取条件列表中已选择的题目ID
+  const conditionFormItemIds = logicItem.conditionList
+    .map(c => c.formItemId)
+    .filter(id => id) // 过滤掉null值
+  
+  // 获取触发列表中已选择的题目ID（排除当前trigger本身）
+  const triggerFormItemIds = logicItem.triggerList
+    .filter(t => t !== currentTrigger && t.formItemId) // 排除当前trigger和空值
+    .map(t => t.formItemId)
+  
+  // 合并所有已选择的题目ID
+  const selectedFormItemIds = [...conditionFormItemIds, ...triggerFormItemIds]
+  
+  // 返回过滤后的列表（已选择的题目不显示在下拉框中）
+  return allFormItemList.value
+    .filter(item => !selectedFormItemIds.includes(item.formItemId))
+    .map(item => ({
+      ...item,
+      disabled: false // 因为已经过滤掉了，所以不需要disabled
+    }))
 }
 
 // 获取条件选项
