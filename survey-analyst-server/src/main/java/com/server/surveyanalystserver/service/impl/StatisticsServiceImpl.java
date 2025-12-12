@@ -129,12 +129,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         statistics.put("questionTitle", formItem.getLabel());
         statistics.put("questionType", formItem.getType());
 
-        // 获取该表单的所有数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
-            formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        // 获取该表单的所有数据（分批查询）
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        int pageSize = 5000; // 每批5000条
+        int currentPage = 1;
+        boolean hasMore = true;
+        
+        while (hasMore) {
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+                formDataService.getFormDataList(page, formKey);
+            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            
+            if (records != null && !records.isEmpty()) {
+                formDataList.addAll(records);
+                hasMore = records.size() == pageSize; // 如果返回的数量等于pageSize，说明可能还有更多数据
+                currentPage++;
+            } else {
+                hasMore = false;
+            }
+        }
 
         // 解析scheme获取选项信息
         ObjectMapper objectMapper = new ObjectMapper();
@@ -463,12 +478,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 3. 获取所有表单项
         List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
         
-        // 4. 获取所有表单数据（一次获取，避免重复查询）
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
-            formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        // 4. 获取所有表单数据（分批查询，避免数据量过大时的内存问题）
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        int pageSize = 5000; // 每批5000条
+        int currentPage = 1;
+        boolean hasMore = true;
+        
+        while (hasMore) {
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+                formDataService.getFormDataList(page, formKey);
+            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            
+            if (records != null && !records.isEmpty()) {
+                formDataList.addAll(records);
+                hasMore = records.size() == pageSize; // 如果返回的数量等于pageSize，说明可能还有更多数据
+                currentPage++;
+            } else {
+                hasMore = false;
+            }
+        }
 
         // 5. 统计每个题目的数据
         Map<String, Map<String, Object>> questionStatistics = new HashMap<>();
@@ -837,12 +867,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 2. 获取所有表单项
         List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
 
-        // 3. 获取所有表单数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
-            formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        // 3. 获取所有表单数据（分批查询）
+        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        int pageSize = 5000; // 每批5000条
+        int currentPage = 1;
+        boolean hasMore = true;
+        
+        while (hasMore) {
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+                formDataService.getFormDataList(page, formKey);
+            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            
+            if (records != null && !records.isEmpty()) {
+                formDataList.addAll(records);
+                hasMore = records.size() == pageSize; // 如果返回的数量等于pageSize，说明可能还有更多数据
+                currentPage++;
+            } else {
+                hasMore = false;
+            }
+        }
 
         // 4. 根据筛选条件过滤数据
         List<com.server.surveyanalystserver.entity.FormData> filteredDataList = formDataList;

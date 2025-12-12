@@ -93,8 +93,8 @@
               
               <!-- 选择题统计 -->
               <div v-if="isChoiceType(item.type)" class="stat-chart">
-                <!-- 统计表格 -->
-                <div v-if="displaySettings.showTable" class="stat-table-wrapper">
+                <!-- 统计表格（只在图表类型为 table 时显示） -->
+                <div v-if="getCurrentChartType(item.formItemId) === 'table'" class="stat-table-wrapper">
                   <!-- 级联选择使用树形表格 -->
                   <el-table
                     v-if="item.type === 'CASCADER'"
@@ -165,9 +165,9 @@
                   </div>
                 </div>
                 
-                <!-- 图表 -->
+                <!-- 图表（只在图表类型不为 table 时显示） -->
                 <div
-                  v-if="getCurrentChartType(item.formItemId) !== 'table' && getChartOption(item.formItemId)"
+                  v-else-if="getCurrentChartType(item.formItemId) !== 'table' && getChartOption(item.formItemId)"
                   class="chart-wrapper"
                 >
                   <v-chart
@@ -2079,18 +2079,25 @@ const loadTrendData = async () => {
           },
           yAxis: {
             type: 'category',
-            data: optionHeatData.map(item => item.optionLabel),
+            // 从高到低排序，需要reverse因为条形图是从下往上显示
+            data: optionHeatData.map(item => item.optionLabel).reverse(),
             axisLabel: {
               interval: 0,
               formatter: (value) => {
-                return value.length > 10 ? value.substring(0, 10) + '...' : value
-              }
+                // 如果文本过长，截断并显示省略号
+                if (value.length > 25) {
+                  return value.substring(0, 25) + '...'
+                }
+                return value
+              },
+              lineHeight: 14
             }
           },
           series: [{
             name: '选择次数',
             type: 'bar',
-            data: optionHeatData.map(item => item.count),
+            // 从高到低排序，需要reverse因为条形图是从下往上显示
+            data: optionHeatData.map(item => item.count).reverse(),
             itemStyle: { color: '#F56C6C' }
           }]
         }
@@ -2321,10 +2328,24 @@ const calculateOptionHeat = (dataList) => {
 }
 
 // 刷新数据
-const handleRefresh = () => {
-  loadStatistics()
-  if (activeTab.value === 'analysis') {
-    loadTrendData()
+const handleRefresh = async () => {
+  try {
+    // 先清除缓存，然后重新加载统计数据
+    if (surveyId.value) {
+      await statisticsApi.refreshStatistics(surveyId.value)
+      ElMessage.success('缓存已清除，正在刷新数据...')
+    }
+    await loadStatistics()
+    if (activeTab.value === 'analysis') {
+      loadTrendData()
+    }
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+    // 即使刷新缓存失败，也尝试重新加载数据
+    await loadStatistics()
+    if (activeTab.value === 'analysis') {
+      loadTrendData()
+    }
   }
 }
 
