@@ -1454,7 +1454,20 @@ const validateInput = (element) => {
 }
 
 :deep(.theme-radio-group) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  
   .el-radio {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 100%;
+    
+    .el-radio__label {
+      text-align: left;
+    }
+    
     .el-radio__input.is-checked .el-radio__inner {
       background-color: v-bind('getThemeColor()');
       border-color: v-bind('getThemeColor()');
@@ -1467,7 +1480,20 @@ const validateInput = (element) => {
 }
 
 :deep(.theme-checkbox-group) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  
   .el-checkbox {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 100%;
+    
+    .el-checkbox__label {
+      text-align: left;
+    }
+    
     .el-checkbox__input.is-checked .el-checkbox__inner {
       background-color: v-bind('getThemeColor()');
       border-color: v-bind('getThemeColor()');

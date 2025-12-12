@@ -251,14 +251,21 @@ const formatCascaderValue = (value) => {
 .readonly-radio-group,
 .readonly-checkbox-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
   
   .readonly-radio,
   .readonly-checkbox {
     display: flex;
     align-items: center;
     cursor: default;
+    width: 100%;
+    
+    :deep(.el-radio__label),
+    :deep(.el-checkbox__label) {
+      text-align: left;
+    }
     
     &.checked {
       :deep(.el-radio__input.is-checked .el-radio__inner),
