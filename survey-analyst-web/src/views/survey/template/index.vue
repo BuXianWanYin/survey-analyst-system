@@ -120,20 +120,52 @@
             {{ template.name }}
           </p>
           <div class="template-actions">
-            <el-button :icon="View" type="primary" size="small" @click="toTemplatePreview(template.formKey)">
-              查看
-            </el-button>
+            <el-tooltip :disabled="!isSmallScreen" content="查看" placement="top">
+              <el-button 
+                :icon="View" 
+                type="primary" 
+                size="small" 
+                :circle="isSmallScreen"
+                @click="toTemplatePreview(template.formKey)"
+              >
+                <span v-show="!isSmallScreen">查看</span>
+              </el-button>
+            </el-tooltip>
             <!-- 只有我的模板才显示编辑和删除按钮 -->
             <template v-if="activeTab === 'my' && template.isPublic !== 1">
-              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(template)">
-                编辑信息
-              </el-button>
-              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(template)">
-                编辑组件
-              </el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(template)">
-              删除
-            </el-button>
+              <el-tooltip :disabled="!isSmallScreen" content="编辑信息" placement="top">
+                <el-button 
+                  :icon="Edit" 
+                  type="warning" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleEditInfo(template)"
+                >
+                  <span v-show="!isSmallScreen">编辑信息</span>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip :disabled="!isSmallScreen" content="编辑组件" placement="top">
+                <el-button 
+                  :icon="Setting" 
+                  type="success" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleEditComponents(template)"
+                >
+                  <span v-show="!isSmallScreen">编辑组件</span>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip :disabled="!isSmallScreen" content="删除" placement="top">
+                <el-button 
+                  :icon="Delete" 
+                  type="danger" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleDelete(template)"
+                >
+                  <span v-show="!isSmallScreen">删除</span>
+                </el-button>
+              </el-tooltip>
             </template>
           </div>
         </div>
@@ -154,13 +186,55 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" :width="activeTab === 'my' ? 320 : 100" fixed="right">
           <template #default="{ row }">
-            <el-button :icon="View" type="primary" size="small" @click="toTemplatePreview(row.formKey)">查看</el-button>
-            <!-- 只有我的模板才显示编辑和删除按钮 -->
-            <template v-if="activeTab === 'my' && row.isPublic !== 1">
-              <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-              <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-              <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-            </template>
+            <div class="action-buttons">
+              <el-tooltip :disabled="!isSmallScreen" content="查看" placement="top">
+                <el-button 
+                  :icon="View" 
+                  type="primary" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="toTemplatePreview(row.formKey)"
+                >
+                  <span v-show="!isSmallScreen">查看</span>
+                </el-button>
+              </el-tooltip>
+              <!-- 只有我的模板才显示编辑和删除按钮 -->
+              <template v-if="activeTab === 'my' && row.isPublic !== 1">
+                <el-tooltip :disabled="!isSmallScreen" content="编辑信息" placement="top">
+                  <el-button 
+                    :icon="Edit" 
+                    type="warning" 
+                    size="small" 
+                    :circle="isSmallScreen"
+                    @click="handleEditInfo(row)"
+                  >
+                    <span v-show="!isSmallScreen">编辑信息</span>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip :disabled="!isSmallScreen" content="编辑组件" placement="top">
+                  <el-button 
+                    :icon="Setting" 
+                    type="success" 
+                    size="small" 
+                    :circle="isSmallScreen"
+                    @click="handleEditComponents(row)"
+                  >
+                    <span v-show="!isSmallScreen">编辑组件</span>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip :disabled="!isSmallScreen" content="删除" placement="top">
+                  <el-button 
+                    :icon="Delete" 
+                    type="danger" 
+                    size="small" 
+                    :circle="isSmallScreen"
+                    @click="handleDelete(row)"
+                  >
+                    <span v-show="!isSmallScreen">删除</span>
+                  </el-button>
+                </el-tooltip>
+              </template>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -298,7 +372,7 @@
 
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElTooltip } from 'element-plus'
 import { Search, Delete, Plus, Edit, ArrowDown, Grid, List, View, Setting, Close, Check } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { templateApi } from '@/api'
@@ -318,6 +392,14 @@ const isAdmin = computed(() => {
 // 获取当前用户ID
 const currentUserId = computed(() => {
   return userStore.userInfo?.id
+})
+
+// 判断按钮是否只显示图标
+// 使用更激进的策略：当窗口宽度小于2000px时就只显示图标
+// 这样可以确保在缩放150%时也能正常工作
+const isSmallScreen = computed(() => {
+  // 提高阈值，让按钮在更多情况下只显示图标，避免换行
+  return width.value < 2000
 })
 
 // 响应式分页布局
@@ -972,10 +1054,13 @@ onMounted(() => {
   margin-top: 12px;
   display: flex;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 4px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .template-actions .el-button {
@@ -983,30 +1068,81 @@ onMounted(() => {
   white-space: nowrap;
   font-size: 12px;
   padding: 5px 10px;
+  min-width: auto;
 }
 
-/* 手机端：确保按钮不换行 */
-@media (max-width: 768px) {
-  .template-actions {
-    flex-wrap: nowrap;
-    gap: 4px;
-    padding: 0 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
+/* 当按钮是圆形时，调整样式 */
+.template-actions .el-button.is-circle {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  min-width: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 
-  .template-actions::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
+.template-actions .el-button.is-circle :deep(span) {
+  display: none !important;
+}
 
-  .template-actions .el-button {
-    flex: 0 0 auto;
-    font-size: 11px;
-    padding: 4px 8px;
-    min-width: auto;
-  }
+.template-actions .el-button.is-circle :deep(.el-icon) {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 1 !important;
+}
+
+.template-actions .el-button.is-circle :deep(svg) {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
+  overflow: hidden;
+}
+
+.action-buttons .el-button.is-circle {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.action-buttons .el-button.is-circle :deep(span) {
+  display: none !important;
+}
+
+.action-buttons .el-button.is-circle :deep(.el-icon) {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 1 !important;
+}
+
+.action-buttons .el-button.is-circle :deep(svg) {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 .template-tabs {

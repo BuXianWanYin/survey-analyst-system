@@ -112,7 +112,7 @@ const handleLogin = async () => {
                 console.error('路由跳转错误:', err)
                 // 如果重定向失败，跳转到默认页面
             if (res.data.user && res.data.user.role === 'ADMIN') {
-              router.push('/system/user')
+              router.push('/system/dashboard')
             } else {
               router.push('/survey/list')
             }
@@ -120,7 +120,7 @@ const handleLogin = async () => {
             })
           } else {
             // 根据用户角色跳转到不同页面
-            const targetPath = res.data.user && res.data.user.role === 'ADMIN' ? '/system/user' : '/survey/list'
+            const targetPath = res.data.user && res.data.user.role === 'ADMIN' ? '/system/dashboard' : '/survey/list'
             router.push(targetPath).catch(err => {
               // 忽略重复导航错误
               if (err.name !== 'NavigationDuplicated') {

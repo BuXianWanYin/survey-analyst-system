@@ -252,11 +252,13 @@ const handleCommand = (command) => {
 .main-content {
   background: #f5f7fa;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
   position: relative;
+  height: calc(100vh - 60px);
 }
 
 .mobile-overlay {

@@ -105,18 +105,50 @@
             {{ template.name }}
           </p>
           <div class="template-actions">
-            <el-button :icon="View" type="primary" size="small" @click="handleView(template)">
-              查看
-            </el-button>
-            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(template)">
-              编辑信息
-            </el-button>
-            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(template)">
-              编辑组件
-            </el-button>
-            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(template)">
-              删除
-            </el-button>
+            <el-tooltip :disabled="!isSmallScreen" content="查看" placement="top">
+              <el-button 
+                :icon="View" 
+                type="primary" 
+                size="small" 
+                :circle="isSmallScreen"
+                @click="handleView(template)"
+              >
+                <span v-show="!isSmallScreen">查看</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :disabled="!isSmallScreen" content="编辑信息" placement="top">
+              <el-button 
+                :icon="Edit" 
+                type="warning" 
+                size="small" 
+                :circle="isSmallScreen"
+                @click="handleEditInfo(template)"
+              >
+                <span v-show="!isSmallScreen">编辑信息</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :disabled="!isSmallScreen" content="编辑组件" placement="top">
+              <el-button 
+                :icon="Setting" 
+                type="success" 
+                size="small" 
+                :circle="isSmallScreen"
+                @click="handleEditComponents(template)"
+              >
+                <span v-show="!isSmallScreen">编辑组件</span>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :disabled="!isSmallScreen" content="删除" placement="top">
+              <el-button 
+                :icon="Delete" 
+                type="danger" 
+                size="small" 
+                :circle="isSmallScreen"
+                @click="handleDelete(template)"
+              >
+                <span v-show="!isSmallScreen">删除</span>
+              </el-button>
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -144,10 +176,50 @@
         <el-table-column label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
-            <el-button :icon="View" type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button :icon="Edit" type="warning" size="small" @click="handleEditInfo(row)">编辑信息</el-button>
-            <el-button :icon="Setting" type="success" size="small" @click="handleEditComponents(row)">编辑组件</el-button>
-            <el-button :icon="Delete" type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-tooltip :disabled="!isSmallScreen" content="查看" placement="top">
+                <el-button 
+                  :icon="View" 
+                  type="primary" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleView(row)"
+                >
+                  <span v-show="!isSmallScreen">查看</span>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip :disabled="!isSmallScreen" content="编辑信息" placement="top">
+                <el-button 
+                  :icon="Edit" 
+                  type="warning" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleEditInfo(row)"
+                >
+                  <span v-show="!isSmallScreen">编辑信息</span>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip :disabled="!isSmallScreen" content="编辑组件" placement="top">
+                <el-button 
+                  :icon="Setting" 
+                  type="success" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleEditComponents(row)"
+                >
+                  <span v-show="!isSmallScreen">编辑组件</span>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip :disabled="!isSmallScreen" content="删除" placement="top">
+                <el-button 
+                  :icon="Delete" 
+                  type="danger" 
+                  size="small" 
+                  :circle="isSmallScreen"
+                  @click="handleDelete(row)"
+                >
+                  <span v-show="!isSmallScreen">删除</span>
+                </el-button>
+              </el-tooltip>
             </div>
           </template>
         </el-table-column>
@@ -318,7 +390,7 @@
 
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElTooltip } from 'element-plus'
 import { useWindowSize } from '@vueuse/core'
 import { Search, View, Edit, Delete, Setting, Plus, ArrowDown, Close, Check, Upload } from '@element-plus/icons-vue'
 import { adminApi, templateApi, surveyApi } from '@/api'
@@ -339,6 +411,14 @@ const queryParams = ref({
 const total = ref(0)
 const templateTypeList = ref([])
 const templateList = ref([])
+
+// 判断按钮是否只显示图标
+// 使用更激进的策略：当窗口宽度小于2000px时就只显示图标
+// 这样可以确保在缩放150%时也能正常工作
+const isSmallScreen = computed(() => {
+  // 提高阈值，让按钮在更多情况下只显示图标，避免换行
+  return width.value < 2000
+})
 
 // 响应式分页布局
 const paginationLayout = computed(() => {
@@ -958,20 +1038,55 @@ onMounted(() => {
   margin-top: 12px;
   display: flex;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 4px;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .template-actions .el-button {
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
   white-space: nowrap;
   font-size: 12px;
   padding: 5px 10px;
+  min-width: auto;
+}
+
+/* 当按钮是圆形时，调整样式 */
+.template-actions .el-button.is-circle {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  min-width: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.template-actions .el-button.is-circle :deep(span) {
+  display: none !important;
+}
+
+.template-actions .el-button.is-circle :deep(.el-icon) {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 1 !important;
+}
+
+.template-actions .el-button.is-circle :deep(svg) {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 .table-container {
@@ -1085,6 +1200,39 @@ onMounted(() => {
   gap: 5px;
   flex-wrap: nowrap;
   align-items: center;
+  overflow: hidden;
+}
+
+.action-buttons .el-button.is-circle {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.action-buttons .el-button.is-circle :deep(span) {
+  display: none !important;
+}
+
+.action-buttons .el-button.is-circle :deep(.el-icon) {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 1 !important;
+}
+
+.action-buttons .el-button.is-circle :deep(svg) {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 /* 响应式设计 */
@@ -1172,20 +1320,6 @@ onMounted(() => {
     flex-wrap: wrap;
   }
 
-  /* 卡片按钮在同一行显示 */
-  .template-actions {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 4px;
-  }
-
-  .template-actions .el-button {
-    flex: 1;
-    min-width: 0;
-    width: auto;
-    padding: 5px 8px;
-    font-size: 11px;
-  }
 
   /* 卡片封面图左右间距 */
   .preview-img {

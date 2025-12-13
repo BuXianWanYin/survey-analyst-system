@@ -198,6 +198,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { createLineChart, createBarChart } from '@/utils/echarts'
+import { useWindowSize } from '@vueuse/core'
 
 use([
   CanvasRenderer,
@@ -237,6 +238,9 @@ const createTrendOption = ref(null)
 const responseTrendOption = ref(null)
 const durationTrendOption = ref(null)
 const loginTrendOption = ref(null)
+
+// 获取视口宽度，用于响应式调整图表配置
+const { width: windowWidth } = useWindowSize()
 
 /**
  * 加载系统概览数据
@@ -290,6 +294,52 @@ const loadCreateTrend = async () => {
       const maxValue = Math.max(...seriesData, 0)
       const yAxisMax = maxValue <= 1 ? 6 : maxValue + 2
 
+      // 根据数据长度和视口宽度计算标签旋转角度和底部间距
+      const dataLength = xAxisData.length
+      const isSmallScreen = windowWidth.value < 2000
+      
+      // 90天数据时的配置
+      let labelRotate = 0
+      let gridBottom = '3%'
+      let labelMargin = 8
+      let labelInterval = 1
+      
+      if (dataLength > 60) {
+        // 90天数据
+        if (isSmallScreen) {
+          // 小屏幕：更大的间隔、更大的底部间距、旋转角度
+          labelInterval = 10  // 每10天显示一个标签（约9个标签）
+          labelRotate = 45
+          gridBottom = '20%'  // 增加底部间距
+          labelMargin = 20
+        } else {
+          // 大屏幕：较小的间隔
+          labelInterval = 7   // 每7天显示一个标签（约13个标签）
+          labelRotate = 45
+          gridBottom = '15%'
+          labelMargin = 15
+        }
+      } else if (dataLength > 20) {
+        // 30天数据
+        if (isSmallScreen) {
+          labelInterval = 5   // 每5天显示一个标签
+          labelRotate = 0
+          gridBottom = '8%'
+          labelMargin = 10
+        } else {
+          labelInterval = 3   // 每3天显示一个标签
+          labelRotate = 0
+          gridBottom = '3%'
+          labelMargin = 8
+        }
+      } else {
+        // 7天数据
+        labelInterval = 1
+        labelRotate = 0
+        gridBottom = '3%'
+        labelMargin = 8
+      }
+
       // 使用柔和的蓝色调
       createTrendOption.value = {
         tooltip: {
@@ -309,9 +359,9 @@ const loadCreateTrend = async () => {
           }
         },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
+          left: '8%',
+          right: '8%',
+          bottom: gridBottom,
           containLabel: true
         },
         xAxis: {
@@ -326,15 +376,14 @@ const loadCreateTrend = async () => {
           },
           axisLabel: {
             color: '#909399',
-            // 根据数据量间隔显示日期标签
+            // 根据时间范围动态调整日期标签显示间隔
             interval: function(index, value) {
-              // 30天数据时，每2天显示一个标签
-              if (xAxisData.length > 20) {
-                return index % 2 === 0
-              }
-              // 7天数据时，每1天显示
-              return true
-            }
+              return index % labelInterval === 0
+            },
+            // 旋转标签以避免重叠
+            rotate: labelRotate,
+            // 增加标签与轴的距离，防止溢出
+            margin: labelMargin
           },
           splitLine: {
             show: false
@@ -423,6 +472,52 @@ const loadResponseTrend = async () => {
       // 所有提交的都是已完成的，所以只显示总填写数
       const totalData = data.map(item => Math.floor(item.total || 0))
 
+      // 根据数据长度和视口宽度计算标签旋转角度和底部间距
+      const dataLength = xAxisData.length
+      const isSmallScreen = windowWidth.value < 2000
+      
+      // 90天数据时的配置
+      let labelRotate = 0
+      let gridBottom = '3%'
+      let labelMargin = 8
+      let labelInterval = 1
+      
+      if (dataLength > 60) {
+        // 90天数据
+        if (isSmallScreen) {
+          // 小屏幕：更大的间隔、更大的底部间距、旋转角度
+          labelInterval = 10  // 每10天显示一个标签（约9个标签）
+          labelRotate = 45
+          gridBottom = '20%'  // 增加底部间距
+          labelMargin = 20
+        } else {
+          // 大屏幕：较小的间隔
+          labelInterval = 7   // 每7天显示一个标签（约13个标签）
+          labelRotate = 45
+          gridBottom = '15%'
+          labelMargin = 15
+        }
+      } else if (dataLength > 20) {
+        // 30天数据
+        if (isSmallScreen) {
+          labelInterval = 5   // 每5天显示一个标签
+          labelRotate = 0
+          gridBottom = '8%'
+          labelMargin = 10
+        } else {
+          labelInterval = 3   // 每3天显示一个标签
+          labelRotate = 0
+          gridBottom = '3%'
+          labelMargin = 8
+        }
+      } else {
+        // 7天数据
+        labelInterval = 1
+        labelRotate = 0
+        gridBottom = '3%'
+        labelMargin = 8
+      }
+
       // 使用柔和的蓝色调折线图
       responseTrendOption.value = {
         tooltip: {
@@ -442,9 +537,9 @@ const loadResponseTrend = async () => {
           }
         },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
+          left: '8%',
+          right: '8%',
+          bottom: gridBottom,
           containLabel: true
         },
         xAxis: {
@@ -454,15 +549,14 @@ const loadResponseTrend = async () => {
           name: '日期',
           axisLabel: {
             color: '#909399',
-            // 根据数据量间隔显示日期标签，与登录趋势保持一致
+            // 根据时间范围动态调整日期标签显示间隔
             interval: function(index, value) {
-              // 30天数据时，每2天显示一个标签
-              if (xAxisData.length > 20) {
-                return index % 2 === 0
-              }
-              // 7天数据时，每1天显示
-              return true
-            }
+              return index % labelInterval === 0
+            },
+            // 旋转标签以避免重叠
+            rotate: labelRotate,
+            // 增加标签与轴的距离，防止溢出
+            margin: labelMargin
           },
           axisLine: {
             lineStyle: {
@@ -552,6 +646,52 @@ const loadDurationTrend = async () => {
       })
       const seriesData = data.map(item => item.avgDuration || 0)
 
+      // 根据数据长度和视口宽度计算标签旋转角度和底部间距
+      const dataLength = xAxisData.length
+      const isSmallScreen = windowWidth.value < 2000
+      
+      // 90天数据时的配置
+      let labelRotate = 0
+      let gridBottom = '3%'
+      let labelMargin = 8
+      let labelInterval = 1
+      
+      if (dataLength > 60) {
+        // 90天数据
+        if (isSmallScreen) {
+          // 小屏幕：更大的间隔、更大的底部间距、旋转角度
+          labelInterval = 10  // 每10天显示一个标签（约9个标签）
+          labelRotate = 45
+          gridBottom = '20%'  // 增加底部间距
+          labelMargin = 20
+        } else {
+          // 大屏幕：较小的间隔
+          labelInterval = 7   // 每7天显示一个标签（约13个标签）
+          labelRotate = 45
+          gridBottom = '15%'
+          labelMargin = 15
+        }
+      } else if (dataLength > 20) {
+        // 30天数据
+        if (isSmallScreen) {
+          labelInterval = 5   // 每5天显示一个标签
+          labelRotate = 0
+          gridBottom = '8%'
+          labelMargin = 10
+        } else {
+          labelInterval = 3   // 每3天显示一个标签
+          labelRotate = 0
+          gridBottom = '3%'
+          labelMargin = 8
+        }
+      } else {
+        // 7天数据
+        labelInterval = 1
+        labelRotate = 0
+        gridBottom = '3%'
+        labelMargin = 8
+      }
+
       // 使用柔和的蓝色调
       durationTrendOption.value = {
         tooltip: {
@@ -564,9 +704,9 @@ const loadDurationTrend = async () => {
           }
         },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
+          left: '8%',
+          right: '8%',
+          bottom: gridBottom,
           containLabel: true
         },
         xAxis: {
@@ -581,15 +721,14 @@ const loadDurationTrend = async () => {
           },
           axisLabel: {
             color: '#909399',
-            // 根据数据量间隔显示日期标签，与其他趋势图保持一致
+            // 根据时间范围动态调整日期标签显示间隔
             interval: function(index, value) {
-              // 30天数据时，每2天显示一个标签
-              if (xAxisData.length > 20) {
-                return index % 2 === 0
-              }
-              // 7天数据时，每1天显示
-              return true
-            }
+              return index % labelInterval === 0
+            },
+            // 旋转标签以避免重叠
+            rotate: labelRotate,
+            // 增加标签与轴的距离，防止溢出
+            margin: labelMargin
           },
           splitLine: {
             show: false
@@ -669,6 +808,52 @@ const loadLoginTrend = async () => {
       })
       const seriesData = data.map(item => Math.floor(item.count || 0))
 
+      // 根据数据长度和视口宽度计算标签旋转角度和底部间距
+      const dataLength = xAxisData.length
+      const isSmallScreen = windowWidth.value < 2000
+      
+      // 90天数据时的配置
+      let labelRotate = 0
+      let gridBottom = '3%'
+      let labelMargin = 8
+      let labelInterval = 1
+      
+      if (dataLength > 60) {
+        // 90天数据
+        if (isSmallScreen) {
+          // 小屏幕：更大的间隔、更大的底部间距、旋转角度
+          labelInterval = 10  // 每10天显示一个标签（约9个标签）
+          labelRotate = 45
+          gridBottom = '20%'  // 增加底部间距
+          labelMargin = 20
+        } else {
+          // 大屏幕：较小的间隔
+          labelInterval = 7   // 每7天显示一个标签（约13个标签）
+          labelRotate = 45
+          gridBottom = '15%'
+          labelMargin = 15
+        }
+      } else if (dataLength > 20) {
+        // 30天数据
+        if (isSmallScreen) {
+          labelInterval = 5   // 每5天显示一个标签
+          labelRotate = 0
+          gridBottom = '8%'
+          labelMargin = 10
+        } else {
+          labelInterval = 3   // 每3天显示一个标签
+          labelRotate = 0
+          gridBottom = '3%'
+          labelMargin = 8
+        }
+      } else {
+        // 7天数据
+        labelInterval = 1
+        labelRotate = 0
+        gridBottom = '3%'
+        labelMargin = 8
+      }
+
       // 使用柔和的蓝色调
       loginTrendOption.value = {
         tooltip: {
@@ -688,9 +873,9 @@ const loadLoginTrend = async () => {
           }
         },
         grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
+          left: '8%',
+          right: '8%',
+          bottom: gridBottom,
           containLabel: true
         },
         xAxis: {
@@ -705,15 +890,14 @@ const loadLoginTrend = async () => {
           },
           axisLabel: {
             color: '#909399',
-            // 根据数据量间隔显示日期标签，与其他趋势图保持一致
+            // 根据时间范围动态调整日期标签显示间隔
             interval: function(index, value) {
-              // 30天数据时，每2天显示一个标签
-              if (xAxisData.length > 20) {
-                return index % 2 === 0
-              }
-              // 7天数据时，每1天显示
-              return true
-            }
+              return index % labelInterval === 0
+            },
+            // 旋转标签以避免重叠
+            rotate: labelRotate,
+            // 增加标签与轴的距离，防止溢出
+            margin: labelMargin
           },
           splitLine: {
             show: false
