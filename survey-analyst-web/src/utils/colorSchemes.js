@@ -1,11 +1,12 @@
 /**
  * 配色方案配置
+ * 功能：提供多种预设配色方案，支持配色方案的加载和保存
  */
 
 export const colorSchemes = [
   {
     id: 'default',
-    name: 'WJX默认',
+    name: '默认',
     colors: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'],
     preview: 'linear-gradient(90deg, #5470c6 0%, #91cc75 25%, #fac858 50%, #ee6666 75%, #73c0de 100%)'
   },
@@ -91,8 +92,8 @@ export const colorSchemes = [
 
 /**
  * 根据ID获取配色方案
- * @param {String} id 配色方案ID
- * @returns {Object} 配色方案对象
+ * @param {string} id 配色方案ID
+ * @returns {Object} 配色方案对象，如果未找到则返回默认配色方案
  */
 export function getColorScheme(id) {
   return colorSchemes.find(scheme => scheme.id === id) || colorSchemes[0]
@@ -100,7 +101,7 @@ export function getColorScheme(id) {
 
 /**
  * 从localStorage加载配色方案
- * @returns {Object} 配色方案对象
+ * @returns {Object} 配色方案对象，如果加载失败则返回默认配色方案
  */
 export function loadColorScheme() {
   try {
@@ -117,7 +118,7 @@ export function loadColorScheme() {
 
 /**
  * 保存配色方案到localStorage
- * @param {String} id 配色方案ID
+ * @param {string} id 配色方案ID
  */
 export function saveColorScheme(id) {
   try {

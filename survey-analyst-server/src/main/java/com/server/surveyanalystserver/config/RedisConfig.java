@@ -25,10 +25,17 @@ import java.time.format.DateTimeFormatter;
 public class RedisConfig {
 
     /**
-     * 日期时间格式化器
+     * 日期时间格式化器模式
      */
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * 配置Redis模板
+     * 配置Redis的序列化方式：key使用String序列化，value使用Jackson JSON序列化
+     * 支持LocalDateTime的序列化和反序列化
+     * @param connectionFactory Redis连接工厂
+     * @return Redis模板实例
+     */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();

@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,9 @@ import java.util.Map;
 @Data
 @TableName(value = "form_logic", autoResultMap = true)
 @ApiModel(description = "表单逻辑实体")
-public class FormLogic {
+public class FormLogic implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     
     @TableId(type = IdType.AUTO)
     @ApiModelProperty(value = "主键ID")

@@ -105,6 +105,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷统计概览页面
+ * 功能：显示问卷的整体统计数据，包括总填写数、已完成数、有效率等指标，以及填写趋势图表
+ */
+
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -150,6 +155,10 @@ const deviceChartOption = ref(null)
 
 let refreshTimer = null
 
+/**
+ * 加载问卷数据
+ * 从后端获取问卷的基本信息
+ */
 const loadSurveyData = async () => {
   const surveyId = route.query.id
   if (!surveyId) {
@@ -167,6 +176,10 @@ const loadSurveyData = async () => {
   }
 }
 
+/**
+ * 加载统计数据
+ * 从后端获取问卷的统计概览数据（总填写数、完成数等）
+ */
 const loadStatistics = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -181,6 +194,10 @@ const loadStatistics = async () => {
   }
 }
 
+/**
+ * 加载填写趋势数据
+ * 根据时间范围加载填写趋势数据并生成折线图配置
+ */
 const loadTrendData = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -206,6 +223,10 @@ const loadTrendData = async () => {
   }
 }
 
+/**
+ * 加载填写来源数据
+ * 加载填写来源统计数据并生成饼图配置
+ */
 const loadSourceData = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -230,6 +251,10 @@ const loadSourceData = async () => {
   }
 }
 
+/**
+ * 加载设备类型数据
+ * 加载设备类型统计数据并生成柱状图配置
+ */
 const loadDeviceData = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -254,6 +279,10 @@ const loadDeviceData = async () => {
   }
 }
 
+/**
+ * 处理刷新统计数据
+ * 调用刷新接口重新计算统计数据，成功后重新加载所有数据
+ */
 const handleRefresh = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -267,6 +296,10 @@ const handleRefresh = async () => {
   }
 }
 
+/**
+ * 处理导出统计数据
+ * 调用导出接口将统计数据导出为Excel文件
+ */
 const handleExport = async () => {
   const surveyId = route.query.id
   if (!surveyId) return
@@ -280,10 +313,18 @@ const handleExport = async () => {
   }
 }
 
+/**
+ * 跳转到详细统计页面
+ * 跳转到问卷的详细统计页面
+ */
 const goToDetail = () => {
   router.push(`/survey/statistics/detail?id=${route.query.id}`)
 }
 
+/**
+ * 加载所有数据
+ * 依次加载统计数据、趋势数据、来源数据和设备数据
+ */
 const loadAllData = async () => {
   await loadStatistics()
   await loadTrendData()

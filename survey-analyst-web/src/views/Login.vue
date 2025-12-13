@@ -55,6 +55,11 @@
 </template>
 
 <script setup>
+/**
+ * 登录页面
+ * 功能：用户登录功能，支持账号或邮箱登录，登录成功后跳转到目标页面
+ */
+
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -134,6 +139,10 @@ const handleLogin = async () => {
   })
 }
 
+/**
+ * 跳转到注册页
+ * 如果有重定向参数，会传递给注册页
+ */
 const goToRegister = () => {
   // 如果有重定向参数，传递给注册页
   const redirect = route.query.redirect
@@ -147,6 +156,9 @@ const goToRegister = () => {
   }
 }
 
+/**
+ * 跳转到忘记密码页
+ */
 const goToForgotPassword = () => {
   router.push('/auth/forgot-password')
 }

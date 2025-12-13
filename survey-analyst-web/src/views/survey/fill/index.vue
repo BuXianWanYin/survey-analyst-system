@@ -156,6 +156,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷填写页面
+ * 功能：提供问卷填写功能，支持密码验证、表单提交、主题配置、填写时长统计等功能
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { formatDateTime, getCurrentDateTime } from '@/utils/date'
 import { useRoute, useRouter } from 'vue-router'
@@ -187,7 +192,10 @@ const responseCount = ref(0)
 const verifyingPassword = ref(false)
 const fillStartTime = ref(null) // 记录开始填写时间
 
-// 密码验证相关函数
+/**
+ * 处理密码验证
+ * 验证用户输入的访问密码，验证成功后继续加载表单数据
+ */
 const handleVerifyPassword = async () => {
   if (!inputPassword.value || !inputPassword.value.trim()) {
     ElMessage.warning('请输入访问密码')
@@ -221,7 +229,10 @@ const handleVerifyPassword = async () => {
   }
 }
 
-// 继续加载表单数据（密码验证通过后调用）
+/**
+ * 继续加载表单数据
+ * 密码验证通过后调用，加载表单配置、表单项、逻辑规则和外观配置
+ */
 const continueLoadFormData = async () => {
   try {
     // 加载表单配置
@@ -330,6 +341,10 @@ const continueLoadFormData = async () => {
   }
 }
 
+/**
+ * 处理取消密码验证
+ * 关闭密码对话框并跳转到相应页面（已登录跳转到问卷列表，未登录跳转到登录页）
+ */
 const handleCancelPassword = () => {
   passwordDialogVisible.value = false
   inputPassword.value = ''
@@ -361,7 +376,11 @@ const themeConfig = reactive({
   btnHeight: 48
 })
 
-// 获取Logo位置样式值
+/**
+ * 获取Logo位置样式值
+ * 将配置的位置值转换为CSS flex布局值
+ * @returns {string} CSS flex布局位置值
+ */
 const getLogoPosition = () => {
   const positionMap = {
     'flex-start': 'flex-start',
@@ -373,7 +392,11 @@ const getLogoPosition = () => {
   return positionMap[themeConfig.logoPosition] || 'flex-start'
 }
 
-// 检查登录状态，如果未登录则提示并跳转
+/**
+ * 检查登录状态并重定向
+ * 如果用户未登录，提示用户登录并跳转到登录页
+ * @returns {Promise<boolean>} 如果已跳转返回true，否则返回false
+ */
 const checkLoginAndRedirect = async () => {
   const hasNoToken = !getToken()
   if (hasNoToken) {
@@ -400,7 +423,10 @@ const checkLoginAndRedirect = async () => {
   return false // 已登录，不需要跳转
 }
 
-// 加载问卷数据
+/**
+ * 加载问卷数据
+ * 根据路由参数（ID或key）加载问卷信息、表单配置、表单项、逻辑规则和外观配置
+ */
 const loadSurveyData = async () => {
   // 检查登录状态
   const hasRedirected = await checkLoginAndRedirect()
@@ -578,7 +604,10 @@ const loadSurveyData = async () => {
   }
 }
 
-// 初始化表单数据模型
+/**
+ * 初始化表单数据模型
+ * 根据表单项的类型和默认值，为每个表单项初始化对应的表单模型值
+ */
 const initFormModel = () => {
   formItems.value.forEach(item => {
     // 确保 vModel 存在
@@ -686,7 +715,10 @@ const initFormModel = () => {
   })
 }
 
-// 加载外观配置
+/**
+ * 加载外观配置
+ * 从后端获取问卷的主题配置并更新到themeConfig中
+ */
 const loadTheme = async () => {
   try {
     const res = await formApi.getFormTheme(surveyId.value)
@@ -713,7 +745,14 @@ const loadTheme = async () => {
   }
 }
 
-// 评估逻辑条件（用于验证时判断字段是否可见）
+/**
+ * 评估逻辑条件
+ * 根据条件表达式和选项值评估单个条件是否满足
+ * @param {Object} condition - 条件对象，包含formItemId、expression、optionValue
+ * @param {Object} formModel - 表单数据模型
+ * @param {Array} formItems - 表单项列表
+ * @returns {boolean} 条件是否满足
+ */
 const evaluateCondition = (condition, formModel, formItems) => {
   const { formItemId, expression, optionValue } = condition
   if (!formItemId || !expression) return true
@@ -747,7 +786,14 @@ const evaluateCondition = (condition, formModel, formItems) => {
   }
 }
 
-// 评估逻辑规则（用于验证时判断字段是否可见）
+/**
+ * 评估逻辑规则
+ * 评估包含多个条件的逻辑规则是否满足（支持AND和OR关系）
+ * @param {Object} rule - 逻辑规则对象，包含conditionList
+ * @param {Object} formModel - 表单数据模型
+ * @param {Array} formItems - 表单项列表
+ * @returns {boolean} 规则是否满足
+ */
 const evaluateLogicRule = (rule, formModel, formItems) => {
   const conditionList = rule.conditionList || []
   if (conditionList.length === 0) {
@@ -776,7 +822,15 @@ const evaluateLogicRule = (rule, formModel, formItems) => {
   return result
 }
 
-// 判断字段是否可见（用于验证时，逻辑与SurveyFormRender组件保持一致）
+/**
+ * 判断字段是否可见
+ * 根据hideType和逻辑规则判断表单项是否应该显示（与SurveyFormRender组件逻辑保持一致）
+ * @param {Object} item - 表单项对象
+ * @param {Object} formModel - 表单数据模型
+ * @param {Array} formItems - 表单项列表
+ * @param {Array} formLogic - 逻辑规则列表
+ * @returns {boolean} 字段是否可见
+ */
 const isItemVisible = (item, formModel, formItems, formLogic) => {
   // 如果字段的hideType为true，则不可见
   if (item.hideType) {
@@ -844,7 +898,11 @@ const isItemVisible = (item, formModel, formItems, formLogic) => {
   return isVisible
 }
 
-// 验证表单
+/**
+ * 验证表单
+ * 验证表单数据的有效性，包括必填项验证和逻辑隐藏字段的跳过
+ * @returns {Promise<boolean>} 验证是否通过
+ */
 const validateForm = async () => {
   // 使用 SurveyFormRender 组件的完整验证规则
   if (surveyFormRef.value) {
@@ -885,7 +943,10 @@ const validateForm = async () => {
   return true
 }
 
-// 提交表单
+/**
+ * 处理表单提交
+ * 验证表单、检查填写数量限制、计算填写时长后提交表单数据
+ */
 const handleSubmit = async () => {
   // 检查登录状态
   const hasRedirected = await checkLoginAndRedirect()

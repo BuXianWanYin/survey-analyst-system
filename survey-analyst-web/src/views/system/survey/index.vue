@@ -148,6 +148,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷管理页面（管理员）
+ * 功能：管理员对所有用户的问卷进行管理，支持搜索、筛选、查看详情、更新状态、删除问卷等功能，支持卡片视图和表格视图切换
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -180,7 +185,10 @@ const paginationLayout = computed(() => {
   }
 })
 
-// 加载用户列表
+/**
+ * 加载用户列表
+ * 加载所有用户列表，用于筛选下拉框
+ */
 const loadUserList = async () => {
   try {
     const res = await adminApi.getUserList({ pageNum: 1, pageSize: 1000 })
@@ -192,6 +200,10 @@ const loadUserList = async () => {
   }
 }
 
+/**
+ * 加载问卷列表
+ * 根据当前页码、每页条数、搜索关键词、状态和用户筛选加载问卷列表
+ */
 const loadSurveyList = async () => {
   loading.value = true
   try {
@@ -214,24 +226,47 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   currentPage.value = 1
   loadSurveyList()
 }
 
+/**
+ * 处理每页条数变化
+ * 重新加载列表
+ */
 const handleSizeChange = () => {
   loadSurveyList()
 }
 
+/**
+ * 处理当前页码变化
+ * 重新加载列表
+ */
 const handleCurrentChange = () => {
   loadSurveyList()
 }
 
+/**
+ * 处理查看问卷
+ * 跳转到问卷预览页面（只读模式）
+ * @param {Object} row - 问卷行对象
+ */
 const handleView = (row) => {
   // 跳转到问卷预览页面（只读，不能提交）
   router.push(`/survey/preview/${row.id}`)
 }
 
+/**
+ * 处理更新问卷状态
+ * 更新问卷的发布状态，成功后刷新列表
+ * @param {Object} row - 问卷行对象
+ * @param {string} status - 新状态 ('PUBLISHED' 或 'ENDED')
+ */
 const handleUpdateStatus = async (row, status) => {
   try {
     const res = await adminApi.updateSurveyStatus(row.id, status)
@@ -244,6 +279,11 @@ const handleUpdateStatus = async (row, status) => {
   }
 }
 
+/**
+ * 处理删除问卷
+ * 确认后调用删除接口，成功后刷新列表
+ * @param {Object} row - 问卷行对象
+ */
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm('确定要删除该问卷吗？', '提示', {
@@ -264,6 +304,12 @@ const handleDelete = async (row) => {
   }
 }
 
+/**
+ * 获取状态文本
+ * 将状态代码转换为中文文本
+ * @param {string} status - 状态代码
+ * @returns {string} 状态中文文本
+ */
 const getStatusText = (status) => {
   const statusMap = {
     DRAFT: '草稿',
@@ -273,6 +319,12 @@ const getStatusText = (status) => {
   return statusMap[status] || '未知'
 }
 
+/**
+ * 获取状态类型
+ * 返回状态对应的Element Plus标签类型
+ * @param {string} status - 状态代码
+ * @returns {string} 标签类型 ('info', 'success', 'danger')
+ */
 const getStatusType = (status) => {
   const typeMap = {
     DRAFT: 'info',
@@ -282,6 +334,12 @@ const getStatusType = (status) => {
   return typeMap[status] || 'info'
 }
 
+/**
+ * 获取访问类型文本
+ * 将访问类型代码转换为中文文本
+ * @param {string} accessType - 访问类型代码
+ * @returns {string} 访问类型中文文本
+ */
 const getAccessTypeText = (accessType) => {
   const typeMap = {
     PUBLIC: '公开',

@@ -2152,6 +2152,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷编辑器页面
+ * 功能：提供问卷设计功能，支持拖拽添加题目、编辑题目属性、预览问卷、保存问卷等功能，支持移动端响应式设计
+ */
+
 import { ref, reactive, computed, onMounted, nextTick, inject, markRaw, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -2283,12 +2288,19 @@ const isMobile = computed(() => width.value < 992)
 const showLeftDrawer = ref(false)
 const showRightDrawer = ref(false)
 
+/**
+ * 关闭所有抽屉
+ * 同时关闭左侧和右侧抽屉
+ */
 const closeAllDrawers = () => {
   showLeftDrawer.value = false
   showRightDrawer.value = false
 }
 
-// 切换左侧抽屉
+/**
+ * 切换左侧抽屉
+ * 打开或关闭左侧组件库抽屉，打开时自动关闭右侧抽屉
+ */
 const toggleLeftDrawer = () => {
   showLeftDrawer.value = !showLeftDrawer.value
   // 如果打开左侧抽屉，关闭右侧抽屉
@@ -2297,7 +2309,10 @@ const toggleLeftDrawer = () => {
   }
 }
 
-// 切换右侧抽屉
+/**
+ * 切换右侧抽屉
+ * 打开或关闭右侧属性面板抽屉，打开时自动关闭左侧抽屉
+ */
 const toggleRightDrawer = () => {
   showRightDrawer.value = !showRightDrawer.value
   // 如果打开右侧抽屉，关闭左侧抽屉
@@ -2306,7 +2321,11 @@ const toggleRightDrawer = () => {
   }
 }
 
-// 处理中间区域点击事件（点击其他地方关闭面板）
+/**
+ * 处理中间区域点击事件
+ * 移动端点击中间设计区域时，关闭所有抽屉（点击浮动按钮除外）
+ * @param {Event} event - 点击事件对象
+ */
 const handleCenterBoardClick = (event) => {
   // 只有在移动端才需要关闭面板
   if (!isMobile.value) return
@@ -2365,7 +2384,14 @@ const activeData = computed(() => {
   return drawingList.value.find(item => item.formItemId === activeId.value)
 })
 
-// 根据组件类型获取默认值
+/**
+ * 根据组件类型获取默认值
+ * 根据不同的组件类型（文件上传、多选框、滑块、数字输入、评分等）返回对应的默认值类型
+ * @param {string} type - 组件类型
+ * @param {*} defaultValue - 原始默认值
+ * @param {Object} config - 组件配置对象
+ * @returns {*} 处理后的默认值
+ */
 const getDefaultValue = (type, defaultValue, config) => {
   // 文件上传类型的组件需要数组类型
   if (type === 'UPLOAD' || type === 'IMAGE_UPLOAD') {
@@ -2412,7 +2438,12 @@ const getDefaultValue = (type, defaultValue, config) => {
   return defaultValue !== null && defaultValue !== undefined ? defaultValue : ''
 }
 
-// 获取组件标签文本
+/**
+ * 获取组件标签文本
+ * 根据组件类型返回对应的中文标签
+ * @param {string} type - 组件类型
+ * @returns {string} 组件标签文本
+ */
 const getComponentLabel = (type) => {
   const component = componentList.find(c => c.type === type)
   return component ? component.label : type
@@ -2420,7 +2451,10 @@ const getComponentLabel = (type) => {
 
 
 
-// 处理组件库拖拽开始事件
+/**
+ * 处理组件库拖拽开始事件
+ * 移动端开始拖拽组件时，关闭左侧组件面板
+ */
 const handleComponentDragStart = () => {
   // 移动端开始拖拽组件时，关闭左侧组件面板，打开右侧面板
   if (isMobile.value) {
@@ -2429,14 +2463,23 @@ const handleComponentDragStart = () => {
   }
 }
 
-// 克隆组件（从组件库拖拽时调用）
+/**
+ * 克隆组件
+ * 从组件库拖拽时调用，创建新的表单项
+ * @param {Object} original - 原始组件对象
+ * @returns {Object} 新的表单项对象
+ */
 const cloneComponent = (original) => {
   // 创建新的表单项
   const newItem = createFormItem(original.type)
   return newItem
 }
 
-// 处理添加事件（从组件库拖拽到设计区域）
+/**
+ * 处理添加事件
+ * 从组件库拖拽到设计区域时触发，初始化表单模型并保存到后端
+ * @param {Object} evt - 拖拽事件对象，包含newIndex属性
+ */
 const handleAdd = (evt) => {
   // evt.newIndex 是新添加组件的索引位置
   const newItem = drawingList.value[evt.newIndex]
@@ -2469,7 +2512,10 @@ const handleAdd = (evt) => {
   })
 }
 
-// 拖拽结束（VueDraggable 内部排序时触发）
+/**
+ * 处理拖拽结束
+ * VueDraggable内部排序时触发，保存排序后的列表到后端
+ */
 const handleDragEnd = () => {
   // 保存排序后的列表
   saveFormItems()
@@ -2716,7 +2762,11 @@ const createFormItem = (type) => {
   return baseItem
 }
 
-// 点击组件
+/**
+ * 处理点击组件
+ * 点击设计区域的组件时，选中该组件并打开右侧属性面板
+ * @param {Object} element - 组件对象
+ */
 const handleItemClick = (element) => {
   activeId.value = element.formItemId
   // 移动端自动打开右侧属性面板，关闭左侧面板
@@ -2726,7 +2776,11 @@ const handleItemClick = (element) => {
   }
 }
 
-// 复制组件
+/**
+ * 处理复制组件
+ * 复制选中的组件，生成新的组件并插入到原组件后面
+ * @param {Object} element - 要复制的组件对象
+ */
 const handleCopyItem = (element) => {
   const newItem = {
     ...JSON.parse(JSON.stringify(element)),
@@ -2743,7 +2797,11 @@ const handleCopyItem = (element) => {
   saveFormItems()
 }
 
-// 删除组件
+/**
+ * 处理删除组件
+ * 删除选中的组件，同时从表单模型中移除对应的值
+ * @param {Object} element - 要删除的组件对象
+ */
 const handleDeleteItem = (element) => {
   const index = drawingList.value.findIndex(item => item.formItemId === element.formItemId)
   if (index > -1) {
@@ -2758,14 +2816,20 @@ const handleDeleteItem = (element) => {
   }
 }
 
-// 属性变更
+/**
+ * 处理属性变更
+ * 组件属性变化时，验证逻辑并保存到后端
+ */
 const handlePropertyChange = () => {
   // 验证逻辑
   validateComponentLogic()
   saveFormItems()
 }
 
-// 处理必填变化
+/**
+ * 处理必填变化
+ * 当组件设置为必填时，自动取消禁用状态（必填和禁用冲突）
+ */
 const handleRequiredChange = () => {
   // 如果选择了必填，自动取消禁用
   if (activeData.value.required && activeData.value.disabled) {
@@ -2774,7 +2838,10 @@ const handleRequiredChange = () => {
   handlePropertyChange()
 }
 
-// 验证组件逻辑
+/**
+ * 验证组件逻辑
+ * 验证组件配置的逻辑冲突，如必填与禁用、最大值与最小值等
+ */
 const validateComponentLogic = () => {
   if (!activeData.value) return
   

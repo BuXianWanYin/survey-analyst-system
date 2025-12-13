@@ -17,6 +17,13 @@ import java.util.Map;
 @Service
 public class FormLogicServiceImpl extends ServiceImpl<FormLogicMapper, FormLogic> implements FormLogicService {
     
+    /**
+     * 保存表单逻辑
+     * 保存或更新表单逻辑规则，如果已存在则更新，否则创建新逻辑
+     * @param surveyId 问卷ID
+     * @param scheme 逻辑规则列表
+     * @return 保存成功后的表单逻辑对象
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormLogic saveFormLogic(Long surveyId, List<Map<String, Object>> scheme) {
@@ -40,6 +47,11 @@ public class FormLogicServiceImpl extends ServiceImpl<FormLogicMapper, FormLogic
         }
     }
     
+    /**
+     * 根据问卷ID获取表单逻辑
+     * @param surveyId 问卷ID
+     * @return 表单逻辑对象，如果不存在则返回null
+     */
     @Override
     public FormLogic getBySurveyId(Long surveyId) {
         LambdaQueryWrapper<FormLogic> wrapper = new LambdaQueryWrapper<>();
@@ -47,6 +59,11 @@ public class FormLogicServiceImpl extends ServiceImpl<FormLogicMapper, FormLogic
         return this.getOne(wrapper);
     }
     
+    /**
+     * 根据问卷ID删除表单逻辑
+     * @param surveyId 问卷ID
+     * @return true表示删除成功，false表示删除失败
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteBySurveyId(Long surveyId) {

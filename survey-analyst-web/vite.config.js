@@ -1,3 +1,8 @@
+/**
+ * Vite配置文件
+ * 功能：配置Vite构建工具，包括开发服务器、代理、路径别名、构建选项
+ */
+
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
@@ -22,24 +27,24 @@ export default defineConfig(({ mode }) => {
           secure: false,
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
-              // 设置 X-Forwarded-For 头，传递客户端真实IP
-              const clientIp = req.socket.remoteAddress || req.connection.remoteAddress;
+              // 设置X-Forwarded-For头，传递客户端真实IP
+              const clientIp = req.socket.remoteAddress || req.connection.remoteAddress
               if (clientIp) {
-                // 处理 IPv6 映射的 IPv4 地址
-                let ip = clientIp;
+                // 处理IPv6映射的IPv4地址
+                let ip = clientIp
                 if (ip.startsWith('::ffff:')) {
-                  ip = ip.replace('::ffff:', '');
+                  ip = ip.replace('::ffff:', '')
                 }
-                // 如果已有 X-Forwarded-For，追加；否则新建
-                const existingForwardedFor = req.headers['x-forwarded-for'];
+                // 如果已有X-Forwarded-For，追加；否则新建
+                const existingForwardedFor = req.headers['x-forwarded-for']
                 if (existingForwardedFor) {
-                  proxyReq.setHeader('X-Forwarded-For', `${existingForwardedFor}, ${ip}`);
+                  proxyReq.setHeader('X-Forwarded-For', `${existingForwardedFor}, ${ip}`)
                 } else {
-                  proxyReq.setHeader('X-Forwarded-For', ip);
+                  proxyReq.setHeader('X-Forwarded-For', ip)
                 }
-                proxyReq.setHeader('X-Real-IP', ip);
+                proxyReq.setHeader('X-Real-IP', ip)
               }
-            });
+            })
           }
         }
       }

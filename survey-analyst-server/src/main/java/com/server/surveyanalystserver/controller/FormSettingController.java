@@ -22,6 +22,13 @@ public class FormSettingController {
     @Autowired
     private FormSettingService formSettingService;
     
+    /**
+     * 保存表单设置
+     * 保存或更新表单的设置信息，包括提交设置、填写限制等
+     * @param surveyId 问卷ID
+     * @param settings 设置信息Map，包含各种表单设置项
+     * @return 保存成功后的表单设置对象
+     */
     @ApiOperation(value = "保存表单设置", notes = "保存或更新表单设置")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/{surveyId}")
@@ -32,6 +39,12 @@ public class FormSettingController {
         return Result.success("保存成功", saved);
     }
     
+    /**
+     * 根据问卷ID获取表单设置
+     * 查询指定问卷的表单设置信息
+     * @param surveyId 问卷ID
+     * @return 表单设置对象，如果不存在则返回null
+     */
     @ApiOperation(value = "获取表单设置", notes = "根据问卷ID获取表单设置")
     @GetMapping("/{surveyId}")
     public Result<FormSetting> getFormSetting(@PathVariable Long surveyId) {

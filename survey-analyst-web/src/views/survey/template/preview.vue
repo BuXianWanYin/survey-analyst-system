@@ -41,6 +41,11 @@
 </template>
 
 <script setup>
+/**
+ * 模板预览页面
+ * 功能：预览问卷模板的详细内容，支持使用模板创建新问卷
+ */
+
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'

@@ -1,10 +1,15 @@
-// API 路径
+/**
+ * 常量定义
+ * 功能：定义项目中使用的常量，包括API路径、Token键名、响应状态码等
+ */
+
+// API路径
 export const API_BASE_URL = import.meta.env.VITE_APP_BASE_API
 
 // 请求超时时间
 export const REQUEST_TIMEOUT = parseInt(import.meta.env.VITE_APP_TIMEOUT)
 
-// Token 相关
+// Token相关常量
 export const TOKEN_KEY = 'survey_analyst_token'
 export const REFRESH_TOKEN_KEY = 'survey_analyst_refresh_token'
 export const USER_INFO_KEY = 'survey_analyst_user_info'

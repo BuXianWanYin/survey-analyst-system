@@ -3,6 +3,9 @@ package com.server.surveyanalystserver.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.entity.dto.ResponseVO;
+
+import java.util.Map;
 
 /**
  * 填写记录Service接口
@@ -41,8 +44,14 @@ public interface ResponseService extends IService<Response> {
      * @param userName 填写用户名称（可选，模糊查询）
      * @return 填写记录分页列表（包含关联信息）
      */
-    com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.dto.ResponseVO> getResponseListWithDetails(
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.dto.ResponseVO> page,
+    Page<ResponseVO> getResponseListWithDetails(
+            Page<ResponseVO> page,
             Long surveyId, String surveyTitle, String publisherName, Long publisherId, String userName);
+
+    /**
+     * 获取数据统计数据
+     * @return 统计数据
+     */
+    Map<String, Object> getDataStatistics();
 }
 

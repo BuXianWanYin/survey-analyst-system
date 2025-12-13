@@ -19,6 +19,12 @@ public class SurveyPublishController {
     @Autowired
     private SurveyPublishService surveyPublishService;
 
+    /**
+     * 获取问卷访问链接
+     * 生成问卷的公开访问链接，用于分享问卷
+     * @param id 问卷ID
+     * @return 问卷访问链接URL
+     */
     @ApiOperation(value = "获取问卷链接", notes = "生成问卷访问链接")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/{id}/link")
@@ -27,20 +33,18 @@ public class SurveyPublishController {
         return Result.success("获取成功", link);
     }
 
+    /**
+     * 获取问卷二维码
+     * 生成问卷的二维码图片，返回Base64编码的图片数据
+     * @param id 问卷ID
+     * @return Base64编码的二维码图片数据
+     */
     @ApiOperation(value = "获取问卷二维码", notes = "生成问卷二维码（Base64格式）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/{id}/qrcode")
     public Result<String> getQRCode(@PathVariable Long id) {
         String qrcode = surveyPublishService.generateQRCode(id);
         return Result.success("获取成功", qrcode);
-    }
-
-    @ApiOperation(value = "获取嵌入代码", notes = "生成问卷嵌入代码（iframe）")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
-    @GetMapping("/{id}/embed-code")
-    public Result<String> getEmbedCode(@PathVariable Long id) {
-        String embedCode = surveyPublishService.generateEmbedCode(id);
-        return Result.success("获取成功", embedCode);
     }
 }
 

@@ -77,6 +77,11 @@
 </template>
 
 <script setup>
+/**
+ * 数据推送设置组件
+ * 功能：配置问卷填写数据推送到第三方系统的设置，支持配置webhook地址、请求类型、推送格式等功能
+ */
+
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -96,7 +101,10 @@ const form = ref({
 
 const rules = {}
 
-// 加载设置
+/**
+ * 加载数据推送设置
+ * 从后端加载问卷的数据推送设置（webhook配置等）
+ */
 const loadSetting = async () => {
   const id = route.query.id
   if (!id) return
@@ -116,7 +124,10 @@ const loadSetting = async () => {
   }
 }
 
-// 保存设置
+/**
+ * 保存数据推送设置
+ * 验证表单后保存数据推送设置到后端
+ */
 const handleSave = async () => {
   if (!formRef.value) return
 
@@ -142,7 +153,10 @@ const handleSave = async () => {
   })
 }
 
-// 发送测试
+/**
+ * 处理发送测试
+ * 向配置的webhook地址发送测试数据，验证配置是否正确
+ */
 const handleSendTest = async () => {
   if (!form.enabled) {
     ElMessage.warning('请先开启数据推送')

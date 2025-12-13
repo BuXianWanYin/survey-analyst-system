@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
+import com.server.surveyanalystserver.entity.FormTemplate;
+import com.server.surveyanalystserver.service.FormTemplateService;
 import com.server.surveyanalystserver.service.SurveyService;
 import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
@@ -29,8 +31,14 @@ public class SurveyController {
     private UserService userService;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormTemplateService formTemplateService;
+    private FormTemplateService formTemplateService;
 
+    /**
+     * 创建新问卷
+     * 创建问卷并自动设置当前用户为创建者
+     * @param survey 问卷信息对象，必须包含title字段
+     * @return 创建成功后的问卷信息
+     */
     @ApiOperation(value = "创建问卷", notes = "创建新问卷")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -41,6 +49,13 @@ public class SurveyController {
         return Result.success("创建成功", createdSurvey);
     }
 
+    /**
+     * 更新问卷信息
+     * 更新问卷的基本信息，不包括状态和发布相关字段
+     * @param id 问卷ID
+     * @param survey 包含更新信息的问卷对象
+     * @return 更新后的问卷信息
+     */
     @ApiOperation(value = "更新问卷", notes = "更新问卷信息")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PutMapping("/{id}")
@@ -50,6 +65,12 @@ public class SurveyController {
         return Result.success("更新成功", updatedSurvey);
     }
 
+    /**
+     * 根据ID获取问卷详情
+     * 查询问卷的完整信息，包括关联的表单配置等
+     * @param id 问卷ID
+     * @return 问卷详情信息
+     */
     @ApiOperation(value = "获取问卷详情", notes = "根据ID获取问卷详情")
     @GetMapping("/{id}")
     public Result<Survey> getSurveyById(@PathVariable Long id) {
@@ -57,6 +78,13 @@ public class SurveyController {
         return Result.success("获取成功", survey);
     }
 
+    /**
+     * 分页查询当前用户的问卷列表
+     * 查询当前登录用户创建的所有问卷，包含答卷数量统计
+     * @param pageNum 页码，默认为1
+     * @param pageSize 每页数量，默认为10
+     * @return 问卷分页列表
+     */
     @ApiOperation(value = "分页查询问卷列表", notes = "分页查询当前用户的问卷列表")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/list")
@@ -69,6 +97,12 @@ public class SurveyController {
         return Result.success("查询成功", result);
     }
 
+    /**
+     * 发布问卷
+     * 将问卷状态设置为已发布，允许用户填写
+     * @param id 问卷ID
+     * @return 发布结果
+     */
     @ApiOperation(value = "发布问卷", notes = "发布问卷")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/{id}/publish")
@@ -96,7 +130,7 @@ public class SurveyController {
     @ApiOperation(value = "使用模板创建问卷", notes = "根据模板 formKey 创建新问卷")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/use-template/create")
-    public Result<Long> createSurveyByTemplate(@RequestBody com.server.surveyanalystserver.entity.FormTemplate request) {
+    public Result<Long> createSurveyByTemplate(@RequestBody FormTemplate request) {
         User currentUser = userService.getCurrentUser();
         Survey survey = formTemplateService.createSurveyByTemplate(request.getFormKey(), currentUser.getId());
         return Result.success("创建成功", survey.getId());

@@ -13,8 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 /**
@@ -31,6 +29,13 @@ public class FormDataController {
     @Autowired
     private UserService userService;
     
+    /**
+     * 填写前校验接口
+     * 在开始填写问卷前进行校验，检查各种限制条件（如填写次数限制、IP限制等）
+     * @param params 参数Map，包含formKey（表单Key）和deviceId（设备ID）
+     * @param request HTTP请求对象，用于获取IP地址等信息
+     * @return 校验结果
+     */
     @ApiOperation(value = "填写前校验", notes = "在开始填写问卷前进行校验（检查各种限制）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/validate")
@@ -43,6 +48,13 @@ public class FormDataController {
         return Result.success("校验通过，可以开始填写");
     }
     
+    /**
+     * 保存表单填写数据
+     * 保存用户填写的表单数据，处理base64图片，记录IP地址、设备信息等，返回提交设置
+     * @param params 参数Map，包含formKey（表单Key）、originalData（原始数据）、startTime（开始时间）、deviceId（设备ID）
+     * @param request HTTP请求对象，用于获取IP地址等信息
+     * @return 保存结果，包含表单数据和提交设置
+     */
     @ApiOperation(value = "保存表单数据", notes = "保存表单填写数据（需要登录）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -51,29 +63,17 @@ public class FormDataController {
         @SuppressWarnings("unchecked")
         Map<String, Object> originalData = (Map<String, Object>) params.get("originalData");
         
-        // 处理 base64 图片数据，转换为文件并保存
         if (originalData != null) {
             originalData = formDataService.processBase64Images(originalData);
         }
         
-        // 获取请求参数
         Object startTimeObj = params.get("startTime");
-        LocalDateTime startTime = null;
-        if (startTimeObj instanceof String) {
-            try {
-                startTime = LocalDateTime.parse((String) startTimeObj, 
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            } catch (Exception e) {
-                // 解析失败，使用null
-            }
-        }
-        
+        String startTimeStr = startTimeObj != null ? startTimeObj.toString() : null;
         String deviceId = (String) params.get("deviceId");
         User currentUser = userService.getCurrentUser();
         
-        // 保存表单数据并获取提交设置
         Map<String, Object> result = formDataService.saveFormDataWithSettings(formKey, originalData, request, 
-            deviceId, currentUser.getId(), startTime);
+            deviceId, currentUser.getId(), startTimeStr);
         
         return Result.success("保存成功", result);
     }

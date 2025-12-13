@@ -21,6 +21,13 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
     @Value("${survey.access.url}")
     private String frontendUrl;
 
+    /**
+     * 生成问卷访问链接
+     * 生成问卷的前端访问URL
+     * @param surveyId 问卷ID
+     * @return 问卷访问链接
+     * @throws RuntimeException 如果问卷不存在则抛出异常
+     */
     @Override
     public String generateSurveyLink(Long surveyId) {
         Survey survey = surveyService.getSurveyById(surveyId);
@@ -30,6 +37,13 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
         return frontendUrl + "/user/survey/fill/" + surveyId;
     }
 
+    /**
+     * 生成问卷二维码
+     * 生成问卷访问链接的二维码图片，返回Base64编码的图片数据
+     * @param surveyId 问卷ID
+     * @return Base64编码的二维码图片数据（data:image/png;base64,前缀）
+     * @throws RuntimeException 如果生成失败则抛出异常
+     */
     @Override
     public String generateQRCode(Long surveyId) {
         try {
@@ -43,12 +57,6 @@ public class SurveyPublishServiceImpl implements SurveyPublishService {
         } catch (Exception e) {
             throw new RuntimeException("生成二维码失败", e);
         }
-    }
-
-    @Override
-    public String generateEmbedCode(Long surveyId) {
-        String surveyLink = generateSurveyLink(surveyId);
-        return String.format("<iframe src=\"%s\" width=\"100%%\" height=\"800px\" frameborder=\"0\"></iframe>", surveyLink);
     }
 }
 

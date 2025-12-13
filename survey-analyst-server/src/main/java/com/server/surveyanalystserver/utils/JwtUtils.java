@@ -21,7 +21,10 @@ public class JwtUtils {
     private JwtConfig jwtConfig;
 
     /**
-     * 生成Token
+     * 生成JWT Token
+     * 使用HS512算法和配置的密钥生成Token，Token包含用户名、签发时间和过期时间
+     * @param username 用户名
+     * @return JWT Token字符串
      */
     public String generateToken(String username) {
         Date now = new Date();
@@ -38,7 +41,9 @@ public class JwtUtils {
     }
 
     /**
-     * 从Token中获取用户名
+     * 从JWT Token中提取用户名
+     * @param token JWT Token字符串
+     * @return 用户名，如果Token无效则返回null
      */
     public String getUsernameFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
@@ -46,7 +51,10 @@ public class JwtUtils {
     }
 
     /**
-     * 验证Token
+     * 验证JWT Token是否有效
+     * 检查Token的签名和过期时间
+     * @param token JWT Token字符串
+     * @return true表示Token有效，false表示Token无效或已过期
      */
     public Boolean validateToken(String token) {
         try {
@@ -58,7 +66,10 @@ public class JwtUtils {
     }
 
     /**
-     * 从Token中获取Claims
+     * 从JWT Token中解析Claims
+     * 使用配置的密钥解析Token并提取Claims信息
+     * @param token JWT Token字符串
+     * @return Claims对象，如果解析失败则返回null
      */
     private Claims getClaimsFromToken(String token) {
         try {
@@ -74,7 +85,9 @@ public class JwtUtils {
     }
 
     /**
-     * 判断Token是否过期
+     * 判断Token是否已过期
+     * @param claims JWT Claims对象
+     * @return true表示Token已过期，false表示Token未过期
      */
     private Boolean isTokenExpired(Claims claims) {
         Date expiration = claims.getExpiration();

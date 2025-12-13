@@ -243,6 +243,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷预览组件
+ * 功能：提供问卷预览功能，支持移动端和桌面端视图切换，支持二维码显示、主题配置等功能
+ */
+
 import { ref, reactive, watch, computed } from 'vue'
 import { Iphone, Monitor, Loading } from '@element-plus/icons-vue'
 import SurveyFormRender from './SurveyFormRender.vue'
@@ -287,7 +292,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(false)
-const viewMode = ref('mobile') // 'mobile' 或 'desktop'
+const viewMode = ref('mobile')
 const qrCodeUrl = ref('')
 const previewFormModel = reactive({})
 const themeConfigData = reactive({
@@ -308,12 +313,18 @@ const themeConfigData = reactive({
   btnHeight: 48
 })
 
-// 合并外部传入的主题配置
+/**
+ * 合并外部传入的主题配置
+ * @returns {Object} 主题配置对象
+ */
 const currentThemeConfig = computed(() => {
   return Object.keys(props.themeConfig).length > 0 ? props.themeConfig : themeConfigData
 })
 
-// 获取Logo位置样式值
+/**
+ * 获取Logo位置样式值
+ * @returns {string} CSS flex布局位置值
+ */
 const getLogoPosition = () => {
   const positionMap = {
     'flex-start': 'flex-start',
@@ -325,7 +336,10 @@ const getLogoPosition = () => {
   return positionMap[currentThemeConfig.value.logoPosition] || 'flex-start'
 }
 
-// 加载外观配置
+/**
+ * 加载外观配置
+ * 从后端获取问卷的主题配置信息
+ */
 const loadTheme = async () => {
   if (!props.surveyId) return
   
@@ -415,7 +429,10 @@ const initPreviewForm = () => {
   })
 }
 
-// 加载二维码
+/**
+ * 加载二维码
+ * 根据formKey生成问卷的二维码图片
+ */
 const loadQRCode = async () => {
   if (!props.formKey) {
     return

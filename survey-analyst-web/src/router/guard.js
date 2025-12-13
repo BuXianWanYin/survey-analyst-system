@@ -1,24 +1,25 @@
+/**
+ * 路由守卫
+ * 功能：设置路由前置守卫和后置守卫，处理页面标题设置、登录验证、管理员权限验证等
+ */
+
 import { getToken } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
 /**
  * 设置路由守卫
- * @param {Router} router Vue Router实例
+ * @param {Object} router Vue Router实例
  */
 export function setupRouterGuard(router) {
-  // 前置守卫
   router.beforeEach((to, from, next) => {
-    // 设置页面标题
     if (to.meta.title) {
       document.title = `${to.meta.title} - 在线问卷调查与数据分析系统`
     }
     
-    // 检查是否需要登录
     if (to.meta.requiresAuth) {
       const token = getToken()
       if (!token) {
-        // 未登录，跳转到登录页
         next({
           name: 'Login',
           query: {
@@ -29,7 +30,6 @@ export function setupRouterGuard(router) {
       }
     }
     
-    // 检查是否需要管理员权限
     if (to.meta.requiresAdmin) {
       const userStore = useUserStore()
       if (!userStore.userInfo || userStore.userInfo.role !== 'ADMIN') {
@@ -42,7 +42,6 @@ export function setupRouterGuard(router) {
     next()
   })
   
-  // 后置守卫
   router.afterEach(() => {
     // 可以在这里处理一些后置逻辑，如埋点等
   })

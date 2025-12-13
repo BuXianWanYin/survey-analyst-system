@@ -20,15 +20,6 @@ export const surveyPublishApi = {
    */
   getQRCode(id) {
     return request.get(`/survey/${id}/qrcode`)
-  },
-
-  /**
-   * 获取嵌入代码
-   * @param {Number} id 问卷ID
-   * @returns {Promise} 嵌入代码
-   */
-  getEmbedCode(id) {
-    return request.get(`/survey/${id}/embed-code`)
   }
 }
 

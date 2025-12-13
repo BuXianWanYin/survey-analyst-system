@@ -119,6 +119,11 @@
 </template>
 
 <script setup>
+/**
+ * 数据管理页面（管理员）
+ * 功能：管理员查看所有问卷的填写记录，支持按问卷ID和发布用户筛选，支持查看详情、删除记录等功能
+ */
+
 import { ref, onMounted, computed, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useWindowSize } from '@vueuse/core'
@@ -158,7 +163,10 @@ const paginationLayout = computed(() => {
   }
 })
 
-// 加载用户列表
+/**
+ * 加载用户列表
+ * 加载所有用户列表，用于筛选下拉框
+ */
 const loadUserList = async () => {
   try {
     const res = await adminApi.getUserList({ pageNum: 1, pageSize: 1000 })
@@ -170,6 +178,10 @@ const loadUserList = async () => {
   }
 }
 
+/**
+ * 加载填写记录列表
+ * 根据当前页码、每页条数、问卷ID和发布用户筛选加载填写记录列表
+ */
 const loadResponseList = async () => {
   loading.value = true
   try {
@@ -203,19 +215,36 @@ const loadResponseList = async () => {
   }
 }
 
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   currentPage.value = 1
   loadResponseList()
 }
 
+/**
+ * 处理每页条数变化
+ * 重新加载列表
+ */
 const handleSizeChange = () => {
   loadResponseList()
 }
 
+/**
+ * 处理当前页码变化
+ * 重新加载列表
+ */
 const handleCurrentChange = () => {
   loadResponseList()
 }
 
+/**
+ * 处理查看填写记录详情
+ * 加载表单数据、表单项配置和外观配置，用于在对话框中显示
+ * @param {Object} row - 填写记录行对象
+ */
 const handleView = async (row) => {
   viewDialogVisible.value = true
   detailLoading.value = true
@@ -288,7 +317,12 @@ const handleView = async (row) => {
   }
 }
 
-// 获取表单模型
+/**
+ * 获取表单模型
+ * 根据填写记录数据生成对应的表单模型，用于在对话框中显示表单内容
+ * @param {Object} formData - 表单数据对象
+ * @returns {Object} 表单模型对象
+ */
 const getFormModel = (formData) => {
   const formModel = {}
   const rowData = formData.originalData || {}
@@ -315,12 +349,22 @@ const getFormModel = (formData) => {
   return formModel
 }
 
-// 格式化日期
+/**
+ * 格式化日期
+ * 将日期字符串格式化为 'YYYY-MM-DD HH:mm:ss' 格式
+ * @param {string|Date} date - 日期字符串或日期对象
+ * @returns {string} 格式化后的日期字符串
+ */
 const formatDate = (date) => {
   if (!date) return '-'
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
+/**
+ * 处理删除填写记录
+ * 确认后调用删除接口，成功后刷新列表
+ * @param {Object} row - 填写记录行对象
+ */
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm('确定要删除该填写记录吗？', '提示', {

@@ -20,6 +20,13 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
     @Autowired
     private SurveyMapper surveyMapper;
     
+    /**
+     * 保存表单配置
+     * 保存或更新表单配置，如果已存在则更新，否则创建新配置
+     * 逻辑外键联动：同步更新survey表的title和description字段
+     * @param config 表单配置对象
+     * @return 保存成功后的表单配置对象
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormConfig saveFormConfig(FormConfig config) {
@@ -105,6 +112,11 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
         }
     }
     
+    /**
+     * 根据问卷ID获取表单配置
+     * @param surveyId 问卷ID
+     * @return 表单配置对象，如果不存在则返回null
+     */
     @Override
     public FormConfig getBySurveyId(Long surveyId) {
         Survey survey = surveyMapper.selectById(surveyId);
@@ -118,6 +130,11 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
         return this.getOne(wrapper);
     }
     
+    /**
+     * 根据表单Key获取表单配置
+     * @param formKey 表单Key
+     * @return 表单配置对象，如果不存在则返回null
+     */
     @Override
     public FormConfig getByFormKey(String formKey) {
         LambdaQueryWrapper<FormConfig> wrapper = new LambdaQueryWrapper<>();
@@ -125,6 +142,11 @@ public class FormConfigServiceImpl extends ServiceImpl<FormConfigMapper, FormCon
         return this.getOne(wrapper);
     }
     
+    /**
+     * 根据ID删除表单配置
+     * @param id 表单配置ID
+     * @return true表示删除成功，false表示删除失败
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteById(Long id) {

@@ -26,7 +26,10 @@ public class JacksonConfig {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     /**
-     * 配置ObjectMapper，支持LocalDateTime序列化
+     * 配置ObjectMapper，支持LocalDateTime序列化和反序列化
+     * 配置Jackson使用指定的日期时间格式，禁用时间戳格式
+     * @param builder Jackson对象映射器构建器
+     * @return 配置好的ObjectMapper实例
      */
     @Bean
     @Primary

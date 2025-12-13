@@ -20,7 +20,9 @@ import java.io.IOException;
 public class EncodingFilterConfig {
 
     /**
-     * 自定义字符编码过滤器，排除导出接口
+     * 配置自定义字符编码过滤器
+     * 为所有接口设置UTF-8编码，但排除导出接口以避免破坏二进制文件
+     * @return 过滤器注册Bean
      */
     @Bean
     public FilterRegistrationBean<OncePerRequestFilter> customCharacterEncodingFilter() {
@@ -32,7 +34,7 @@ public class EncodingFilterConfig {
                                           FilterChain filterChain) throws ServletException, IOException {
                 String requestPath = request.getRequestURI();
                 
-                // 排除导出接口，避免对二进制文件（Excel、PDF）应用字符编码
+                // 排除导出接口，避免对二进制文件（Excel）应用字符编码
                 if (requestPath != null && requestPath.startsWith("/api/export")) {
                     // 对于导出接口，直接传递，不设置字符编码
                     filterChain.doFilter(request, response);

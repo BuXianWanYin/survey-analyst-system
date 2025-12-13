@@ -4,8 +4,8 @@ import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormItem;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormItemService;
+import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -33,6 +33,12 @@ public class FormController {
     @Autowired
     private UserService userService;
     
+    /**
+     * 保存表单配置
+     * 保存或更新表单的基本配置信息，自动设置当前用户为创建者
+     * @param config 表单配置对象
+     * @return 保存成功后的表单配置
+     */
     @ApiOperation(value = "保存表单配置", notes = "保存或更新表单配置")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/config")
@@ -52,41 +58,23 @@ public class FormController {
         return Result.success("查询成功", config);
     }
     
+    /**
+     * 批量保存表单项
+     * 批量保存表单项列表，如果form_config不存在会自动创建
+     * @param data 数据Map，包含formKey（表单Key）、items（表单项列表）、surveyId（问卷ID，可选）
+     * @return 保存结果
+     */
     @ApiOperation(value = "批量保存表单项", notes = "批量保存表单项列表，如果 form_config 不存在会自动创建")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/item/batch")
     public Result<Void> batchSaveFormItems(@RequestBody Map<String, Object> data) {
         String formKey = (String) data.get("formKey");
-        if (formKey == null || formKey.isEmpty()) {
-            return Result.error("formKey 不能为空");
-        }
-        
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> itemsData = (List<Map<String, Object>>) data.get("items");
         Long surveyId = data.get("surveyId") != null ? 
             ((Number) data.get("surveyId")).longValue() : null;
-        
-        // 确保 form_config 存在
-        FormConfig existingConfig = formConfigService.getByFormKey(formKey);
-        if (existingConfig == null) {
-            // 如果不存在，创建一个基本的 form_config
-            FormConfig newConfig = new FormConfig();
-            newConfig.setFormKey(formKey);
-            newConfig.setSurveyId(surveyId);
-            User currentUser = userService.getCurrentUser();
-            newConfig.setUserId(currentUser.getId());
-            newConfig.setName("未命名表单");
-            newConfig.setDescription("");
-            newConfig.setStatus(1);
-            newConfig.setIsDeleted(0);
-            formConfigService.saveFormConfig(newConfig);
-        } else if (surveyId != null && existingConfig.getSurveyId() == null) {
-            // 如果 form_config 存在但没有 surveyId，而前端传入了 surveyId，则更新
-            existingConfig.setSurveyId(surveyId);
-            formConfigService.saveFormConfig(existingConfig);
-        }
-        
-        formItemService.batchSaveFromMap(formKey, itemsData);
+        User currentUser = userService.getCurrentUser();
+        formItemService.batchSaveFormItemsWithConfig(formKey, itemsData, surveyId, currentUser.getId());
         return Result.success("保存成功");
     }
     

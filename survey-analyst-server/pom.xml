@@ -142,24 +142,6 @@
             <version>3.3.2</version>
         </dependency>
 
-        <!-- iText PDF生成 -->
-        <!-- 注意：iText 7 使用模块化结构，需要单独引入各个模块 -->
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>kernel</artifactId>
-            <version>7.2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>layout</artifactId>
-            <version>7.2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>html2pdf</artifactId>
-            <version>4.0.4</version>
-        </dependency>
-
         <!-- Jackson JSON处理 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

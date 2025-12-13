@@ -88,6 +88,11 @@
 </template>
 
 <script setup>
+/**
+ * 主布局组件
+ * 功能：提供带顶部导航栏和侧边栏的主布局，支持响应式设计，包含用户信息下拉菜单、侧边栏导航等功能
+ */
+
 import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -112,10 +117,18 @@ const route = useRoute()
 const userStore = useUserStore()
 const { width } = useWindowSize()
 
+// 当前激活的菜单项
 const activeMenu = computed(() => route.path)
+
+// 是否为移动端（宽度小于768px）
 const isMobile = computed(() => width.value < 768)
+
+// 移动端菜单是否折叠
 const isCollapse = ref(true)
 
+/**
+ * 切换移动端菜单显示/隐藏
+ */
 const toggleMobileMenu = () => {
   isCollapse.value = !isCollapse.value
 }
@@ -131,6 +144,10 @@ onUnmounted(() => {
   stopWatcher()
 })
 
+/**
+ * 处理用户下拉菜单命令
+ * @param {string} command 命令类型：logout(退出登录) 或 profile(个人中心)
+ */
 const handleCommand = (command) => {
   if (command === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {

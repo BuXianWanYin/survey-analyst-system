@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -16,7 +17,9 @@ import java.time.LocalDateTime;
 @Data
 @TableName("form_theme")
 @ApiModel(description = "表单主题实体")
-public class FormTheme {
+public class FormTheme implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     
     @TableId(type = IdType.AUTO)
     @ApiModelProperty(value = "主键ID")

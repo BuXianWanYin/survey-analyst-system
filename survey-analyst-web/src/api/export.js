@@ -4,12 +4,12 @@ import { getToken } from '@/utils/auth'
 
 /**
  * 构建导出URL，避免路径重复
+ * @param {string} path 导出路径
+ * @returns {string} 完整的导出URL
  */
 function buildExportUrl(path) {
   const baseURL = import.meta.env.VITE_APP_BASE_API || ''
-  // 规范化baseURL：移除末尾的斜杠
   const normalizedBase = baseURL.replace(/\/+$/, '')
-  // 检查baseURL是否以/api结尾（避免路径重复）
   if (normalizedBase.endsWith('/api')) {
     return `${normalizedBase}/export${path}`
   } else {
@@ -19,6 +19,7 @@ function buildExportUrl(path) {
 
 /**
  * 导出相关 API
+ * 功能：提供问卷数据导出、分析报告导出等功能
  */
 export const exportApi = {
   /**

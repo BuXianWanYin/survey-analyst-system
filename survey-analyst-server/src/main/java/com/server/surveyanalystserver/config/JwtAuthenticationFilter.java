@@ -32,6 +32,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private UserMapper userMapper;
 
+    /**
+     * 执行JWT认证过滤逻辑
+     * 从请求头中提取JWT Token，验证Token有效性，加载用户信息并设置到Spring Security上下文中
+     * @param request HTTP请求对象
+     * @param response HTTP响应对象
+     * @param chain 过滤器链
+     * @throws ServletException Servlet异常
+     * @throws IOException IO异常
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -70,6 +79,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    /**
+     * 从请求头中提取JWT Token
+     * 从Authorization请求头中提取Bearer Token
+     * @param request HTTP请求对象
+     * @return JWT Token字符串，如果不存在则返回null
+     */
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

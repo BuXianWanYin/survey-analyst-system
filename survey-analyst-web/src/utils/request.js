@@ -1,3 +1,8 @@
+/**
+ * 请求封装
+ * 功能：封装axios请求，提供请求拦截器（自动添加Token）、响应拦截器（统一处理响应和错误）
+ */
+
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { getToken, removeToken } from './auth'
@@ -10,7 +15,7 @@ const service = axios.create({
   }
 })
 
-// 请求拦截器
+// 请求拦截器：自动添加Token到请求头
 service.interceptors.request.use(
   (config) => {
     const token = getToken()
@@ -24,14 +29,14 @@ service.interceptors.request.use(
   }
 )
 
-// 响应拦截器
+// 响应拦截器：统一处理响应和错误
 service.interceptors.response.use(
   (response) => {
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')
+      // 401未授权时，清除token并刷新页面跳转到登录页
       if (res.code === 401) {
-        // 未授权，清除token并跳转登录
         removeToken()
         location.reload()
       }

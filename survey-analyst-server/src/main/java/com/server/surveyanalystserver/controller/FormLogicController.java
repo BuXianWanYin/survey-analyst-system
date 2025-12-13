@@ -23,6 +23,13 @@ public class FormLogicController {
     @Autowired
     private FormLogicService formLogicService;
     
+    /**
+     * 保存表单逻辑规则
+     * 保存或更新表单的逻辑规则配置，用于控制表单项的显示、隐藏等逻辑
+     * @param surveyId 问卷ID
+     * @param scheme 逻辑规则列表，包含多个逻辑规则配置
+     * @return 保存成功后的表单逻辑对象
+     */
     @ApiOperation(value = "保存表单逻辑", notes = "保存或更新表单逻辑")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/{surveyId}")
@@ -33,6 +40,12 @@ public class FormLogicController {
         return Result.success("保存成功", saved);
     }
     
+    /**
+     * 根据问卷ID获取表单逻辑规则
+     * 查询指定问卷的表单逻辑规则配置
+     * @param surveyId 问卷ID
+     * @return 表单逻辑对象，如果不存在则返回null
+     */
     @ApiOperation(value = "获取表单逻辑", notes = "根据问卷ID获取表单逻辑")
     @GetMapping("/{surveyId}")
     public Result<FormLogic> getFormLogic(@PathVariable Long surveyId) {

@@ -1,6 +1,5 @@
 package com.server.surveyanalystserver.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.surveyanalystserver.common.Result;
 import com.server.surveyanalystserver.entity.User;
@@ -23,32 +22,25 @@ public class AdminUserController {
     @Autowired
     private UserService userService;
 
-    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder = 
-        new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-
+    /**
+     * 管理员分页查询用户列表
+     * 支持按关键词和状态筛选用户
+     * @param pageNum 页码，默认为1
+     * @param pageSize 每页数量，默认为10
+     * @param keyword 关键词，用于搜索账号、邮箱、用户名，可选
+     * @param status 用户状态（1-启用，0-禁用），可选
+     * @return 用户分页列表
+     */
     @ApiOperation(value = "分页查询用户列表", notes = "管理员分页查询所有用户")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list")
     public Result<Page<User>> getUserList(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer status) {
+            @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
+            @ApiParam(value = "每页数量", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize,
+            @ApiParam(value = "关键词") @RequestParam(required = false) String keyword,
+            @ApiParam(value = "状态") @RequestParam(required = false) Integer status) {
         Page<User> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        
-        if (keyword != null && !keyword.isEmpty()) {
-            wrapper.and(w -> w.like(User::getAccount, keyword)
-                    .or().like(User::getEmail, keyword)
-                    .or().like(User::getUsername, keyword));
-        }
-        
-        if (status != null) {
-            wrapper.eq(User::getStatus, status);
-        }
-        
-        wrapper.orderByDesc(User::getCreateTime);
-        Page<User> result = userService.page(page, wrapper);
+        Page<User> result = userService.getAdminUserList(page, keyword, status);
         return Result.success("查询成功", result);
     }
 
@@ -60,26 +52,30 @@ public class AdminUserController {
         return Result.success("获取成功", user);
     }
 
+    /**
+     * 管理员更新用户信息
+     * 更新指定用户的信息，包括基本信息（不包括密码）
+     * @param id 用户ID
+     * @param user 包含更新信息的用户对象
+     * @return 更新后的用户信息
+     */
     @ApiOperation(value = "更新用户信息", notes = "管理员更新用户信息")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public Result<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id);
-        userService.updateById(user);
-        User updatedUser = userService.getById(id);
+    public Result<User> updateUser(
+            @ApiParam(value = "用户ID", required = true) @PathVariable Long id,
+            @ApiParam(value = "用户信息", required = true) @RequestBody User user) {
+        User updatedUser = userService.updateAdminUser(id, user);
         return Result.success("更新成功", updatedUser);
     }
 
     @ApiOperation(value = "启用/禁用用户", notes = "管理员启用或禁用用户")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/status")
-    public Result<Void> updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
-        User user = userService.getById(id);
-        if (user == null) {
-            return Result.error("用户不存在");
-        }
-        user.setStatus(status);
-        userService.updateById(user);
+    public Result<Void> updateUserStatus(
+            @ApiParam(value = "用户ID", required = true) @PathVariable Long id,
+            @ApiParam(value = "状态", required = true) @RequestParam Integer status) {
+        userService.updateUserStatus(id, status);
         return Result.success(status == 1 ? "启用成功" : "禁用成功");
     }
 
@@ -95,35 +91,7 @@ public class AdminUserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Result<User> createUser(@ApiParam(value = "用户信息", required = true) @RequestBody User user) {
-        // 检查账号是否已存在
-        LambdaQueryWrapper<User> accountWrapper = new LambdaQueryWrapper<>();
-        accountWrapper.eq(User::getAccount, user.getAccount());
-        if (userService.count(accountWrapper) > 0) {
-            return Result.error("账号已存在");
-        }
-
-        // 检查邮箱是否已存在
-        LambdaQueryWrapper<User> emailWrapper = new LambdaQueryWrapper<>();
-        emailWrapper.eq(User::getEmail, user.getEmail());
-        if (userService.count(emailWrapper) > 0) {
-            return Result.error("邮箱已存在");
-        }
-
-        // 设置默认值
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole("USER");
-        }
-        if (user.getStatus() == null) {
-            user.setStatus(1);
-        }
-
-        // 密码加密
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-
-        userService.save(user);
-        User createdUser = userService.getById(user.getId());
+        User createdUser = userService.createAdminUser(user);
         return Result.success("创建成功", createdUser);
     }
 
@@ -131,15 +99,7 @@ public class AdminUserController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/statistics")
     public Result<Object> getUserStatistics() {
-        long totalUsers = userService.count();
-        long activeUsers = userService.count(new LambdaQueryWrapper<User>().eq(User::getStatus, 1));
-        long disabledUsers = userService.count(new LambdaQueryWrapper<User>().eq(User::getStatus, 0));
-        
-        java.util.Map<String, Object> statistics = new java.util.HashMap<>();
-        statistics.put("totalUsers", totalUsers);
-        statistics.put("activeUsers", activeUsers);
-        statistics.put("disabledUsers", disabledUsers);
-        
+        Object statistics = userService.getUserStatistics();
         return Result.success("获取成功", statistics);
     }
 }

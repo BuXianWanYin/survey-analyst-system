@@ -1,11 +1,16 @@
 /**
  * 词云图工具封装
- * 基于echarts-wordcloud
+ * 功能：基于echarts-wordcloud提供词云图配置生成功能
  */
 
 /**
  * 创建词云图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.data 词云数据数组，格式：[{name: 词语, value: 权重}]
+ * @param {string} options.shape 词云形状，可选：circle、cardioid、diamond、triangle-forward、triangle、star
+ * @param {Array} options.sizeRange 字体大小范围，默认[12, 60]
+ * @param {Array} options.rotationRange 旋转角度范围，默认[-90, 90]
  * @returns {Object} ECharts配置对象
  */
 export function createWordCloudChart(options = {}) {

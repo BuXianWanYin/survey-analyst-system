@@ -36,6 +36,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷预览页面
+ * 功能：预览问卷内容，显示问卷标题、描述和表单项，支持主题配置
+ */
+
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -63,7 +68,10 @@ const themeConfig = reactive({
   showSubmitBtn: false // 预览模式不显示提交按钮
 })
 
-// 加载问卷信息
+/**
+ * 加载问卷信息
+ * 从后端获取问卷的基本信息（标题、描述等）
+ */
 const loadSurveyInfo = async () => {
   if (!surveyId.value) return
   
@@ -78,7 +86,10 @@ const loadSurveyInfo = async () => {
   }
 }
 
-// 加载问卷数据
+/**
+ * 加载问卷数据
+ * 加载问卷信息、表单配置、表单项和逻辑规则，并初始化预览表单模型
+ */
 const loadSurveyData = async () => {
   if (!surveyId.value) return
   
@@ -153,7 +164,10 @@ const loadSurveyData = async () => {
   }
 }
 
-// 初始化预览表单数据
+/**
+ * 初始化预览表单数据
+ * 根据表单项的类型和默认值，为预览表单模型初始化对应的值
+ */
 const initPreviewForm = () => {
   // 清空之前的表单数据
   Object.keys(previewFormModel).forEach(key => {

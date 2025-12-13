@@ -19,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -41,11 +43,23 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
     @Autowired
     private UserMapper userMapper;
 
+    /**
+     * 根据ID获取填写记录详情
+     * @param id 填写记录ID
+     * @return 填写记录对象，如果不存在则返回null
+     */
     @Override
     public Response getResponseById(Long id) {
         return this.getById(id);
     }
 
+    /**
+     * 分页查询填写记录列表
+     * 查询指定问卷的所有填写记录，按创建时间降序排列
+     * @param page 分页参数
+     * @param surveyId 问卷ID
+     * @return 填写记录分页列表
+     */
     @Override
     public Page<Response> getResponseList(Page<Response> page, Long surveyId) {
         LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
@@ -54,6 +68,12 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         return this.page(page, wrapper);
     }
 
+    /**
+     * 获取问卷的填写数量
+     * 优先通过formKey统计form_data表的数据，如果没有formConfig则回退到统计response表
+     * @param surveyId 问卷ID
+     * @return 填写数量
+     */
     @Override
     public long getResponseCount(Long surveyId) {
         // 通过 surveyId 获取 formKey，然后统计 form_data 表的数据
@@ -73,6 +93,17 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         return formDataService.count(wrapper);
     }
 
+    /**
+     * 分页查询填写记录列表（包含详细信息）
+     * 支持多条件筛选（问卷ID、问卷标题、发布用户、填写用户等），返回包含问卷标题、发布用户、填写用户等详细信息的VO列表
+     * @param page 分页参数
+     * @param surveyId 问卷ID，可选
+     * @param surveyTitle 问卷标题（模糊匹配），可选
+     * @param publisherName 发布用户名称（模糊匹配），可选
+     * @param publisherId 发布用户ID，可选
+     * @param userName 填写用户名称（模糊匹配），可选
+     * @return 填写记录分页列表（包含详细信息）
+     */
     @Override
     public Page<ResponseVO> getResponseListWithDetails(Page<ResponseVO> page, Long surveyId, 
             String surveyTitle, String publisherName, Long publisherId, String userName) {
@@ -194,6 +225,25 @@ public class ResponseServiceImpl extends ServiceImpl<ResponseMapper, Response> i
         Page<ResponseVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
         voPage.setRecords(voList);
         return voPage;
+    }
+
+    /**
+     * 获取数据统计概览
+     * 统计所有填写记录的总数、已完成数、草稿数
+     * @return 统计数据Map，包含totalResponses、completedResponses、draftResponses等字段
+     */
+    @Override
+    public Map<String, Object> getDataStatistics() {
+        long totalResponses = this.count();
+        long completedResponses = this.count(new LambdaQueryWrapper<Response>().eq(Response::getStatus, "COMPLETED"));
+        long draftResponses = this.count(new LambdaQueryWrapper<Response>().eq(Response::getStatus, "DRAFT"));
+        
+        Map<String, Object> statistics = new HashMap<>();
+        statistics.put("totalResponses", totalResponses);
+        statistics.put("completedResponses", completedResponses);
+        statistics.put("draftResponses", draftResponses);
+        
+        return statistics;
     }
 }
 

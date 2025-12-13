@@ -62,6 +62,11 @@
 </template>
 
 <script setup>
+/**
+ * 个人中心页面
+ * 功能：显示和编辑个人信息，支持修改密码功能
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check, Lock } from '@element-plus/icons-vue'
@@ -85,6 +90,12 @@ const passwordForm = reactive({
 
 const passwordFormRef = ref(null)
 
+/**
+ * 验证确认密码是否与新密码一致
+ * @param {Object} rule - 验证规则对象
+ * @param {string} value - 确认密码的值
+ * @param {Function} callback - 验证回调函数
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== passwordForm.newPassword) {
     callback(new Error('两次输入的密码不一致'))
@@ -107,6 +118,10 @@ const passwordRules = {
   ]
 }
 
+/**
+ * 加载当前用户信息
+ * 从后端获取当前登录用户的详细信息并填充到表单中
+ */
 const loadUserInfo = async () => {
   try {
     const res = await userApi.getCurrentUser()
@@ -118,6 +133,10 @@ const loadUserInfo = async () => {
   }
 }
 
+/**
+ * 处理保存用户信息
+ * 提交用户信息更新请求，更新成功后重新加载用户信息
+ */
 const handleSaveInfo = async () => {
   try {
     const res = await userApi.updateUserInfo({
@@ -134,6 +153,10 @@ const handleSaveInfo = async () => {
   }
 }
 
+/**
+ * 处理修改密码
+ * 验证表单后调用修改密码接口
+ */
 const handleChangePassword = async () => {
   if (!passwordFormRef.value) {
     return
@@ -146,6 +169,10 @@ const handleChangePassword = async () => {
   })
 }
 
+/**
+ * 执行密码修改
+ * 调用后端接口修改密码，成功后清空密码表单
+ */
 const changePassword = async () => {
   try {
     const res = await userApi.changePassword({

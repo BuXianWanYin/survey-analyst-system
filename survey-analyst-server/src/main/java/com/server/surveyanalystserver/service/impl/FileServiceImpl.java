@@ -25,6 +25,13 @@ public class FileServiceImpl implements FileService {
     @Autowired
     private FileConfig fileConfig;
 
+    /**
+     * 上传文件
+     * 上传文件到服务器，按日期创建目录，返回文件访问URL
+     * @param file 上传的文件
+     * @return 文件访问URL（/upload/yyyy/MM/dd/文件名）
+     * @throws RuntimeException 如果文件为空、文件大小超过限制或上传失败则抛出异常
+     */
     @Override
     public String uploadFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -78,6 +85,12 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    /**
+     * 删除文件
+     * 根据文件URL删除服务器上的文件
+     * @param fileUrl 文件访问URL
+     * @return true表示删除成功，false表示删除失败或文件不存在
+     */
     @Override
     public boolean deleteFile(String fileUrl) {
         try {
@@ -104,6 +117,12 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    /**
+     * 获取文件信息
+     * 获取文件的基本信息（如文件大小）
+     * @param fileUrl 文件访问URL
+     * @return 文件信息字符串，如果文件不存在则返回null
+     */
     @Override
     public String getFileInfo(String fileUrl) {
         try {
@@ -130,6 +149,14 @@ public class FileServiceImpl implements FileService {
         }
     }
     
+    /**
+     * 保存Base64图片
+     * 将Base64编码的图片数据保存到服务器，按日期创建目录，返回文件访问URL
+     * @param base64Data Base64编码的图片数据（可包含data:image/png;base64,前缀）
+     * @param fileExtension 文件扩展名（如.png）
+     * @return 文件访问URL（/upload/yyyy/MM/dd/文件名）
+     * @throws RuntimeException 如果数据为空、文件大小超过限制或保存失败则抛出异常
+     */
     @Override
     public String saveBase64Image(String base64Data, String fileExtension) {
         if (base64Data == null || base64Data.isEmpty()) {

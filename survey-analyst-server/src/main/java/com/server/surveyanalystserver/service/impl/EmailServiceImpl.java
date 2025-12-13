@@ -47,6 +47,13 @@ public class EmailServiceImpl implements EmailService {
         return EMAIL_PATTERN.matcher(email.trim()).matches();
     }
 
+    /**
+     * 发送问卷提交通知邮件
+     * 当问卷收到新提交时，发送通知邮件到指定邮箱列表（支持分号分隔的多个邮箱）
+     * @param toEmails 接收邮箱列表（分号分隔）
+     * @param surveyTitle 问卷标题
+     * @param surveyId 问卷ID
+     */
     @Override
     public void sendSurveySubmitNotification(String toEmails, String surveyTitle, Long surveyId) {
         if (mailSender == null) {
@@ -120,6 +127,13 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * 发送密码重置邮件
+     * 发送包含密码重置链接的邮件，链接30分钟内有效
+     * @param toEmail 接收邮箱
+     * @param token 密码重置Token
+     * @throws RuntimeException 如果发送失败则抛出异常
+     */
     @Override
     public void sendPasswordResetEmail(String toEmail, String token) {
         if (mailSender == null) {
@@ -159,6 +173,14 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * 发送验证码邮件
+     * 发送包含验证码的邮件，验证码5分钟内有效
+     * @param toEmail 接收邮箱
+     * @param code 验证码（6位数字）
+     * @param type 验证码类型（REGISTER-注册，RESET_PASSWORD-重置密码）
+     * @throws RuntimeException 如果发送失败或验证码类型未知则抛出异常
+     */
     @Override
     public void sendVerificationCodeEmail(String toEmail, String code, String type) {
         if (mailSender == null) {

@@ -101,6 +101,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷数据管理页面
+ * 功能：查看问卷的填写记录，支持数据导出、查看详情、删除记录等功能
+ */
+
 import { ref, onMounted, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -199,7 +204,10 @@ const loadFormConfig = async () => {
   }
 }
 
-// 加载数据
+/**
+ * 加载填写数据
+ * 根据当前页码和每页条数加载问卷的填写记录列表
+ */
 const loadData = async () => {
   if (!formKey.value) return
 
@@ -226,13 +234,23 @@ const loadData = async () => {
   }
 }
 
-// 获取字段标签
+/**
+ * 获取字段标签
+ * 根据表单项ID获取对应的标签文本
+ * @param {string} formItemId - 表单项ID
+ * @returns {string} 字段标签文本
+ */
 const getFieldLabel = (formItemId) => {
   const item = formItems.value.find(i => i.formItemId === formItemId)
   return item ? item.label : formItemId
 }
 
-// 格式化数据值
+/**
+ * 格式化数据值
+ * 将数据值格式化为可显示的字符串
+ * @param {*} value - 要格式化的值
+ * @returns {string} 格式化后的字符串
+ */
 const formatDataValue = (value) => {
   if (value === null || value === undefined) {
     return '-'
@@ -246,7 +264,13 @@ const formatDataValue = (value) => {
   return String(value)
 }
 
-// 格式化数据值（带选项显示）
+/**
+ * 格式化数据值（带选项显示）
+ * 根据表单项类型和选项配置，将选项值转换为选项标签显示
+ * @param {string} formItemId - 表单项ID
+ * @param {*} value - 要格式化的值
+ * @returns {string} 格式化后的字符串（显示选项标签）
+ */
 const formatDataValueWithOptions = (formItemId, value) => {
   if (value === null || value === undefined) {
     return '-'
@@ -308,7 +332,13 @@ const formatDataValueWithOptions = (formItemId, value) => {
   return formatDataValue(value)
 }
 
-// 判断是否为签名字段
+/**
+ * 判断是否为签名字段
+ * 检查指定的表单项是否为签名类型且值为base64图片
+ * @param {string} formItemId - 表单项ID
+ * @param {*} value - 字段值
+ * @returns {boolean} 是否为签名字段
+ */
 const isSignatureField = (formItemId, value) => {
   const item = formItems.value.find(i => i.formItemId === formItemId)
   if (item && item.type === 'SIGN_PAD') {
@@ -320,7 +350,13 @@ const isSignatureField = (formItemId, value) => {
   return false
 }
 
-// 判断是否为文件字段
+/**
+ * 判断是否为文件字段
+ * 检查指定的表单项是否为文件上传类型
+ * @param {string} formItemId - 表单项ID
+ * @param {*} value - 字段值（未使用）
+ * @returns {boolean} 是否为文件字段
+ */
 const isFileField = (formItemId, value) => {
   const item = formItems.value.find(i => i.formItemId === formItemId)
   if (item && item.type === 'UPLOAD') {
@@ -329,7 +365,13 @@ const isFileField = (formItemId, value) => {
   return false
 }
 
-// 判断是否为图片字段
+/**
+ * 判断是否为图片字段
+ * 检查指定的表单项是否为图片上传类型
+ * @param {string} formItemId - 表单项ID
+ * @param {*} value - 字段值（未使用）
+ * @returns {boolean} 是否为图片字段
+ */
 const isImageField = (formItemId, value) => {
   const item = formItems.value.find(i => i.formItemId === formItemId)
   if (item && item.type === 'IMAGE_UPLOAD') {
@@ -338,7 +380,12 @@ const isImageField = (formItemId, value) => {
   return false
 }
 
-// 获取行的表单模型
+/**
+ * 获取行的表单模型
+ * 根据填写记录生成对应的表单模型，用于在展开行中显示表单内容
+ * @param {Object} row - 填写记录行对象
+ * @returns {Object} 表单模型对象
+ */
 const getRowFormModel = (row) => {
   const rowId = row.id
   if (!rowFormModels[rowId]) {
@@ -371,25 +418,43 @@ const getRowFormModel = (row) => {
   return rowFormModels[rowId]
 }
 
-// 处理展开/收缩
+/**
+ * 处理表格行展开/收缩
+ * 当表格行展开或收缩时触发（当前未使用，保留用于未来扩展）
+ * @param {Object} row - 表格行对象
+ * @param {Array} expandedRows - 当前展开的所有行的数组
+ */
 const handleExpandChange = (row, expandedRows) => {
   // expandedRows 是当前展开的所有行的数组
   // 这里可以用于跟踪展开状态
 }
 
-// 格式化日期
+/**
+ * 格式化日期
+ * 将日期字符串格式化为 'YYYY-MM-DD HH:mm:ss' 格式
+ * @param {string|Date} date - 日期字符串或日期对象
+ * @returns {string} 格式化后的日期字符串
+ */
 const formatDate = (date) => {
   if (!date) return '-'
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 }
 
-// 查看详情
+/**
+ * 查看详情
+ * 打开查看对话框，显示填写记录的详细信息
+ * @param {Object} row - 填写记录行对象
+ */
 const handleView = (row) => {
   currentData.value = row
   viewDialogVisible.value = true
 }
 
-// 删除数据
+/**
+ * 处理删除填写记录
+ * 确认后调用删除接口，成功后刷新列表
+ * @param {Object} row - 填写记录行对象
+ */
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm('确定要删除这条数据吗？', '提示', {
@@ -410,7 +475,10 @@ const handleDelete = async (row) => {
   }
 }
 
-// 导出数据
+/**
+ * 处理导出数据
+ * 调用导出接口将问卷填写数据导出为Excel文件
+ */
 const handleExport = async () => {
   if (!surveyId.value) {
     ElMessage.warning('请先选择问卷')
@@ -427,7 +495,10 @@ const handleExport = async () => {
   }
 }
 
-// 刷新
+/**
+ * 处理刷新数据
+ * 重新加载填写记录列表
+ */
 const handleRefresh = () => {
   loadData()
 }

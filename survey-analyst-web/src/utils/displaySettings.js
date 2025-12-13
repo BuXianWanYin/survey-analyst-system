@@ -1,13 +1,14 @@
 /**
  * 显示设置管理
+ * 功能：管理统计页面的显示设置，包括表格、条形图、平均分等显示选项的加载和保存
  */
 
 const DEFAULT_SETTINGS = {
-  showTable: true,      // 显示表格
-  showBar: true,        // 显示条形图
-  showAverage: true,    // 显示平均分
-  hideEmpty: false,     // 隐藏空选项
-  hideSkip: true        // 隐藏跳过项
+  showTable: true,
+  showBar: true,
+  showAverage: true,
+  hideEmpty: false,
+  hideSkip: true
 }
 
 /**

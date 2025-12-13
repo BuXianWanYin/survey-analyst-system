@@ -141,6 +141,11 @@
 </template>
 
 <script setup>
+/**
+ * 用户管理页面（管理员）
+ * 功能：管理员对用户进行管理，支持搜索、筛选、添加用户、编辑用户、启用/禁用用户、删除用户等功能
+ */
+
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Edit, Lock, Unlock, Delete, Close, Check } from '@element-plus/icons-vue'
@@ -219,6 +224,10 @@ const editForm = reactive({
   status: 1
 })
 
+/**
+ * 加载用户列表
+ * 根据当前页码、每页条数、搜索关键词和状态筛选加载用户列表
+ */
 const loadUserList = async () => {
   loading.value = true
   try {
@@ -240,23 +249,43 @@ const loadUserList = async () => {
   }
 }
 
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   currentPage.value = 1
   loadUserList()
 }
 
+/**
+ * 处理每页条数变化
+ * 重新加载列表
+ */
 const handleSizeChange = () => {
   loadUserList()
 }
 
+/**
+ * 处理当前页码变化
+ * 重新加载列表
+ */
 const handleCurrentChange = () => {
   loadUserList()
 }
 
+/**
+ * 打开添加用户对话框
+ * 显示添加用户对话框并重置表单
+ */
 const handleAdd = () => {
   addDialogVisible.value = true
 }
 
+/**
+ * 处理添加对话框关闭
+ * 重置添加表单的所有字段
+ */
 const handleAddDialogClose = () => {
   if (addFormRef.value) {
     addFormRef.value.resetFields()
@@ -272,6 +301,10 @@ const handleAddDialogClose = () => {
   })
 }
 
+/**
+ * 处理保存新用户
+ * 验证表单后调用创建用户接口，成功后关闭对话框并刷新列表
+ */
 const handleAddSave = async () => {
   if (!addFormRef.value) {
     return
@@ -294,11 +327,20 @@ const handleAddSave = async () => {
   })
 }
 
+/**
+ * 处理编辑用户
+ * 打开编辑对话框并填充用户信息
+ * @param {Object} row - 用户行对象
+ */
 const handleEdit = (row) => {
   Object.assign(editForm, row)
   editDialogVisible.value = true
 }
 
+/**
+ * 处理保存用户信息
+ * 调用更新用户接口，成功后关闭对话框并刷新列表
+ */
 const handleSave = async () => {
   try {
     const res = await adminApi.updateUser(editForm.id, editForm)
@@ -312,6 +354,11 @@ const handleSave = async () => {
   }
 }
 
+/**
+ * 处理切换用户状态
+ * 启用或禁用用户，成功后刷新列表
+ * @param {Object} row - 用户行对象
+ */
 const handleToggleStatus = async (row) => {
   try {
     const newStatus = row.status === 1 ? 0 : 1
@@ -325,6 +372,11 @@ const handleToggleStatus = async (row) => {
   }
 }
 
+/**
+ * 处理删除用户
+ * 确认后调用删除接口，成功后刷新列表
+ * @param {Object} row - 用户行对象
+ */
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm('确定要删除该用户吗？', '提示', {

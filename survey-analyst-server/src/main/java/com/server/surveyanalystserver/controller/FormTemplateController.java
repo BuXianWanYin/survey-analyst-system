@@ -33,6 +33,11 @@ public class FormTemplateController {
     @Autowired
     private UserService userService;
 
+    /**
+     * 获取模板分类列表
+     * 获取系统分类和当前用户的自定义分类，按排序号降序排列
+     * @return 模板分类列表
+     */
     @ApiOperation(value = "获取模板分类列表", notes = "获取系统分类和当前用户的自定义分类，按排序号降序")
     @GetMapping("/type/list")
     public Result<List<FormTemplateCategory>> getTemplateTypeList() {
@@ -66,6 +71,12 @@ public class FormTemplateController {
         return Result.success("查询成功", template.getScheme());
     }
 
+    /**
+     * 将表单保存为模板
+     * 将当前表单保存为我的模板（isPublic=0），用于后续复用
+     * @param template 模板信息对象，必须包含scheme（表单定义）
+     * @return 创建成功后的模板formKey
+     */
     @ApiOperation(value = "保存为模板", notes = "将表单保存为模板（保存到我的模板）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/create")
@@ -80,6 +91,12 @@ public class FormTemplateController {
         return Result.success("保存成功", created.getFormKey());
     }
 
+    /**
+     * 更新我的模板信息
+     * 更新模板信息，只能更新自己创建的模板（包含权限检查）
+     * @param template 包含更新信息的模板对象
+     * @return 更新成功后的模板formKey
+     */
     @ApiOperation(value = "更新模板", notes = "更新我的模板信息（只能更新自己创建的模板）")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/update")

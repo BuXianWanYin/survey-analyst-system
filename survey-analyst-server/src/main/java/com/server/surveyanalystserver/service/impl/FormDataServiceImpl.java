@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +55,15 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
     @Autowired(required = false)
     private EmailService emailService;
     
+    /**
+     * 填写前校验
+     * 在开始填写问卷前进行各种限制条件检查，包括问卷状态、时间限制、填写次数限制、IP限制、设备限制等
+     * @param formKey 表单Key
+     * @param request HTTP请求对象，用于获取IP地址等信息
+     * @param deviceId 设备ID，用于设备限制检查
+     * @param userId 用户ID，用于用户限制检查
+     * @throws RuntimeException 如果校验失败（问卷未发布、已结束、超出限制等）则抛出异常
+     */
     @Override
     public void validateBeforeFill(String formKey, HttpServletRequest request, String deviceId, Long userId) {
         String ipAddress = IpUtils.getIpAddress(request);
@@ -211,6 +221,19 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         }
     }
     
+    /**
+     * 保存表单数据
+     * 保存用户填写的表单数据，同时创建Response记录，记录IP地址、设备信息、填写时长等
+     * @param formKey 表单Key
+     * @param originalData 原始数据Map
+     * @param ipAddress IP地址
+     * @param deviceId 设备ID
+     * @param userId 用户ID
+     * @param startTime 开始填写时间
+     * @param browser 浏览器名称
+     * @param userAgent User-Agent字符串
+     * @return 保存成功后的表单数据对象
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormData saveFormData(String formKey, Map<String, Object> originalData, String ipAddress, String deviceId, Long userId, LocalDateTime startTime, String browser, String userAgent) {
@@ -275,6 +298,13 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         return formData;
     }
     
+    /**
+     * 分页查询表单数据
+     * 根据表单Key分页查询该表单的所有填写数据，按创建时间降序排列
+     * @param page 分页参数
+     * @param formKey 表单Key
+     * @return 表单数据分页列表
+     */
     @Override
     public Page<FormData> getFormDataList(Page<FormData> page, String formKey) {
         LambdaQueryWrapper<FormData> wrapper = new LambdaQueryWrapper<>();
@@ -283,6 +313,11 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         return this.page(page, wrapper);
     }
     
+    /**
+     * 根据ID获取表单数据详情
+     * @param id 表单数据ID
+     * @return 表单数据对象，如果不存在则返回null
+     */
     @Override
     public FormData getFormDataById(Long id) {
         return this.getById(id);
@@ -526,6 +561,22 @@ public class FormDataServiceImpl extends ServiceImpl<FormDataMapper, FormData> i
         }
         
         return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> saveFormDataWithSettings(String formKey, Map<String, Object> originalData, 
+            HttpServletRequest request, String deviceId, Long userId, String startTimeStr) {
+        LocalDateTime startTime = null;
+        if (startTimeStr != null && !startTimeStr.isEmpty()) {
+            try {
+                startTime = LocalDateTime.parse(startTimeStr, 
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } catch (Exception e) {
+                // 解析失败，使用null
+            }
+        }
+        return saveFormDataWithSettings(formKey, originalData, request, deviceId, userId, startTime);
     }
 }
 

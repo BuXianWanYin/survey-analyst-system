@@ -110,6 +110,11 @@
 </template>
 
 <script setup>
+/**
+ * 通知设置组件
+ * 功能：配置问卷填写后的邮件通知设置，支持添加多个邮箱、删除邮箱、选择通知邮箱等功能
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { useWindowSize } from '@vueuse/core'
 import { useRoute } from 'vue-router'
@@ -146,7 +151,10 @@ const emailRules = {
 
 const rules = {}
 
-// 加载当前用户信息
+/**
+ * 加载当前用户信息
+ * 获取当前登录用户的邮箱信息，用于快速添加通知邮箱
+ */
 const loadCurrentUser = async () => {
   try {
     const res = await userApi.getCurrentUser()
@@ -158,12 +166,20 @@ const loadCurrentUser = async () => {
   }
 }
 
-// 检查邮箱是否在列表中
+/**
+ * 检查邮箱是否在列表中
+ * @param {string} email - 邮箱地址
+ * @returns {boolean} 邮箱是否已在通知列表中
+ */
 const isEmailInList = (email) => {
   return emailList.value.includes(email)
 }
 
-// 从下拉框添加邮箱
+/**
+ * 处理从下拉框添加邮箱
+ * 从邮箱选择下拉框中添加邮箱到通知列表，如果是特殊值则打开添加对话框
+ * @param {string} email - 邮箱地址或特殊值 '__add_email__'
+ */
 const handleAddEmailFromSelect = async (email) => {
   if (!email || email === '__add_email__') {
     showAddEmailDialog.value = true
@@ -182,7 +198,10 @@ const handleAddEmailFromSelect = async (email) => {
   await autoSaveSettings()
 }
 
-// 加载设置
+/**
+ * 加载通知设置
+ * 从后端加载问卷的通知设置，包括通知邮箱列表
+ */
 const loadSetting = async () => {
   const id = route.query.id
   if (!id) return
@@ -225,7 +244,10 @@ const loadSetting = async () => {
   }
 }
 
-// 添加邮箱
+/**
+ * 处理添加邮箱
+ * 验证邮箱表单后，将邮箱添加到通知列表并自动保存设置
+ */
 const handleAddEmail = async () => {
   if (!emailFormRef.value) return
   
@@ -247,7 +269,11 @@ const handleAddEmail = async () => {
   })
 }
 
-// 删除邮箱
+/**
+ * 删除邮箱
+ * 从通知列表中删除指定索引的邮箱，并自动保存设置
+ * @param {number} index - 要删除的邮箱索引
+ */
 const removeEmail = async (index) => {
   emailList.value.splice(index, 1)
   if (emailList.value.length > 0) {
@@ -260,7 +286,11 @@ const removeEmail = async (index) => {
   await autoSaveSettings()
 }
 
-// 邮箱选择变化
+/**
+ * 处理邮箱选择变化
+ * 当从下拉框选择邮箱时，如果是特殊值则打开添加对话框，否则自动添加到列表
+ * @param {string} value - 选择的邮箱值
+ */
 const handleEmailChange = (value) => {
   if (value === '__add_email__') {
     // 选择"添加邮箱"选项时，打开对话框
@@ -272,7 +302,10 @@ const handleEmailChange = (value) => {
   }
 }
 
-// 重置邮箱表单
+/**
+ * 重置邮箱表单
+ * 清空邮箱输入框并清除验证状态
+ */
 const resetEmailForm = () => {
   emailForm.value.email = ''
   if (emailFormRef.value) {
@@ -280,7 +313,10 @@ const resetEmailForm = () => {
   }
 }
 
-// 自动保存设置（不显示成功提示，因为操作本身已有提示）
+/**
+ * 自动保存设置
+ * 将当前的邮箱列表自动保存到后端，不显示成功提示（因为操作本身已有提示）
+ */
 const autoSaveSettings = async () => {
   if (!surveyId.value) return
   

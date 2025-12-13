@@ -9,45 +9,51 @@ public interface StatisticsService {
 
     /**
      * 获取问卷统计概览
+     * 获取指定问卷的整体统计数据，包括填写数量、完成率、平均填写时长等
      * @param surveyId 问卷ID
-     * @return 统计概览数据
+     * @return 统计概览数据Map，包含totalResponses、completedResponses等字段
      */
     Map<String, Object> getSurveyStatistics(Long surveyId);
 
     /**
-     * 获取题目统计
-     * @param formItemId 表单项ID（字符串）
+     * 获取题目统计数据
+     * 获取指定题目的统计数据，包括填写数量、填写率等
+     * @param formItemId 表单项ID（字符串格式）
      * @param surveyId 问卷ID（可选，用于容错处理）
-     * @return 题目统计数据
+     * @return 题目统计数据Map
      */
     Map<String, Object> getQuestionStatistics(String formItemId, Long surveyId);
 
     /**
-     * 获取选项统计（选择人数、比例）
-     * @param formItemId 表单项ID（字符串）
-     * @return 选项统计数据
+     * 获取选项统计数据
+     * 获取选择题各选项的选择人数和比例
+     * @param formItemId 表单项ID（字符串格式）
+     * @return 选项统计数据Map，包含各选项的选择人数和比例
      */
     Map<String, Object> getOptionStatistics(String formItemId);
 
     /**
-     * 获取填写趋势统计
+     * 获取填写趋势统计数据
+     * 按时间范围统计问卷的填写数量趋势，用于趋势分析图表
      * @param surveyId 问卷ID
-     * @param timeRange 时间范围（如：7d, 30d, all）
-     * @return 填写趋势数据
+     * @param timeRange 时间范围（7d-最近7天，30d-最近30天，90d-最近90天，1y-最近1年，all-全部）
+     * @return 填写趋势数据Map，包含日期和对应的填写数量
      */
     Map<String, Object> getResponseTrend(Long surveyId, String timeRange);
 
     /**
-     * 获取填写来源统计
+     * 获取填写来源统计数据
+     * 统计问卷填写的来源分布（如：直接访问、分享链接等）
      * @param surveyId 问卷ID
-     * @return 填写来源数据
+     * @return 填写来源数据Map，包含各来源的填写数量
      */
     Map<String, Object> getResponseSource(Long surveyId);
 
     /**
-     * 获取设备类型统计
+     * 获取设备类型统计数据
+     * 统计填写问卷的设备类型分布（PC、移动设备等）
      * @param surveyId 问卷ID
-     * @return 设备类型数据
+     * @return 设备类型数据Map，包含各设备类型的填写数量
      */
     Map<String, Object> getDeviceStatistics(Long surveyId);
 

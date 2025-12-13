@@ -26,9 +26,11 @@ public class DataEncryptionUtils {
     private String secretKey;
 
     /**
-     * 加密数据
-     * @param data 原始数据
-     * @return 加密后的Base64字符串
+     * 使用AES算法加密数据
+     * 将原始数据加密后转换为Base64字符串
+     * @param data 待加密的原始数据
+     * @return 加密后的Base64编码字符串
+     * @throws RuntimeException 如果加密失败则抛出运行时异常
      */
     public String encrypt(String data) {
         if (data == null || data.isEmpty()) {
@@ -51,9 +53,11 @@ public class DataEncryptionUtils {
     }
 
     /**
-     * 解密数据
-     * @param encryptedData 加密后的Base64字符串
-     * @return 原始数据
+     * 使用AES算法解密数据
+     * 将Base64编码的加密字符串解密为原始数据
+     * @param encryptedData Base64编码的加密字符串
+     * @return 解密后的原始数据
+     * @throws RuntimeException 如果解密失败则抛出运行时异常
      */
     public String decrypt(String encryptedData) {
         if (encryptedData == null || encryptedData.isEmpty()) {

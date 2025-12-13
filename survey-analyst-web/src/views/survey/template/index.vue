@@ -291,6 +291,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷模板列表页面
+ * 功能：显示问卷模板列表，支持我的模板和公共模板切换，支持搜索、分类管理、创建模板、使用模板等功能
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -376,7 +381,10 @@ const categoryForm = ref({
 // 默认封面图（如果没有图片，使用占位图）
 const defaultCoverImg = '/images/default-cover.svg'
 
-// 加载模板分类
+/**
+ * 加载模板分类
+ * 从后端获取所有模板分类列表
+ */
 const queryTemplateType = async () => {
   try {
     const res = await templateApi.getTemplateTypeList()
@@ -388,7 +396,10 @@ const queryTemplateType = async () => {
   }
 }
 
-// 加载模板列表
+/**
+ * 加载模板列表
+ * 根据查询参数分页加载模板列表
+ */
 const queryTemplatePage = async () => {
   loading.value = true
   try {
@@ -406,7 +417,11 @@ const queryTemplatePage = async () => {
   }
 }
 
-// 标签切换
+/**
+ * 处理标签切换
+ * 切换我的模板和公共模板时，重置查询参数并重新加载列表
+ * @param {string} tabName - 标签名称 ('my' 或 'public')
+ */
 const handleTabChange = (tabName) => {
   queryParams.value.isPublic = tabName === 'public' ? 1 : 0
   queryParams.value.current = 1
@@ -414,14 +429,21 @@ const handleTabChange = (tabName) => {
   queryTemplatePage()
 }
 
-// 分类选择
+/**
+ * 处理分类选择
+ * 选择分类筛选时，更新查询参数并重新加载列表
+ * @param {string|number} index - 分类ID或'null'（表示全部）
+ */
 const handleCategorySelect = (index) => {
   queryParams.value.type = index === 'null' ? null : Number(index)
   queryParams.value.current = 1
   queryTemplatePage()
 }
 
-// 查看模板预览
+/**
+ * 跳转到模板预览页面
+ * @param {string} formKey - 模板的唯一标识key
+ */
 const toTemplatePreview = (formKey) => {
   router.push({
     path: '/survey/template/preview',
@@ -429,7 +451,11 @@ const toTemplatePreview = (formKey) => {
   })
 }
 
-// 编辑信息（基本信息：名称、描述、分类、封面图等）
+/**
+ * 处理编辑模板信息
+ * 打开编辑对话框并填充模板信息（名称、描述、分类、封面图等）
+ * @param {Object} template - 模板对象
+ */
 const handleEditInfo = (template) => {
   editForm.value = {
     id: template.id,
@@ -443,7 +469,11 @@ const handleEditInfo = (template) => {
   editDialogVisible.value = true
 }
 
-// 编辑组件（直接编辑模板）
+/**
+ * 处理编辑模板组件
+ * 跳转到问卷编辑页面，直接编辑模板的表单内容
+ * @param {Object} template - 模板对象
+ */
 const handleEditComponents = (template) => {
   // 直接通过formKey跳转到编辑页面，编辑模板本身
   router.push({
@@ -458,7 +488,10 @@ const handleEditComponents = (template) => {
   })
 }
 
-// 保存模板信息
+/**
+ * 处理保存模板信息
+ * 验证表单后调用更新模板接口，成功后关闭对话框并刷新列表
+ */
 const handleSaveTemplate = async () => {
   if (!editForm.value.name) {
     ElMessage.warning('请输入模板名称')
@@ -483,21 +516,34 @@ const handleSaveTemplate = async () => {
   }
 }
 
-// 获取分类名称
+/**
+ * 获取分类名称
+ * 根据分类ID获取分类的名称
+ * @param {number} categoryId - 分类ID
+ * @returns {string} 分类名称
+ */
 const getCategoryName = (categoryId) => {
   if (!categoryId) return '-'
   const category = templateTypeList.value.find(c => c.id === categoryId)
   return category ? category.name : '-'
 }
 
-// 分页大小改变
+/**
+ * 处理每页条数变化
+ * 更新每页条数并重新加载列表
+ * @param {number} size - 每页条数
+ */
 const handleSizeChange = (size) => {
   queryParams.value.size = size
   queryParams.value.current = 1
   queryTemplatePage()
 }
 
-// 分页页码改变
+/**
+ * 处理当前页码变化
+ * 更新当前页码并重新加载列表
+ * @param {number} page - 当前页码
+ */
 const handlePageChange = (page) => {
   queryParams.value.current = page
   queryTemplatePage()
@@ -515,6 +561,11 @@ const uploadHeaders = computed(() => {
   }
 })
 
+/**
+ * 处理模板封面图上传成功
+ * 上传成功后更新封面图URL
+ * @param {Object} response - 上传响应对象
+ */
 const handleTemplateCoverUpload = (response) => {
   if (response && response.code === 200 && response.data) {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
@@ -525,7 +576,10 @@ const handleTemplateCoverUpload = (response) => {
   }
 }
 
-// 预览封面图 - 触发 el-image 的原生预览功能
+/**
+ * 预览封面图
+ * 触发 el-image 组件的原生预览功能
+ */
 const handlePreviewCoverImage = () => {
   if (coverImageRef.value) {
     // 触发图片的点击事件来打开预览
@@ -536,13 +590,20 @@ const handlePreviewCoverImage = () => {
   }
 }
 
-// 删除封面图
+/**
+ * 删除封面图
+ * 清空封面图URL
+ */
 const handleDeleteCoverImage = () => {
   editForm.value.coverImg = ''
   ElMessage.success('封面图已删除')
 }
 
-// 删除模板
+/**
+ * 处理删除模板
+ * 确认后调用删除接口，成功后刷新列表（公共模板不允许删除）
+ * @param {Object} template - 模板对象
+ */
 const handleDelete = async (template) => {
   // 公共模板不允许删除
   if (template.isPublic === 1) {
@@ -571,12 +632,19 @@ const handleDelete = async (template) => {
   }
 }
 
-// 图片加载错误处理
+/**
+ * 处理图片加载错误
+ * 图片加载失败时使用默认占位图
+ * @param {Event} event - 图片加载错误事件
+ */
 const handleImageError = (event) => {
   event.target.src = defaultCoverImg
 }
 
-// 添加分类
+/**
+ * 处理添加分类
+ * 打开分类对话框并重置表单
+ */
 const handleAddCategory = () => {
   editingCategory.value = null
   categoryForm.value = {
@@ -587,7 +655,11 @@ const handleAddCategory = () => {
   categoryDialogVisible.value = true
 }
 
-// 编辑分类
+/**
+ * 处理编辑分类
+ * 打开分类对话框并填充分类信息
+ * @param {Object} category - 分类对象
+ */
 const handleEditCategory = (category) => {
   editingCategory.value = category
   categoryForm.value = {
@@ -598,7 +670,10 @@ const handleEditCategory = (category) => {
   categoryDialogVisible.value = true
 }
 
-// 保存分类
+/**
+ * 处理保存分类
+ * 根据是否为编辑模式，调用创建或更新分类接口，成功后刷新分类列表
+ */
 const handleSaveCategory = async () => {
   if (!categoryForm.value.name || !categoryForm.value.name.trim()) {
     ElMessage.warning('请输入分类名称')
@@ -626,7 +701,11 @@ const handleSaveCategory = async () => {
   }
 }
 
-// 处理分类管理下拉框命令
+/**
+ * 处理分类管理下拉框命令
+ * 根据不同的命令执行添加、编辑或删除分类操作
+ * @param {string} command - 命令字符串 ('add', 'edit-{id}', 'delete-{id}')
+ */
 const handleCategoryCommand = (command) => {
   if (command === 'add') {
     handleAddCategory()
@@ -650,7 +729,11 @@ const handleCategoryCommand = (command) => {
   }
 }
 
-// 删除分类
+/**
+ * 处理删除分类
+ * 确认后调用删除分类接口，成功后刷新分类列表（系统分类只能由管理员删除）
+ * @param {Object} category - 分类对象
+ */
 const handleDeleteCategory = async (category) => {
   try {
     // 检查是否为系统分类（管理员可以删除系统分类）

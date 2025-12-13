@@ -359,10 +359,10 @@
             </span>
           </div>
           <el-image
-            :src="element.config?.imageUrl || ''"
+            :src="getImageUrl(element.config?.imageUrl || '')"
             :fit="element.config?.fit || 'cover'"
             style="width: 100%"
-            :preview-src-list="element.config?.previewList || []"
+            :preview-src-list="(element.config?.previewList || []).map(url => getImageUrl(url))"
           />
         </div>
 
@@ -415,7 +415,7 @@
                 :key="option.url || idx"
               >
                 <el-image
-                  :src="option.url"
+                  :src="getImageUrl(option.url)"
                   :fit="element.config?.fit || 'cover'"
                   style="width: 100%; height: 100%"
                 />
@@ -467,6 +467,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷表单渲染组件
+ * 功能：渲染问卷表单项，支持多种题型（文本、单选、多选、日期、文件上传等），支持逻辑跳转、表单验证、主题配置等功能
+ */
+
 import { ref, computed, watch } from 'vue'
 import { Upload, Plus, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -501,10 +506,18 @@ const props = defineProps({
   }
 })
 
-// 存储每个表单项的显示状态（由逻辑规则控制）
 const itemVisibility = ref({})
 
-// 评估逻辑条件
+/**
+ * 评估逻辑条件
+ * @param {Object} condition 条件对象
+ * @param {string} condition.formItemId 表单项ID
+ * @param {string} condition.expression 表达式类型（eq、ne、gt、ge、lt、le）
+ * @param {*} condition.optionValue 选项值
+ * @param {Object} formModel 表单数据模型
+ * @param {Array} formItems 表单项数组
+ * @returns {boolean} 条件是否满足
+ */
 const evaluateCondition = (condition, formModel, formItems) => {
   const { formItemId, expression, optionValue, relation } = condition
   if (!formItemId || !expression) return true
@@ -515,37 +528,43 @@ const evaluateCondition = (condition, formModel, formItems) => {
   const value = formModel[item.vModel]
   
   switch (expression) {
-    case 'eq': // 等于/选中
+    case 'eq':
       if (item.type === 'CHECKBOX') {
         return Array.isArray(value) && value.includes(optionValue)
       }
       return value === optionValue
-    case 'ne': // 不等于/未选中
+    case 'ne':
       if (item.type === 'CHECKBOX') {
         return !Array.isArray(value) || !value.includes(optionValue)
       }
       return value !== optionValue
-    case 'gt': // 大于
+    case 'gt':
       return Number(value) > Number(optionValue)
-    case 'ge': // 大于等于
+    case 'ge':
       return Number(value) >= Number(optionValue)
-    case 'lt': // 小于
+    case 'lt':
       return Number(value) < Number(optionValue)
-    case 'le': // 小于等于
+    case 'le':
       return Number(value) <= Number(optionValue)
     default:
       return true
   }
 }
 
-// 评估逻辑规则
+/**
+ * 评估逻辑规则
+ * @param {Object} rule 逻辑规则对象
+ * @param {Array} rule.conditionList 条件列表
+ * @param {Object} formModel 表单数据模型
+ * @param {Array} formItems 表单项数组
+ * @returns {boolean} 规则是否满足
+ */
 const evaluateLogicRule = (rule, formModel, formItems) => {
   const conditionList = rule.conditionList || []
   if (conditionList.length === 0) {
     return true
   }
   
-  // 评估所有条件
   let result = true
   for (let i = 0; i < conditionList.length; i++) {
     const condition = conditionList[i]
@@ -554,7 +573,6 @@ const evaluateLogicRule = (rule, formModel, formItems) => {
     if (i === 0) {
       result = conditionResult
     } else {
-      // 使用第一个条件的relation（所有条件使用相同的relation）
       const relation = conditionList[0]?.relation || condition.relation || 'AND'
       if (relation === 'AND') {
         result = result && conditionResult
@@ -567,9 +585,11 @@ const evaluateLogicRule = (rule, formModel, formItems) => {
   return result
 }
 
-// 更新表单项的显示状态
+/**
+ * 更新表单项的显示状态
+ * 根据逻辑规则控制表单项的显示和隐藏
+ */
 const updateItemVisibility = () => {
-  // 初始化所有项为显示状态（默认显示）
   props.formItems.forEach(item => {
     if (itemVisibility.value[item.formItemId] === undefined) {
       itemVisibility.value[item.formItemId] = true
@@ -580,14 +600,11 @@ const updateItemVisibility = () => {
     return
   }
   
-  // 收集所有被逻辑规则控制的表单项ID
   const controlledItems = new Set()
   
-  // 遍历所有逻辑规则
   props.formLogic.forEach(rule => {
     if (!rule.conditionList || !rule.triggerList) return
     
-    // 将Set转换为数组（如果必要）
     const conditionList = Array.isArray(rule.conditionList) 
       ? rule.conditionList 
       : (rule.conditionList instanceof Set ? Array.from(rule.conditionList) : [])
@@ -595,7 +612,6 @@ const updateItemVisibility = () => {
       ? rule.triggerList 
       : (rule.triggerList instanceof Set ? Array.from(rule.triggerList) : [])
     
-    // 记录被控制的项
     triggerList.forEach(trigger => {
       if (trigger.formItemId) {
         controlledItems.add(trigger.formItemId)
@@ -604,20 +620,15 @@ const updateItemVisibility = () => {
     
     const conditionMet = evaluateLogicRule({ ...rule, conditionList }, props.formModel, props.formItems)
     
-    // 根据条件是否满足来设置显示/隐藏
     triggerList.forEach(trigger => {
       if (trigger.formItemId) {
         if (conditionMet) {
-          // 条件满足时，执行show/hide操作
           if (trigger.type === 'show') {
             itemVisibility.value[trigger.formItemId] = true
           } else if (trigger.type === 'hide') {
             itemVisibility.value[trigger.formItemId] = false
           }
         } else {
-          // 条件不满足时，执行相反的操作
-          // 如果trigger是show，条件不满足则应该hide
-          // 如果trigger是hide，条件不满足则应该show
           if (trigger.type === 'show') {
             itemVisibility.value[trigger.formItemId] = false
           } else if (trigger.type === 'hide') {
@@ -628,7 +639,6 @@ const updateItemVisibility = () => {
     })
   })
   
-  // 对于没有被逻辑规则控制的项，保持默认显示状态
   props.formItems.forEach(item => {
     if (!controlledItems.has(item.formItemId) && itemVisibility.value[item.formItemId] === undefined) {
       itemVisibility.value[item.formItemId] = true
@@ -636,20 +646,21 @@ const updateItemVisibility = () => {
   })
 }
 
-// 监听表单模型变化，重新评估逻辑
 watch(() => props.formModel, () => {
   updateItemVisibility()
 }, { deep: true })
 
-// 监听逻辑规则变化
 watch(() => props.formLogic, () => {
   updateItemVisibility()
 }, { deep: true, immediate: true })
 
-// 初始化显示状态
 updateItemVisibility()
 
-// 过滤掉隐藏的组件，并按 sort 排序
+/**
+ * 获取可见的表单项列表
+ * 过滤掉隐藏的组件，并按sort排序
+ * @returns {Array} 可见的表单项数组
+ */
 const visibleFormItems = computed(() => {
   return props.formItems
     .filter(item => {
@@ -666,18 +677,12 @@ const visibleFormItems = computed(() => {
     })
 })
 
-// 获取题目序号
-// 所有可见组件都参与编号，但 DIVIDER（分割线）不参与编号
-// 其他展示类组件（IMAGE、IMAGE_CAROUSEL、DESC_TEXT）参与编号
 const getQuestionIndex = (element) => {
   let index = 0
-  // 使用 visibleFormItems 确保遍历顺序和显示顺序一致
   for (const item of visibleFormItems.value) {
-    // 分割线不参与编号，跳过
     if (item.type === 'DIVIDER') {
       continue
     }
-    // 其他组件都参与编号（包括展示类组件如 IMAGE、IMAGE_CAROUSEL、DESC_TEXT）
     index++
     if (item.formItemId === element.formItemId) {
       return index
@@ -686,13 +691,16 @@ const getQuestionIndex = (element) => {
   return index
 }
 
-// 内部状态存储，用于类型转换（只用于类型转换，不直接修改 formModel）
 const uploadFileLists = ref({})
 const sliderValues = ref({})
 
-// 获取上传组件的文件列表（确保是数组）
+/**
+ * 获取上传组件的文件列表
+ * 确保返回数组格式，并处理URL转换
+ * @param {string} vModel 表单项的vModel
+ * @returns {Array} 文件列表数组
+ */
 const getUploadFileList = (vModel) => {
-  // 优先使用缓存的值（实时更新）
   if (uploadFileLists.value[vModel] !== undefined) {
     return uploadFileLists.value[vModel]
   }
@@ -705,7 +713,6 @@ const getUploadFileList = (vModel) => {
   } else if (value === null || value === undefined || value === '') {
     fileList = []
   } else {
-    // 如果值是字符串或其他类型，尝试转换为数组
     try {
       const parsed = typeof value === 'string' ? JSON.parse(value) : value
       if (Array.isArray(parsed)) {
@@ -718,16 +725,12 @@ const getUploadFileList = (vModel) => {
     }
   }
   
-  // 确保文件列表中的每个文件都有正确的完整URL用于显示
   fileList = fileList.map(file => {
-    // 如果文件对象有url属性，确保是完整URL
     if (file && file.url) {
-      // 如果url不是完整URL，转换为完整URL
       if (!file.url.startsWith('http://') && !file.url.startsWith('https://')) {
         file.url = getImageUrl(file.url)
       }
     } else if (file && typeof file === 'string') {
-      // 如果文件是字符串（URL），转换为文件对象
       const fullUrl = getImageUrl(file)
       return {
         url: fullUrl,
@@ -738,19 +741,20 @@ const getUploadFileList = (vModel) => {
     return file
   })
   
-  // 缓存文件列表
   uploadFileLists.value[vModel] = fileList
   
   return fileList
 }
 
-// 处理上传组件的变化
+/**
+ * 处理上传组件的变化
+ * @param {string} vModel 表单项的vModel
+ * @param {Object} file 文件对象
+ * @param {Array} fileList 文件列表
+ */
 const handleUploadChange = (vModel, file, fileList) => {
-  // Element Plus 的 upload 组件的 change 事件参数是 (file, fileList)
   const files = Array.isArray(fileList) ? fileList : []
-  // 立即更新缓存，确保UI能实时显示
   uploadFileLists.value[vModel] = [...files]
-  // 更新 formModel，确保响应式更新
   if (vModel in props.formModel) {
     props.formModel[vModel] = [...files]
   } else {
@@ -1351,10 +1355,13 @@ const getInputStyle = (additionalStyles = '') => {
   `
 }
 
-// 获取激活状态的背景色（主题色的浅色版本）
+/**
+ * 获取激活状态的背景色
+ * 将主题色转换为rgba格式，降低透明度
+ * @returns {string} rgba颜色值
+ */
 const getActiveBgColor = () => {
   const themeColor = getThemeColor()
-  // 将主题色转换为rgba，降低透明度
   if (themeColor.startsWith('#')) {
     const r = parseInt(themeColor.slice(1, 3), 16)
     const g = parseInt(themeColor.slice(3, 5), 16)
@@ -1364,7 +1371,10 @@ const getActiveBgColor = () => {
   return '#ecf5ff'
 }
 
-// 暴露验证方法给父组件
+/**
+ * 暴露验证方法给父组件
+ * 提供表单验证、字段验证、重置表单、清除验证等功能
+ */
 defineExpose({
   validate: () => {
     if (!formRef.value) return Promise.resolve(true)
@@ -1384,7 +1394,11 @@ defineExpose({
   }
 })
 
-// 验证输入（正则验证和长度验证）
+/**
+ * 验证输入
+ * 执行正则验证和长度验证
+ * @param {Object} element 表单项元素
+ */
 const validateInput = (element) => {
   if (!element || props.previewMode) return
   

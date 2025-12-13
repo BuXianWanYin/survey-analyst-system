@@ -1,10 +1,15 @@
+/**
+ * 认证工具
+ * 功能：提供Token和用户信息的存储、获取、移除功能，使用sessionStorage实现标签页独立的用户会话
+ */
+
 const TOKEN_KEY = 'survey_analyst_token'
 const REFRESH_TOKEN_KEY = 'survey_analyst_refresh_token'
 const USER_INFO_KEY = 'survey_analyst_user_info'
 
 /**
  * 获取Token
- * 从sessionStorage获取（标签页独立，每个标签页单独一个用户会话）
+ * @returns {string|null} Token字符串，不存在则返回null
  */
 export function getToken() {
   return sessionStorage.getItem(TOKEN_KEY)
@@ -12,7 +17,7 @@ export function getToken() {
 
 /**
  * 设置Token
- * 存储到sessionStorage（标签页独立，每个标签页单独一个用户会话）
+ * @param {string} token Token字符串
  */
 export function setToken(token) {
   sessionStorage.setItem(TOKEN_KEY, token)
@@ -20,7 +25,7 @@ export function setToken(token) {
 
 /**
  * 获取刷新Token
- * 从sessionStorage获取（标签页独立）
+ * @returns {string|null} 刷新Token字符串，不存在则返回null
  */
 export function getRefreshToken() {
   return sessionStorage.getItem(REFRESH_TOKEN_KEY)
@@ -28,15 +33,15 @@ export function getRefreshToken() {
 
 /**
  * 设置刷新Token
- * 存储到sessionStorage（标签页独立）
+ * @param {string} token 刷新Token字符串
  */
 export function setRefreshToken(token) {
   sessionStorage.setItem(REFRESH_TOKEN_KEY, token)
 }
 
 /**
- * 移除Token
- * 移除当前标签页的token（sessionStorage），不影响其他标签页
+ * 移除Token和用户信息
+ * 清除当前标签页的所有认证信息，不影响其他标签页
  */
 export function removeToken() {
   sessionStorage.removeItem(TOKEN_KEY)
@@ -46,7 +51,7 @@ export function removeToken() {
 
 /**
  * 获取用户信息
- * 从sessionStorage获取（标签页独立）
+ * @returns {Object|null} 用户信息对象，不存在则返回null
  */
 export function getUserInfo() {
   const userInfo = sessionStorage.getItem(USER_INFO_KEY)
@@ -55,7 +60,7 @@ export function getUserInfo() {
 
 /**
  * 设置用户信息
- * 存储到sessionStorage（标签页独立，每个标签页单独一个用户会话）
+ * @param {Object} userInfo 用户信息对象
  */
 export function setUserInfo(userInfo) {
   sessionStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo))

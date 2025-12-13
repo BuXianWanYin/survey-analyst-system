@@ -3,6 +3,10 @@
 </template>
 
 <script setup>
+/**
+ * 根组件
+ * 功能：应用的根组件，承载路由视图，提供全局样式
+ */
 </script>
 
 <style>

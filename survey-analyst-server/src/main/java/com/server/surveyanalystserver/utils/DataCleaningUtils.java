@@ -13,8 +13,9 @@ import java.util.stream.Collectors;
 public class DataCleaningUtils {
 
     /**
-     * 去除重复数据（根据IP、时间等）
-     * @param responses 填写记录列表
+     * 去除重复的填写记录
+     * 根据IP地址和提交时间组合作为唯一标识进行去重
+     * @param responses 待去重的填写记录列表
      * @return 去重后的填写记录列表
      */
     public static List<Response> removeDuplicates(List<Response> responses) {
@@ -40,8 +41,9 @@ public class DataCleaningUtils {
     }
 
     /**
-     * 过滤异常数据（填写时长过短、过长等）
-     * @param responses 填写记录列表
+     * 过滤异常填写记录
+     * 过滤掉填写时长小于5秒或超过1小时的异常数据
+     * @param responses 待过滤的填写记录列表
      * @return 过滤后的填写记录列表
      */
     public static List<Response> filterAbnormalData(List<Response> responses) {

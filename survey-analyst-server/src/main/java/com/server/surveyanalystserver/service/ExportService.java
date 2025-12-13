@@ -8,17 +8,11 @@ import javax.servlet.http.HttpServletResponse;
 public interface ExportService {
 
     /**
-     * 导出问卷数据（Excel格式）
+     * 导出问卷填写数据
+     * 将问卷的所有填写数据导出为Excel文件，包含图片等附件
      * @param surveyId 问卷ID
-     * @param response HTTP响应
+     * @param response HTTP响应对象，用于输出Excel文件流
      */
     void exportSurveyData(Long surveyId, HttpServletResponse response);
-
-    /**
-     * 导出分析报告（PDF格式）
-     * @param surveyId 问卷ID
-     * @param response HTTP响应
-     */
-    void exportAnalysisReport(Long surveyId, HttpServletResponse response);
 }
 

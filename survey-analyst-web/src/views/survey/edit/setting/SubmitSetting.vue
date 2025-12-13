@@ -44,6 +44,11 @@
 </template>
 
 <script setup>
+/**
+ * 提交设置组件
+ * 功能：配置问卷提交后的显示方式和跳转设置，支持系统默认提示、自定义文案、提交后跳转网页等功能
+ */
+
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -63,7 +68,10 @@ const form = ref({
 
 const rules = {}
 
-// 加载设置
+/**
+ * 加载提交设置
+ * 从后端加载问卷的提交相关设置（提交后显示内容、跳转等）
+ */
 const loadSetting = async () => {
   const id = route.query.id
   if (!id) return
@@ -92,7 +100,10 @@ const loadSetting = async () => {
   }
 }
 
-// 保存设置
+/**
+ * 保存提交设置
+ * 验证表单后保存提交相关设置到后端
+ */
 const handleSave = async () => {
   if (!formRef.value) return
 

@@ -227,7 +227,8 @@
               <el-button :icon="Download" type="primary" @click="handleDownloadQRCode">
                 下载二维码
               </el-button>
-              <el-button :icon="DocumentCopy" type="primary" @click="handleCopyQRCode">
+              <el-button type="primary" @click="handleCopyQRCode">
+                <img src="/icon/qrcode.svg?v=1" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
                 复制二维码
               </el-button>
             </div>
@@ -251,7 +252,10 @@
             />
           </div>
           <div class="link-button-wrapper">
-            <el-button :icon="Link" type="primary" @click="handleCopyLink">复制链接</el-button>
+            <el-button type="primary" @click="handleCopyLink">
+              <img src="/icon/copy-link.svg?v=1" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
+              复制链接
+            </el-button>
           </div>
         </div>
       </div>
@@ -260,17 +264,26 @@
 </template>
 
 <script setup>
+/**
+ * 问卷发布设置页面
+ * 功能：配置问卷的发布设置，包括回收设置（最大填写数、时间限制）、访问权限、分享链接、二维码等功能
+ */
+
 import { ref, reactive, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Promotion, Link, Download, Close, DocumentCopy, QuestionFilled, Check } from '@element-plus/icons-vue'
+import { Promotion, Download, Close, QuestionFilled, Check } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi, formApi } from '@/api'
 import dayjs from 'dayjs'
 
 const route = useRoute()
 
-// 检测是否为手机端
 const isMobile = ref(false)
+
+/**
+ * 检查是否为移动端
+ * 根据窗口宽度判断是否为移动端视图
+ */
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768
 }
@@ -299,7 +312,11 @@ const recoveryForm = reactive({
   accountWriteCountLimitEnabled: false
 })
 
-// 开关变化处理函数
+/**
+ * 处理最大填写数开关变化
+ * 当开关关闭时重置为0，开启时如果为0则设置为1
+ * @param {boolean} enabled - 开关是否启用
+ */
 const handleMaxResponsesChange = (enabled) => {
   if (!enabled) {
     recoveryForm.maxResponses = 0
@@ -308,6 +325,11 @@ const handleMaxResponsesChange = (enabled) => {
   }
 }
 
+/**
+ * 处理IP限制开关变化
+ * 当开关关闭时重置为0，开启时如果为0则设置为1
+ * @param {boolean} enabled - 开关是否启用
+ */
 const handleIpLimitChange = (enabled) => {
   if (!enabled) {
     recoveryForm.ipWriteCountLimit = 0
@@ -316,6 +338,11 @@ const handleIpLimitChange = (enabled) => {
   }
 }
 
+/**
+ * 处理设备限制开关变化
+ * 当开关关闭时重置为0，开启时如果为0则设置为1
+ * @param {boolean} enabled - 开关是否启用
+ */
 const handleDeviceLimitChange = (enabled) => {
   if (!enabled) {
     recoveryForm.deviceWriteCountLimit = 0
@@ -324,6 +351,11 @@ const handleDeviceLimitChange = (enabled) => {
   }
 }
 
+/**
+ * 处理账号限制开关变化
+ * 当开关关闭时重置为0，开启时如果为0则设置为1
+ * @param {boolean} enabled - 开关是否启用
+ */
 const handleAccountLimitChange = (enabled) => {
   if (!enabled) {
     recoveryForm.accountWriteCountLimit = 0
@@ -342,7 +374,10 @@ const savingPublish = ref(false)
 const linkInputWidth = ref('auto')
 const measureSpan = ref(null)
 
-// 计算链接输入框宽度
+/**
+ * 计算链接输入框宽度
+ * 根据链接文本的实际宽度动态调整输入框宽度
+ */
 const calculateLinkWidth = () => {
   nextTick(() => {
     if (measureSpan.value && surveyLink.value) {
@@ -360,6 +395,10 @@ watch(surveyLink, () => {
   calculateLinkWidth()
 })
 
+/**
+ * 加载问卷数据
+ * 加载问卷信息、回收设置、问卷链接和二维码
+ */
 const loadSurveyData = async () => {
   const surveyId = route.query.id
   if (!surveyId) {
@@ -395,6 +434,11 @@ const loadSurveyData = async () => {
   }
 }
 
+/**
+ * 加载回收设置
+ * 从后端获取问卷的回收限制设置（最大填写数、IP限制、设备限制、账号限制等）
+ * @param {number} surveyId - 问卷ID
+ */
 const loadRecoverySettings = async (surveyId) => {
   try {
     const res = await formApi.getFormSetting(surveyId)
@@ -447,6 +491,10 @@ const loadRecoverySettings = async (surveyId) => {
   }
 }
 
+/**
+ * 加载问卷链接
+ * 从后端获取问卷的公开访问链接，如果接口不存在则使用默认链接格式
+ */
 const loadSurveyLink = async () => {
   try {
     const res = await surveyPublishApi.getSurveyLink(route.query.id)
@@ -466,6 +514,10 @@ const loadSurveyLink = async () => {
   calculateLinkWidth()
 }
 
+/**
+ * 加载二维码
+ * 从后端获取问卷的二维码图片（Base64格式）
+ */
 const loadQRCode = async () => {
   loadingQRCode.value = true
   try {
@@ -480,6 +532,10 @@ const loadQRCode = async () => {
   }
 }
 
+/**
+ * 处理发布问卷
+ * 更新问卷信息和回收设置，然后发布问卷，发布成功后自动加载二维码
+ */
 const handlePublish = async () => {
   publishing.value = true
   try {
@@ -525,6 +581,10 @@ const handlePublish = async () => {
   }
 }
 
+/**
+ * 复制问卷链接
+ * 将问卷链接复制到剪贴板
+ */
 const handleCopyLink = async () => {
   try {
     await navigator.clipboard.writeText(surveyLink.value)
@@ -534,6 +594,10 @@ const handleCopyLink = async () => {
   }
 }
 
+/**
+ * 下载二维码
+ * 将二维码图片下载到本地
+ */
 const handleDownloadQRCode = () => {
   if (!qrCodeBase64.value) return
   
@@ -543,6 +607,10 @@ const handleDownloadQRCode = () => {
   link.click()
 }
 
+/**
+ * 复制二维码图片
+ * 将二维码图片复制到剪贴板
+ */
 const handleCopyQRCode = async () => {
   if (!qrCodeBase64.value) {
     ElMessage.warning('请先生成二维码')
@@ -564,6 +632,10 @@ const handleCopyQRCode = async () => {
   }
 }
 
+/**
+ * 处理停止发布问卷
+ * 调用停止发布接口，成功后更新问卷状态并刷新数据
+ */
 const handleUnpublish = async () => {
   unpublishing.value = true
   try {
@@ -581,7 +653,10 @@ const handleUnpublish = async () => {
   }
 }
 
-// 保存回收设置
+/**
+ * 保存回收设置
+ * 保存问卷的回收限制设置（最大填写数、IP限制、设备限制、账号限制等）并更新问卷基本信息
+ */
 const handleSaveRecoverySettings = async () => {
   savingRecovery.value = true
   try {

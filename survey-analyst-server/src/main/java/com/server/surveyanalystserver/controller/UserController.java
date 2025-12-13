@@ -1,9 +1,7 @@
 package com.server.surveyanalystserver.controller;
 
 import com.server.surveyanalystserver.common.Result;
-import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.service.OperationLogService;
 import com.server.surveyanalystserver.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -12,7 +10,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -26,9 +23,11 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private OperationLogService operationLogService;
-
+    /**
+     * 获取当前登录用户信息
+     * 从Spring Security上下文中获取当前认证用户的信息
+     * @return 当前用户信息
+     */
     @ApiOperation(value = "获取当前用户信息", notes = "获取当前登录用户信息")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/current")
@@ -37,6 +36,12 @@ public class UserController {
         return Result.success("获取成功", user);
     }
 
+    /**
+     * 更新当前用户信息
+     * 更新当前登录用户的个人信息（不包括密码）
+     * @param user 包含更新信息的用户对象
+     * @return 更新后的用户信息
+     */
     @ApiOperation(value = "更新用户信息", notes = "更新当前用户信息")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PutMapping("/info")
@@ -45,6 +50,12 @@ public class UserController {
         return Result.success("更新成功", updatedUser);
     }
 
+    /**
+     * 修改当前用户密码
+     * 验证旧密码后更新为新密码
+     * @param params 参数Map，包含oldPassword（旧密码）和newPassword（新密码）
+     * @return 修改结果
+     */
     @ApiOperation(value = "修改密码", notes = "修改当前用户密码")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PutMapping("/password")
@@ -55,42 +66,18 @@ public class UserController {
         return Result.success("密码修改成功");
     }
 
+    /**
+     * 用户登出接口
+     * 清除用户认证信息，记录登出日志
+     * @param request HTTP请求对象，用于获取IP地址等信息
+     * @return 登出结果
+     */
     @ApiOperation(value = "用户登出", notes = "用户登出接口，记录登出日志")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping("/logout")
     public Result<Void> logout(HttpServletRequest request) {
-        User currentUser = userService.getCurrentUser();
-        
-        // 记录登出日志
-        try {
-            OperationLog log = new OperationLog();
-            log.setUserId(currentUser.getId());
-            log.setOperationType("登出");
-            log.setOperationDesc("用户登出：" + currentUser.getUsername());
-            log.setRequestUrl("/api/user/logout");
-            log.setRequestMethod("POST");
-            log.setIpAddress(getIpAddress(request));
-            log.setCreateTime(LocalDateTime.now());
-            operationLogService.saveLog(log);
-        } catch (Exception e) {
-            // 日志记录失败不影响登出
-        }
-        
+        userService.logout(request);
         return Result.success("登出成功");
-    }
-
-    private String getIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 }
 

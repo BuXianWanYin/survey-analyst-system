@@ -173,6 +173,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷逻辑设置页面
+ * 功能：配置问卷的逻辑跳转规则，支持根据选择字段的选项值触发显示或隐藏其他字段
+ */
+
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -296,7 +301,10 @@ const loadFormData = async () => {
   }
 }
 
-// 加载逻辑
+/**
+ * 加载逻辑规则
+ * 根据surveyId或formKey从后端或模板中加载表单逻辑规则
+ */
 const loadLogic = async () => {
   try {
     // 如果是编辑模板，从模板的scheme中获取逻辑
@@ -323,7 +331,11 @@ const loadLogic = async () => {
   }
 }
 
-// 保存逻辑（防抖）
+/**
+ * 保存逻辑规则（防抖）
+ * 使用防抖函数保存逻辑规则到后端，避免频繁请求
+ * @param {Array} list - 逻辑规则列表
+ */
 const saveLogic = debounce(async (list) => {
   if (!surveyId.value) return
   
@@ -359,19 +371,31 @@ watch(
   { deep: true }
 )
 
-// 添加逻辑
+/**
+ * 添加逻辑规则
+ * 创建一个新的逻辑规则项并添加到列表中
+ */
 const handleAddLogic = () => {
   const newLogic = JSON.parse(JSON.stringify(defaultLogicItem))
   newLogic.id = Date.now()
   logicList.value.push(newLogic)
 }
 
-// 删除逻辑
+/**
+ * 删除逻辑规则
+ * 从列表中删除指定索引的逻辑规则
+ * @param {number} index - 要删除的逻辑规则索引
+ */
 const handleRemoveLogic = (index) => {
   logicList.value.splice(index, 1)
 }
 
-// 添加条件
+/**
+ * 添加条件
+ * 向逻辑规则中添加一个新的条件
+ * @param {Object} logicItem - 逻辑规则项
+ * @param {Object} condition - 参考条件（用于获取relation关系）
+ */
 const handleAddCondition = (logicItem, condition) => {
   logicItem.conditionList.push({
     formItemId: null,
@@ -381,12 +405,21 @@ const handleAddCondition = (logicItem, condition) => {
   })
 }
 
-// 删除条件
+/**
+ * 删除条件
+ * 从逻辑规则中删除指定索引的条件
+ * @param {Object} logicItem - 逻辑规则项
+ * @param {number} index - 要删除的条件索引
+ */
 const handleRemoveCondition = (logicItem, index) => {
   logicItem.conditionList.splice(index, 1)
 }
 
-// 添加触发
+/**
+ * 添加触发项
+ * 向逻辑规则中添加一个新的触发项（控制显示或隐藏字段）
+ * @param {Object} logicItem - 逻辑规则项
+ */
 const handleAddTrigger = (logicItem) => {
   logicItem.triggerList.push({
     formItemId: null,
@@ -394,7 +427,12 @@ const handleAddTrigger = (logicItem) => {
   })
 }
 
-// 删除触发
+/**
+ * 删除触发项
+ * 从逻辑规则中删除指定索引的触发项
+ * @param {Object} logicItem - 逻辑规则项
+ * @param {number} index - 要删除的触发项索引
+ */
 const handleRemoveTrigger = (logicItem, index) => {
   logicItem.triggerList.splice(index, 1)
 }
@@ -406,19 +444,34 @@ const handleRelationChange = (logicItem, relation) => {
   })
 }
 
-// 条件变更
+/**
+ * 处理条件变更
+ * 当条件中的表单项变化时，清空选项值
+ * @param {Object} condition - 条件对象
+ */
 const handleConditionChange = (condition) => {
   condition.optionValue = null
 }
 
-// 获取条件可选择的问题列表
+/**
+ * 获取条件可选择的问题列表
+ * 返回可以作为条件的表单项列表（仅支持单选、多选、下拉框、评分题）
+ * @param {Object} logicItem - 逻辑规则项
+ * @returns {Array} 可选择的表单项列表
+ */
 const getConditionItemList = (logicItem) => {
   return allFormItemList.value.filter(item => {
     return ['RADIO', 'CHECKBOX', 'SELECT', 'RATE'].includes(item.type)
   })
 }
 
-// 获取触发可选择的问题列表（过滤已选择的题目）
+/**
+ * 获取触发可选择的问题列表
+ * 返回可以作为触发的表单项列表，过滤掉已在条件和触发列表中选择的题目
+ * @param {Object} logicItem - 逻辑规则项
+ * @param {Object} currentTrigger - 当前触发项（用于排除自身）
+ * @returns {Array} 可选择的表单项列表
+ */
 const getTriggerItemList = (logicItem, currentTrigger) => {
   // 获取条件列表中已选择的题目ID
   const conditionFormItemIds = logicItem.conditionList
@@ -442,7 +495,12 @@ const getTriggerItemList = (logicItem, currentTrigger) => {
     }))
 }
 
-// 获取条件选项
+/**
+ * 获取条件选项
+ * 根据表单项类型返回可用的条件表达式选项
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 条件选项列表
+ */
 const getConditionOptions = (formItemId) => {
   if (!formItemId) return []
   const type = getFormItemType(formItemId)
@@ -455,7 +513,12 @@ const getConditionOptions = (formItemId) => {
   }
 }
 
-// 获取表单项选项
+/**
+ * 获取表单项选项
+ * 获取指定表单项的选项列表（用于单选、多选、下拉框等）
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 选项列表
+ */
 const getFormItemOptions = (formItemId) => {
   const formItem = allFormItemList.value.find(item => item.formItemId === formItemId)
   if (formItem && formItem.scheme?.config?.options) {
@@ -464,7 +527,12 @@ const getFormItemOptions = (formItemId) => {
   return []
 }
 
-// 获取表单项类型
+/**
+ * 获取表单项类型
+ * 根据表单项ID获取表单项的类型
+ * @param {string} formItemId - 表单项ID
+ * @returns {string} 表单项类型
+ */
 const getFormItemType = (formItemId) => {
   if (!formItemId) return ''
   const formItem = allFormItemList.value.find(item => item.formItemId === formItemId)

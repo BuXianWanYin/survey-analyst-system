@@ -99,12 +99,12 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'copyLink', id: survey.id }">
-                      <el-icon><Link /></el-icon>
-                      <span style="margin-left: 8px">复制链接</span>
+                      <img src="/icon/copy-link.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;" />
+                      <span>复制链接</span>
                     </el-dropdown-item>
                     <el-dropdown-item :command="{ action: 'copyQRCode', id: survey.id }">
-                      <el-icon><Picture /></el-icon>
-                      <span style="margin-left: 8px">复制二维码</span>
+                      <img src="/icon/qrcode-blue.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;" />
+                      <span>复制二维码</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -193,12 +193,12 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'copyLink', id: row.id }">
-                      <el-icon><Link /></el-icon>
-                      <span style="margin-left: 8px">复制链接</span>
+                      <img src="/icon/copy-link.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;" />
+                      <span>复制链接</span>
                     </el-dropdown-item>
                     <el-dropdown-item :command="{ action: 'copyQRCode', id: row.id }">
-                      <el-icon><Picture /></el-icon>
-                      <span style="margin-left: 8px">复制二维码</span>
+                      <img src="/icon/qrcode-blue.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;" />
+                      <span>复制二维码</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -282,10 +282,15 @@
 </template>
 
 <script setup>
+/**
+ * 问卷列表页面
+ * 功能：显示用户的问卷列表，支持搜索、筛选、创建问卷、发布/停止发布、查看统计、删除问卷等功能，支持卡片视图和表格视图切换
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Link, Loading, VideoPause, Picture } from '@element-plus/icons-vue'
+import { Plus, Grid, List, Search, Edit, Promotion, DataAnalysis, Delete, Close, Check, Share, Loading, VideoPause } from '@element-plus/icons-vue'
 import { surveyApi, surveyPublishApi } from '@/api'
 import dayjs from 'dayjs'
 import { useWindowSize } from '@vueuse/core'
@@ -331,6 +336,10 @@ const paginationLayout = computed(() => {
   }
 })
 
+/**
+ * 加载问卷列表
+ * 根据当前页码、每页条数、状态筛选和搜索关键词加载问卷列表
+ */
 const loadSurveyList = async () => {
   loading.value = true
   try {
@@ -364,20 +373,36 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   currentPage.value = 1
   loadSurveyList()
 }
 
+/**
+ * 处理状态筛选变化
+ * 重置页码为第一页并重新加载列表
+ */
 const handleStatusChange = () => {
   currentPage.value = 1
   loadSurveyList()
 }
 
+/**
+ * 处理每页条数变化
+ * 重新加载列表
+ */
 const handleSizeChange = () => {
   loadSurveyList()
 }
 
+/**
+ * 处理当前页码变化
+ * 重新加载列表
+ */
 const handleCurrentChange = () => {
   loadSurveyList()
 }
@@ -393,6 +418,10 @@ const showQRCodeDialog = ref(false)
 const currentQRCode = ref('')
 const currentQRCodeSurveyId = ref(null)
 
+/**
+ * 跳转到创建问卷
+ * 打开创建问卷对话框并重置表单
+ */
 const goToCreateSurvey = () => {
   createForm.value = {
     title: '',
@@ -401,6 +430,10 @@ const goToCreateSurvey = () => {
   showCreateDialog.value = true
 }
 
+/**
+ * 处理创建问卷
+ * 验证表单后调用创建问卷接口，成功后跳转到编辑页面
+ */
 const handleCreateSurvey = async () => {
   if (!createForm.value.title.trim()) {
     ElMessage.warning('请输入问卷名称')
@@ -424,14 +457,29 @@ const handleCreateSurvey = async () => {
   }
 }
 
+/**
+ * 处理编辑问卷
+ * 跳转到问卷编辑页面
+ * @param {number} id - 问卷ID
+ */
 const handleEdit = (id) => {
   router.push(`/survey/edit/editor?id=${id}`)
 }
 
+/**
+ * 处理发布问卷
+ * 跳转到问卷发布页面
+ * @param {number} id - 问卷ID
+ */
 const handlePublish = (id) => {
   router.push(`/survey/edit/publish?id=${id}`)
 }
 
+/**
+ * 处理停止发布问卷
+ * 确认后调用停止发布接口，成功后刷新列表
+ * @param {number} id - 问卷ID
+ */
 const handleUnpublish = async (id) => {
   try {
     await ElMessageBox.confirm('确定要停止发布该问卷吗？停止后将变为已结束状态。', '提示', {
@@ -452,6 +500,11 @@ const handleUnpublish = async (id) => {
   }
 }
 
+/**
+ * 处理查看统计
+ * 跳转到问卷统计页面
+ * @param {number} id - 问卷ID
+ */
 const handleStatistics = (id) => {
   // 跳转到编辑容器内的统计页面
   router.push({
@@ -460,6 +513,11 @@ const handleStatistics = (id) => {
   })
 }
 
+/**
+ * 处理删除问卷
+ * 确认后调用删除接口，成功后刷新列表
+ * @param {number} id - 问卷ID
+ */
 const handleDelete = async (id) => {
   try {
     await ElMessageBox.confirm('确定要删除该问卷吗？', '提示', {
@@ -480,6 +538,12 @@ const handleDelete = async (id) => {
   }
 }
 
+/**
+ * 获取状态文本
+ * 将状态代码转换为中文文本
+ * @param {string} status - 状态代码
+ * @returns {string} 状态中文文本
+ */
 const getStatusText = (status) => {
   const statusMap = {
     DRAFT: '草稿',
@@ -489,6 +553,12 @@ const getStatusText = (status) => {
   return statusMap[status] || '未知'
 }
 
+/**
+ * 获取状态样式类名
+ * 根据状态代码返回对应的CSS类名
+ * @param {string} status - 状态代码
+ * @returns {string} CSS类名
+ */
 const getStatusClass = (status) => {
   const classMap = {
     DRAFT: 'status-draft',
@@ -498,12 +568,24 @@ const getStatusClass = (status) => {
   return classMap[status] || ''
 }
 
+/**
+ * 格式化日期
+ * 将日期字符串格式化为 'YYYY-MM-DD HH:mm' 格式
+ * @param {string|Date} date - 日期字符串或日期对象
+ * @returns {string} 格式化后的日期字符串
+ */
 const formatDate = (date) => {
   if (!date) return ''
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
-// 分享功能处理
+/**
+ * 处理分享命令
+ * 根据不同的分享操作（复制链接、复制二维码）执行相应功能
+ * @param {Object} params - 分享参数
+ * @param {string} params.action - 分享操作类型 ('copyLink' 或 'copyQRCode')
+ * @param {number} params.id - 问卷ID
+ */
 const handleShareCommand = async ({ action, id }) => {
   try {
     switch (action) {
@@ -538,7 +620,10 @@ const handleShareCommand = async ({ action, id }) => {
   }
 }
 
-// 下载二维码
+/**
+ * 下载二维码
+ * 将当前显示的二维码图片下载到本地
+ */
 const handleDownloadQRCode = () => {
   if (!currentQRCode.value) return
   
@@ -549,7 +634,10 @@ const handleDownloadQRCode = () => {
   ElMessage.success('二维码下载成功')
 }
 
-// 复制二维码图片
+/**
+ * 复制二维码图片到剪贴板
+ * 如果浏览器不支持复制图片，则提示使用下载功能
+ */
 const handleCopyQRCodeImage = async () => {
   if (!currentQRCode.value) return
   

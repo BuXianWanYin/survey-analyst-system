@@ -12,6 +12,9 @@ import com.server.surveyanalystserver.service.OperationLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,14 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
     @Autowired
     private UserMapper userMapper;
 
+    /**
+     * 分页查询操作日志
+     * 支持按用户ID和操作类型筛选
+     * @param page 分页参数
+     * @param userId 用户ID，可选
+     * @param operationType 操作类型（模糊匹配），可选
+     * @return 操作日志分页列表
+     */
     @Override
     public Page<OperationLog> getLogPage(Page<OperationLog> page, Long userId, String operationType) {
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
@@ -40,14 +51,28 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         return this.page(page, wrapper);
     }
 
+    /**
+     * 保存操作日志
+     * @param log 操作日志对象
+     */
     @Override
     public void saveLog(OperationLog log) {
         this.save(log);
     }
 
+    /**
+     * 分页查询操作日志（包含用户名）
+     * 支持按用户ID、操作类型、时间区间筛选，返回包含用户名的日志列表
+     * @param page 分页参数
+     * @param userId 用户ID，可选
+     * @param operationType 操作类型（模糊匹配），可选
+     * @param startTime 开始时间，可选
+     * @param endTime 结束时间，可选（会自动设置为当天的23:59:59）
+     * @return 操作日志分页列表（包含用户名）
+     */
     @Override
     public Page<OperationLogVO> getLogPageWithUsername(Page<OperationLogVO> page, Long userId, String operationType, 
-            java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
+            LocalDateTime startTime, LocalDateTime endTime) {
         // 先查询日志
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
         
@@ -64,8 +89,7 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
             wrapper.ge(OperationLog::getCreateTime, startTime);
         }
         if (endTime != null) {
-            // 结束时间需要包含当天的23:59:59
-            java.time.LocalDateTime endDateTime = endTime.toLocalDate().atTime(23, 59, 59);
+            LocalDateTime endDateTime = endTime.toLocalDate().atTime(23, 59, 59);
             wrapper.le(OperationLog::getCreateTime, endDateTime);
         }
         
@@ -101,6 +125,54 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         
         voPage.setRecords(voList);
         return voPage;
+    }
+
+    /**
+     * 解析日期时间字符串
+     * 支持两种格式：yyyy-MM-dd（解析为当天的00:00:00）和yyyy-MM-dd HH:mm:ss
+     * @param timeStr 日期时间字符串
+     * @return LocalDateTime对象，如果解析失败则返回null
+     */
+    @Override
+    public LocalDateTime parseDateTime(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) {
+            return null;
+        }
+        try {
+            if (timeStr.length() == 10) {
+                return LocalDate.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    .atStartOfDay();
+            } else {
+                return LocalDateTime.parse(timeStr, 
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 解析结束日期时间字符串
+     * 支持两种格式：yyyy-MM-dd（解析为当天的23:59:59）和yyyy-MM-dd HH:mm:ss
+     * @param timeStr 日期时间字符串
+     * @return LocalDateTime对象，如果解析失败则返回null
+     */
+    @Override
+    public LocalDateTime parseEndDateTime(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) {
+            return null;
+        }
+        try {
+            if (timeStr.length() == 10) {
+                return LocalDate.parse(timeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    .atTime(23, 59, 59);
+            } else {
+                return LocalDateTime.parse(timeStr, 
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
 

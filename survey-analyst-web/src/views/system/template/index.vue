@@ -311,6 +311,11 @@
 </template>
 
 <script setup>
+/**
+ * 公共模板管理页面（管理员）
+ * 功能：管理员对公共模板进行管理，支持搜索、查看详情、编辑模板、删除模板、添加模板、管理分类等功能
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -387,6 +392,11 @@ const uploadHeaders = computed(() => {
 })
 
 // 处理模板封面图上传
+/**
+ * 处理模板封面图上传成功
+ * 上传成功后更新封面图URL
+ * @param {Object} response - 上传响应对象
+ */
 const handleTemplateCoverUpload = (response) => {
   if (response && response.code === 200 && response.data) {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
@@ -400,6 +410,10 @@ const handleTemplateCoverUpload = (response) => {
 }
 
 // 预览封面图 - 触发 el-image 的原生预览功能
+/**
+ * 预览封面图
+ * 触发 el-image 组件的原生预览功能
+ */
 const handlePreviewCoverImage = () => {
   if (coverImageRef.value) {
     // 触发图片的点击事件来打开预览
@@ -411,12 +425,19 @@ const handlePreviewCoverImage = () => {
 }
 
 // 删除封面图
+/**
+ * 删除封面图
+ * 清空封面图URL
+ */
 const handleDeleteCoverImage = () => {
   editForm.value.coverImg = ''
   ElMessage.success('已删除封面图')
 }
 
-// 加载模板分类
+/**
+ * 加载模板分类
+ * 从后端获取所有模板分类列表
+ */
 const loadCategories = async () => {
   try {
     const res = await templateApi.getTemplateTypeList()
@@ -428,7 +449,10 @@ const loadCategories = async () => {
   }
 }
 
-// 加载模板列表
+/**
+ * 加载模板列表
+ * 根据查询参数分页加载公共模板列表
+ */
 const loadTemplateList = async () => {
   loading.value = true
   try {
@@ -452,13 +476,20 @@ const loadTemplateList = async () => {
   }
 }
 
-// 搜索
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   queryParams.value.current = 1
   loadTemplateList()
 }
 
-// 分类选择
+/**
+ * 处理分类选择
+ * 选择分类筛选时，更新查询参数并重新加载列表
+ * @param {string|number|null} index - 分类ID或'null'（表示全部）
+ */
 const handleCategorySelect = (index) => {
   if (index === 'null' || index === null) {
     queryParams.value.type = null
@@ -469,7 +500,11 @@ const handleCategorySelect = (index) => {
   loadTemplateList()
 }
 
-// 查看
+/**
+ * 处理查看模板
+ * 跳转到模板预览页面
+ * @param {Object} template - 模板对象
+ */
 const handleView = (template) => {
   router.push({
     path: '/survey/template/preview',
@@ -477,7 +512,11 @@ const handleView = (template) => {
   })
 }
 
-// 编辑信息（基本信息：名称、描述、分类、封面图等）
+/**
+ * 处理编辑模板信息
+ * 打开编辑对话框并填充模板信息（名称、描述、分类、封面图等）
+ * @param {Object} template - 模板对象
+ */
 const handleEditInfo = (template) => {
   editForm.value = {
     id: template.id,
@@ -491,7 +530,11 @@ const handleEditInfo = (template) => {
   editDialogVisible.value = true
 }
 
-// 编辑组件（直接编辑模板）
+/**
+ * 处理编辑模板组件
+ * 跳转到问卷编辑页面，直接编辑模板的表单内容
+ * @param {Object} template - 模板对象
+ */
 const handleEditComponents = (template) => {
   // 直接通过formKey跳转到编辑页面，编辑模板本身
   router.push({
@@ -506,7 +549,10 @@ const handleEditComponents = (template) => {
   })
 }
 
-// 保存
+/**
+ * 处理保存模板信息
+ * 验证表单后调用更新模板接口，成功后关闭对话框并刷新列表
+ */
 const handleSave = async () => {
   if (!editForm.value.name) {
     ElMessage.warning('请输入模板名称')

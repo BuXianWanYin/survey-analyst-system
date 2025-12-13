@@ -3,13 +3,15 @@ package com.server.surveyanalystserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.server.surveyanalystserver.entity.FormConfig;
 import com.server.surveyanalystserver.entity.FormItem;
 import com.server.surveyanalystserver.mapper.FormItemMapper;
+import com.server.surveyanalystserver.service.FormConfigService;
 import com.server.surveyanalystserver.service.FormItemService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,7 +21,16 @@ import java.util.stream.Collectors;
  */
 @Service
 public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> implements FormItemService {
+
+    @Autowired
+    private FormConfigService formConfigService;
     
+    /**
+     * 批量保存表单项
+     * 先删除该表单Key下的所有表单项，然后批量插入新的表单项
+     * @param formKey 表单Key
+     * @param items 表单项列表
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void batchSave(String formKey, List<FormItem> items) {
@@ -34,6 +45,12 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         }
     }
     
+    /**
+     * 根据表单Key获取表单项列表
+     * 按排序字段升序排列
+     * @param formKey 表单Key
+     * @return 表单项列表
+     */
     @Override
     public List<FormItem> getByFormKey(String formKey) {
         LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
@@ -42,12 +59,20 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         return this.list(wrapper);
     }
     
+    /**
+     * 根据ID删除表单项
+     * @param id 表单项ID
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteById(Long id) {
         this.removeById(id);
     }
     
+    /**
+     * 根据表单Key删除所有表单项
+     * @param formKey 表单Key
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteByFormKey(String formKey) {
@@ -56,6 +81,11 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         this.remove(wrapper);
     }
     
+    /**
+     * 统计指定表单Key下的表单项数量
+     * @param formKey 表单Key
+     * @return 表单项数量
+     */
     @Override
     public long countByFormKey(String formKey) {
         LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
@@ -63,6 +93,12 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         return this.count(wrapper);
     }
     
+    /**
+     * 从Map数据批量保存表单项
+     * 将Map格式的表单项数据转换为FormItem对象并批量保存
+     * @param formKey 表单Key
+     * @param itemsData 表单项数据Map列表
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void batchSaveFromMap(String formKey, List<Map<String, Object>> itemsData) {
@@ -149,6 +185,32 @@ public class FormItemServiceImpl extends ServiceImpl<FormItemMapper, FormItem> i
         
         // 调用批量保存方法
         batchSave(formKey, items);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchSaveFormItemsWithConfig(String formKey, List<Map<String, Object>> itemsData, Long surveyId, Long userId) {
+        if (formKey == null || formKey.isEmpty()) {
+            throw new RuntimeException("formKey 不能为空");
+        }
+
+        FormConfig existingConfig = formConfigService.getByFormKey(formKey);
+        if (existingConfig == null) {
+            FormConfig newConfig = new FormConfig();
+            newConfig.setFormKey(formKey);
+            newConfig.setSurveyId(surveyId);
+            newConfig.setUserId(userId);
+            newConfig.setName("未命名表单");
+            newConfig.setDescription("");
+            newConfig.setStatus(1);
+            newConfig.setIsDeleted(0);
+            formConfigService.saveFormConfig(newConfig);
+        } else if (surveyId != null && existingConfig.getSurveyId() == null) {
+            existingConfig.setSurveyId(surveyId);
+            formConfigService.saveFormConfig(existingConfig);
+        }
+
+        batchSaveFromMap(formKey, itemsData);
     }
 }
 

@@ -1,10 +1,12 @@
 package com.server.surveyanalystserver.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.server.surveyanalystserver.entity.OperationLog;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.mapper.UserMapper;
 import com.server.surveyanalystserver.service.OperationLogService;
+import com.server.surveyanalystserver.utils.IpUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -18,6 +20,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 操作日志AOP切面
@@ -34,10 +40,19 @@ public class OperationLogAspect {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 定义切点：拦截所有Controller包下的方法
+     */
     @Pointcut("execution(* com.server.surveyanalystserver.controller..*.*(..))")
     public void controllerPointcut() {
     }
 
+    /**
+     * 记录操作日志
+     * 在Controller方法执行成功后，自动记录操作日志，包括用户信息、操作类型、请求参数、IP地址等
+     * @param joinPoint 连接点，包含被拦截方法的信息
+     * @param result 方法返回值
+     */
     @AfterReturning(pointcut = "controllerPointcut()", returning = "result")
     public void logOperation(JoinPoint joinPoint, Object result) {
         try {
@@ -65,8 +80,7 @@ public class OperationLogAspect {
             Long userId = null;
             if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
                 String username = authentication.getName();
-                com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User> wrapper = 
-                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+                LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
                 wrapper.eq(User::getAccount, username);
                 User user = userMapper.selectOne(wrapper);
                 if (user != null) {
@@ -85,7 +99,7 @@ public class OperationLogAspect {
             String responseResult = "成功";
 
             // 获取IP地址
-            String ipAddress = getIpAddress(request);
+            String ipAddress = IpUtils.getIpAddress(request);
 
             // 创建操作日志
             OperationLog log = new OperationLog();
@@ -107,6 +121,12 @@ public class OperationLogAspect {
         }
     }
 
+    /**
+     * 根据HTTP方法和URL获取操作类型
+     * @param method HTTP请求方法（GET、POST、PUT、DELETE等）
+     * @param url 请求URL
+     * @return 操作类型（登录、登出、注册、查询、新增、更新、删除等）
+     */
     private String getOperationType(String method, String url) {
         if (url.contains("/login")) {
             return "登录";
@@ -126,6 +146,14 @@ public class OperationLogAspect {
         return "操作";
     }
 
+    /**
+     * 根据HTTP方法、URL和连接点获取操作描述
+     * 根据URL路径和HTTP方法生成详细的操作描述信息
+     * @param method HTTP请求方法
+     * @param url 请求URL
+     * @param joinPoint 连接点对象
+     * @return 操作描述信息
+     */
     private String getOperationDesc(String method, String url, JoinPoint joinPoint) {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         
@@ -423,6 +451,12 @@ public class OperationLogAspect {
         return action + desc + "数据";
     }
 
+    /**
+     * 获取请求参数
+     * 从连接点中提取请求参数，过滤掉HttpServletRequest等对象，处理大文件数据
+     * @param joinPoint 连接点对象
+     * @return 请求参数的JSON字符串，如果参数为空或处理失败则返回null
+     */
     private String getRequestParams(JoinPoint joinPoint) {
         try {
             Object[] args = joinPoint.getArgs();
@@ -431,7 +465,7 @@ public class OperationLogAspect {
             }
             
             // 过滤掉HttpServletRequest等对象
-            java.util.List<Object> params = new java.util.ArrayList<>();
+            List<Object> params = new ArrayList<>();
             for (Object arg : args) {
                 if (arg != null && !(arg instanceof javax.servlet.http.HttpServletRequest) 
                     && !(arg instanceof javax.servlet.http.HttpServletResponse)) {
@@ -459,16 +493,19 @@ public class OperationLogAspect {
     }
     
     /**
-     * 处理包含大数据的参数（如 base64 图片）
+     * 处理包含大数据的参数
+     * 将base64图片数据和长字符串替换为简短描述，避免日志数据过大
+     * @param arg 待处理的参数对象
+     * @return 处理后的参数对象
      */
     private Object processLargeData(Object arg) {
-        if (arg instanceof java.util.Map) {
+        if (arg instanceof Map) {
             @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> map = (java.util.Map<String, Object>) arg;
-            java.util.Map<String, Object> processedMap = new java.util.HashMap<>(map);
+            Map<String, Object> map = (Map<String, Object>) arg;
+            Map<String, Object> processedMap = new HashMap<>(map);
             
             // 遍历 Map，查找并替换 base64 图片数据
-            for (java.util.Map.Entry<String, Object> entry : processedMap.entrySet()) {
+            for (Map.Entry<String, Object> entry : processedMap.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof String) {
                     String strValue = (String) value;
@@ -479,11 +516,11 @@ public class OperationLogAspect {
                         // 其他长字符串也截断
                         entry.setValue(strValue.substring(0, 1000) + "...[数据已截断，原长度: " + strValue.length() + " 字符]");
                     }
-                } else if (value instanceof java.util.List) {
+                } else if (value instanceof List) {
                     // 处理 List 中的 base64 数据
                     @SuppressWarnings("unchecked")
-                    java.util.List<Object> list = (java.util.List<Object>) value;
-                    java.util.List<Object> processedList = new java.util.ArrayList<>();
+                    List<Object> list = (List<Object>) value;
+                    List<Object> processedList = new ArrayList<>();
                     for (Object item : list) {
                         if (item instanceof String) {
                             String strItem = (String) item;
@@ -504,49 +541,6 @@ public class OperationLogAspect {
             return processedMap;
         }
         return arg;
-    }
-
-    private String getIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        
-        // 将IPv6地址转换为IPv4
-        if (ip != null && !ip.isEmpty()) {
-            // 如果包含多个IP（X-Forwarded-For可能包含多个），取第一个
-            if (ip.contains(",")) {
-                ip = ip.split(",")[0].trim();
-            }
-            
-            // 处理IPv6的localhost地址
-            if (ip.equals("0:0:0:0:0:0:0:1") || ip.equals("::1") || ip.equals("[::1]")) {
-                return "127.0.0.1";
-            }
-            
-            // 如果包含冒号，可能是IPv6地址
-            if (ip.contains(":")) {
-                // 检查是否是IPv4映射的IPv6地址 (::ffff:192.168.1.1)
-                if (ip.startsWith("::ffff:") || ip.startsWith("[::ffff:")) {
-                    String ipv4 = ip.replace("::ffff:", "").replace("[", "").replace("]", "");
-                    // 验证是否是有效的IPv4格式
-                    if (ipv4.matches("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$")) {
-                        return ipv4;
-                    }
-                }
-                // 其他IPv6地址，对于本地开发环境统一返回127.0.0.1
-                // 生产环境可能需要保留IPv6地址或进行其他处理
-                return "127.0.0.1";
-            }
-        }
-        
-        return ip;
     }
 }
 

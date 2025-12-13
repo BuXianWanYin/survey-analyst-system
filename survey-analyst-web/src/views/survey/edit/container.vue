@@ -129,6 +129,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷编辑容器页面
+ * 功能：问卷编辑的主容器，包含顶部工具栏和子路由视图，支持编辑、逻辑、主题、设置、发布、数据、统计等功能的切换
+ */
+
 import { ref, computed, onMounted, provide, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -272,7 +277,11 @@ const showHeaderActions = computed(() => {
   return ['editor', 'logic', 'theme', 'setting'].includes(menu)
 })
 
-// 菜单选择处理（PC端）
+/**
+ * 处理菜单选择（PC端）
+ * 根据选择的菜单项跳转到对应的编辑页面
+ * @param {string} index - 菜单路由名称
+ */
 const handleMenuSelect = (index) => {
   const id = route.query.id
   const formKey = route.query.formKey
@@ -299,13 +308,20 @@ const handleMenuSelect = (index) => {
   }
 }
 
-// 菜单选择处理（移动端，选择后关闭抽屉）
+/**
+ * 处理菜单选择（移动端）
+ * 选择菜单项后关闭抽屉并跳转
+ * @param {string} index - 菜单路由名称
+ */
 const handleMenuSelectMobile = (index) => {
   showMenuDrawer.value = false
   handleMenuSelect(index)
 }
 
-// 加载问卷信息
+/**
+ * 加载问卷信息
+ * 根据路由参数（问卷ID或模板formKey）加载问卷/模板信息、表单配置和表单项
+ */
 const loadSurveyInfo = async () => {
   const id = route.query.id
   const formKeyParam = route.query.formKey
@@ -429,7 +445,10 @@ const loadSurveyInfo = async () => {
   }
 }
 
-// 调用子组件方法：预览
+/**
+ * 处理预览
+ * 如果当前是编辑页面，调用编辑器的预览方法；否则打开预览对话框
+ */
 const handlePreview = async () => {
   // 如果当前是编辑页面，调用编辑器的预览方法
   if (activeMenu.value === 'editor' && editorMethods.value.handlePreview && typeof editorMethods.value.handlePreview === 'function') {
@@ -440,14 +459,20 @@ const handlePreview = async () => {
   }
 }
 
-// 调用子组件方法：保存
+/**
+ * 处理保存
+ * 调用编辑器子组件的保存方法
+ */
 const handleSave = async () => {
   if (editorMethods.value.handleSave && typeof editorMethods.value.handleSave === 'function') {
     await editorMethods.value.handleSave()
   }
 }
 
-// 调用子组件方法：保存为模板
+/**
+ * 处理保存为模板
+ * 调用编辑器子组件的保存为模板方法
+ */
 const handleSaveAsTemplate = async () => {
   if (editorMethods.value.handleSaveAsTemplate && typeof editorMethods.value.handleSaveAsTemplate === 'function') {
     await editorMethods.value.handleSaveAsTemplate()

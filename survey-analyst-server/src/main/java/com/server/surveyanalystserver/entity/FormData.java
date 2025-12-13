@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -18,7 +19,9 @@ import java.util.Map;
 @Data
 @TableName(value = "form_data", autoResultMap = true)
 @ApiModel(description = "表单数据实体")
-public class FormData {
+public class FormData implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     
     @TableId(type = IdType.AUTO)
     @ApiModelProperty(value = "主键ID")

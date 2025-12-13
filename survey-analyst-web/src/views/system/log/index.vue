@@ -72,6 +72,11 @@
 </template>
 
 <script setup>
+/**
+ * 系统日志管理页面（管理员）
+ * 功能：查看系统操作日志，支持按用户ID和操作类型筛选，显示操作详情、请求方法、IP地址等信息
+ */
+
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useWindowSize } from '@vueuse/core'
@@ -99,6 +104,10 @@ const paginationLayout = computed(() => {
   }
 })
 
+/**
+ * 加载日志列表
+ * 根据当前页码、每页条数、用户ID和操作类型筛选加载系统操作日志列表
+ */
 const loadLogList = async () => {
   loading.value = true
   try {
@@ -124,20 +133,37 @@ const loadLogList = async () => {
   }
 }
 
+/**
+ * 处理搜索操作
+ * 重置页码为第一页并重新加载列表
+ */
 const handleSearch = () => {
   currentPage.value = 1
   loadLogList()
 }
 
+/**
+ * 处理每页条数变化
+ * 重新加载列表
+ */
 const handleSizeChange = () => {
   loadLogList()
 }
 
+/**
+ * 处理当前页码变化
+ * 重新加载列表
+ */
 const handleCurrentChange = () => {
   loadLogList()
 }
 
-// 根据操作类型返回对应的标签类型（颜色）
+/**
+ * 获取操作类型标签类型
+ * 根据操作类型返回对应的Element Plus标签颜色类型
+ * @param {string} operationType - 操作类型
+ * @returns {string} 标签类型 ('info', 'success', 'warning', 'danger', 'primary')
+ */
 const getOperationTypeTagType = (operationType) => {
   const typeMap = {
     '查询': 'info',
@@ -152,7 +178,12 @@ const getOperationTypeTagType = (operationType) => {
   return typeMap[operationType] || ''
 }
 
-// 根据请求方法返回对应的标签类型（颜色）
+/**
+ * 获取请求方法标签类型
+ * 根据HTTP请求方法返回对应的Element Plus标签颜色类型
+ * @param {string} method - HTTP请求方法
+ * @returns {string} 标签类型 ('info', 'success', 'warning', 'danger')
+ */
 const getMethodTagType = (method) => {
   const methodMap = {
     'GET': 'info',

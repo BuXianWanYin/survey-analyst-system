@@ -66,6 +66,11 @@
 </template>
 
 <script setup>
+/**
+ * 签名板组件
+ * 功能：提供手写签名功能，支持保存、清除、回撤等操作，可导出为Base64图片
+ */
+
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Check, RefreshLeft, Delete } from '@element-plus/icons-vue'
 import SignaturePad from 'signature_pad'
@@ -105,11 +110,11 @@ const imageUrl = ref(props.modelValue || '')
 const isEmpty = ref(true)
 const canUndo = ref(false)
 
-// 更新是否可以回撤的状态
+/**
+ * 更新是否可以回撤的状态
+ */
 const updateCanUndo = () => {
   if (signaturePad.value) {
-    // signature_pad 通过检查数据点数组来判断是否可以回撤
-    // 如果数据点数组长度大于0，说明可以回撤
     const data = signaturePad.value.toData()
     canUndo.value = data && data.length > 0
   } else {
@@ -117,7 +122,11 @@ const updateCanUndo = () => {
   }
 }
 
-// 调整 canvas 尺寸以匹配显示尺寸
+/**
+ * 调整canvas尺寸以匹配显示尺寸
+ * 考虑设备像素比以获得更清晰的绘制效果
+ * @returns {Object} 返回显示宽度和高度
+ */
 const resizeCanvas = () => {
   if (!canvasRef.value) return
 
@@ -125,44 +134,38 @@ const resizeCanvas = () => {
   const rect = canvas.getBoundingClientRect()
   const dpr = window.devicePixelRatio || 1
 
-  // 获取显示尺寸（从父容器获取，如果没有则使用 props）
   const displayWidth = rect.width > 0 ? Math.floor(rect.width) : props.width
   const displayHeight = rect.height > 0 ? Math.floor(rect.height) : props.height
 
-  // 如果 canvas 已经有正确的显示尺寸，直接使用
   if (rect.width === 0 || rect.height === 0) {
-    // 如果还没有渲染，先设置 CSS 尺寸
     canvas.style.width = displayWidth + 'px'
     canvas.style.height = displayHeight + 'px'
-    // 等待下一帧再获取实际尺寸
     return { displayWidth, displayHeight }
   }
 
-  // 设置 canvas 内部尺寸（考虑设备像素比以获得更清晰的绘制）
   canvas.width = displayWidth * dpr
   canvas.height = displayHeight * dpr
 
-  // 获取上下文并缩放
   const ctx = canvas.getContext('2d')
   ctx.scale(dpr, dpr)
 
-  // 设置 CSS 尺寸为显示尺寸（确保显示尺寸正确）
   canvas.style.width = displayWidth + 'px'
   canvas.style.height = displayHeight + 'px'
 
   return { displayWidth, displayHeight }
 }
 
-// 初始化签名板
+/**
+ * 初始化签名板
+ * 创建SignaturePad实例，设置画布背景，监听签名变化事件
+ */
 const initSignaturePad = () => {
   if (!canvasRef.value) return
 
   const canvas = canvasRef.value
   
-  // 调整 canvas 尺寸（可能需要等待一帧以确保尺寸正确）
   const { displayWidth, displayHeight } = resizeCanvas()
   
-  // 如果尺寸还没有准备好，等待下一帧
   if (displayWidth === 0 || displayHeight === 0) {
     requestAnimationFrame(() => {
       initSignaturePad()
@@ -172,11 +175,9 @@ const initSignaturePad = () => {
   
   const ctx = canvas.getContext('2d')
 
-  // 设置画布背景（使用显示尺寸，因为上下文已经缩放）
   ctx.fillStyle = props.backgroundColor
   ctx.fillRect(0, 0, displayWidth, displayHeight)
 
-  // 初始化 SignaturePad
   signaturePad.value = new SignaturePad(canvas, {
     backgroundColor: props.backgroundColor,
     penColor: props.penColor,
@@ -186,7 +187,6 @@ const initSignaturePad = () => {
     minDistance: 5
   })
 
-  // 监听签名变化
   signaturePad.value.addEventListener('beginStroke', () => {
     isEmpty.value = false
     updateCanUndo()
@@ -197,23 +197,22 @@ const initSignaturePad = () => {
     updateCanUndo()
   })
 
-  // 如果已有图片，加载显示（但不阻止重新编辑）
   if (props.modelValue) {
     imageUrl.value = props.modelValue
     isEmpty.value = false
   }
 }
 
-// 回撤签名
+/**
+ * 回撤签名
+ * 移除最后一个笔画并重新绘制剩余内容
+ */
 const handleUndo = () => {
   if (signaturePad.value) {
     const data = signaturePad.value.toData()
     if (data && data.length > 0) {
-      // 移除最后一个笔画
       data.pop()
-      // 清除画布并重新绘制
       signaturePad.value.clear()
-      // 重新绘制剩余的笔画
       if (data.length > 0) {
         signaturePad.value.fromData(data)
       }
@@ -223,7 +222,10 @@ const handleUndo = () => {
   }
 }
 
-// 清除签名
+/**
+ * 清除签名
+ * 清除画布并重置状态
+ */
 const handleClear = () => {
   if (signaturePad.value) {
     signaturePad.value.clear()
@@ -235,30 +237,28 @@ const handleClear = () => {
   }
 }
 
-// 保存签名
+/**
+ * 保存签名
+ * 将签名转换为Base64图片并触发更新事件
+ */
 const handleSave = () => {
   if (!signaturePad.value || signaturePad.value.isEmpty()) {
     return
   }
 
-  // 将签名转换为 Base64 图片
   const dataURL = signaturePad.value.toDataURL('image/png')
   imageUrl.value = dataURL
   emit('update:modelValue', dataURL)
   emit('change', dataURL)
 }
 
-// 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
   if (newVal && newVal !== imageUrl.value) {
     imageUrl.value = newVal
     isEmpty.value = false
-    // 如果签名板已初始化，清除画布（允许重新编辑）
     if (signaturePad.value) {
       signaturePad.value.clear()
-      // 如果是在禁用模式下，不重新初始化画布
       if (!props.disabled) {
-        // 重新设置背景
         const canvas = canvasRef.value
         if (canvas) {
           const ctx = canvas.getContext('2d')
@@ -276,7 +276,6 @@ watch(() => props.modelValue, (newVal) => {
   }
 })
 
-// 监听禁用状态
 watch(() => props.disabled, (newVal) => {
   if (signaturePad.value) {
     if (newVal) {
@@ -287,22 +286,17 @@ watch(() => props.disabled, (newVal) => {
   }
 })
 
-// 监听笔触颜色变化
 watch(() => props.penColor, (newColor) => {
   if (signaturePad.value) {
     signaturePad.value.penColor = newColor
   }
 })
 
-// 监听高度变化
 watch(() => props.height, () => {
   nextTick(() => {
     if (signaturePad.value && canvasRef.value) {
-      // 保存当前数据
       const data = signaturePad.value.toData()
-      // 重新初始化（会自动调整尺寸）
       initSignaturePad()
-      // 恢复数据
       if (data && data.length > 0) {
         signaturePad.value.fromData(data)
         updateCanUndo()
@@ -311,19 +305,17 @@ watch(() => props.height, () => {
   })
 })
 
-// 监听窗口大小变化，重新调整 canvas 尺寸
+/**
+ * 监听窗口大小变化，重新调整canvas尺寸
+ */
 const handleResize = () => {
   if (signaturePad.value && canvasRef.value) {
-    // 保存当前数据
     const data = signaturePad.value.toData()
-    // 重新调整尺寸
     resizeCanvas()
-    // 重新设置背景
     const canvas = canvasRef.value
     const ctx = canvas.getContext('2d')
     ctx.fillStyle = props.backgroundColor
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    // 恢复数据
     if (data && data.length > 0) {
       signaturePad.value.fromData(data)
       updateCanUndo()
@@ -334,7 +326,6 @@ const handleResize = () => {
 onMounted(() => {
   nextTick(() => {
     initSignaturePad()
-    // 监听窗口大小变化
     window.addEventListener('resize', handleResize)
   })
 })
@@ -343,7 +334,6 @@ onBeforeUnmount(() => {
   if (signaturePad.value) {
     signaturePad.value.off()
   }
-  // 移除窗口大小变化监听
   window.removeEventListener('resize', handleResize)
 })
 </script>

@@ -2,10 +2,15 @@ package com.server.surveyanalystserver.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.server.surveyanalystserver.entity.*;
+import com.server.surveyanalystserver.entity.FormData;
+import com.server.surveyanalystserver.entity.FormTemplate;
+import com.server.surveyanalystserver.entity.FormTemplateCategory;
 import com.server.surveyanalystserver.entity.User;
 import com.server.surveyanalystserver.mapper.FormTemplateCategoryMapper;
-import com.server.surveyanalystserver.service.*;
+import com.server.surveyanalystserver.service.FormDataService;
+import com.server.surveyanalystserver.service.FormItemService;
+import com.server.surveyanalystserver.service.FormTemplateCategoryService;
+import com.server.surveyanalystserver.service.FormTemplateService;
 import com.server.surveyanalystserver.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +36,11 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
     @Autowired
     private UserService userService;
 
+    /**
+     * 获取所有模板分类列表
+     * 查询所有未删除的分类，按排序字段降序排列
+     * @return 分类列表
+     */
     @Override
     public List<FormTemplateCategory> listAll() {
         LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
@@ -39,6 +49,12 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
         return this.list(wrapper);
     }
 
+    /**
+     * 根据用户ID获取模板分类列表
+     * 查询系统分类（user_id为NULL）或指定用户的分类
+     * @param userId 用户ID
+     * @return 分类列表
+     */
     @Override
     public List<FormTemplateCategory> listByUserId(Long userId) {
         LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
@@ -49,6 +65,11 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
         return this.list(wrapper);
     }
 
+    /**
+     * 获取系统模板分类列表
+     * 查询所有系统分类（user_id为NULL），按排序字段降序排列
+     * @return 系统分类列表
+     */
     @Override
     public List<FormTemplateCategory> listSystemCategories() {
         LambdaQueryWrapper<FormTemplateCategory> wrapper = new LambdaQueryWrapper<>();
@@ -58,6 +79,11 @@ public class FormTemplateCategoryServiceImpl extends ServiceImpl<FormTemplateCat
         return this.list(wrapper);
     }
 
+    /**
+     * 删除分类及其下的所有模板
+     * 删除分类时，同时删除该分类下的所有模板及其相关数据（表单项、表单数据等）
+     * @param categoryId 分类ID
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteCategoryWithTemplates(Long categoryId) {

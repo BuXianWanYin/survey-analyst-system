@@ -9,13 +9,16 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 /**
- * 表单项 Mapper
+ * 表单项Mapper接口
+ * 提供表单项实体的数据库操作方法，继承MyBatis Plus的BaseMapper
  */
 @Mapper
 @SuppressWarnings("all")
 public interface FormItemMapper extends BaseMapper<FormItem> {
     /**
-     * 根据 formKey 查询表单项列表
+     * 根据表单Key查询表单项列表
+     * @param formKey 表单Key
+     * @return 表单项列表
      */
     @Select("SELECT * FROM form_item WHERE form_key = #{formKey}")
     List<FormItem> selectByFormKey(@Param("formKey") String formKey);

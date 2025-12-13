@@ -6,24 +6,19 @@ package com.server.surveyanalystserver.service;
 public interface SurveyPublishService {
 
     /**
-     * 生成问卷链接
+     * 生成问卷访问链接
+     * 生成问卷的公开访问链接，用于分享问卷给他人填写
      * @param surveyId 问卷ID
-     * @return 问卷链接
+     * @return 问卷访问链接URL
      */
     String generateSurveyLink(Long surveyId);
 
     /**
-     * 生成二维码（Base64格式）
+     * 生成问卷二维码
+     * 生成问卷的二维码图片，返回Base64编码的图片数据
      * @param surveyId 问卷ID
-     * @return 二维码Base64字符串
+     * @return 二维码Base64编码字符串
      */
     String generateQRCode(Long surveyId);
-
-    /**
-     * 生成嵌入代码（iframe）
-     * @param surveyId 问卷ID
-     * @return 嵌入代码
-     */
-    String generateEmbedCode(Long surveyId);
 }
 

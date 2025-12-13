@@ -18,6 +18,11 @@
 </template>
 
 <script setup>
+/**
+ * 填写设置组件
+ * 功能：配置问卷的填写限制设置，包括每个IP答题次数限制等功能
+ */
+
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -34,7 +39,10 @@ const form = ref({
 
 const rules = {}
 
-// 加载设置
+/**
+ * 加载填写设置
+ * 从后端加载问卷的填写相关设置（IP限制、设备限制等）
+ */
 const loadSetting = async () => {
   const id = route.query.id
   if (!id) return
@@ -52,7 +60,10 @@ const loadSetting = async () => {
   }
 }
 
-// 保存设置
+/**
+ * 保存填写设置
+ * 验证表单后保存填写相关设置到后端
+ */
 const handleSave = async () => {
   if (!formRef.value) return
 

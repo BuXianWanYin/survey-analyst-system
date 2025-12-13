@@ -1,3 +1,8 @@
+/**
+ * 路由配置
+ * 功能：定义应用的所有路由规则，包括认证页面、业务页面、管理员页面等
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
 
@@ -38,7 +43,6 @@ const routes = [
       requiresAuth: false
     }
   },
-  // 问卷填写页面（公开访问，支持 /user/survey/fill/:id 路径）
   {
     path: '/user/survey/fill/:id',
     name: 'UserSurveyFill',

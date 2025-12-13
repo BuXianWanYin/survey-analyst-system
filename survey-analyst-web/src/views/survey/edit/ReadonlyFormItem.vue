@@ -174,6 +174,11 @@
 </template>
 
 <script setup>
+/**
+ * 只读表单项组件
+ * 功能：以只读模式显示表单项的值，支持多种题型（文本、数字、单选、多选、日期、文件上传等）的只读展示
+ */
+
 import { computed } from 'vue'
 import { Download } from '@element-plus/icons-vue'
 import { getImageUrl } from '@/utils/image'

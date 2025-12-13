@@ -115,6 +115,11 @@
 </template>
 
 <script setup>
+/**
+ * 数据可视化仪表盘页面
+ * 功能：提供问卷数据的可视化仪表盘，支持导出PNG和PDF格式，包含统计概览、题目统计图表等
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { use } from 'echarts/core'
@@ -171,6 +176,10 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理加载数据
+ * 依次加载统计数据、趋势数据、来源数据和设备数据
+ */
 const handleLoadData = async () => {
   if (!dashboardForm.surveyId) return
 
@@ -180,6 +189,10 @@ const handleLoadData = async () => {
   await loadDeviceData()
 }
 
+/**
+ * 加载统计数据
+ * 从后端获取问卷的统计概览数据
+ */
 const loadStatistics = async () => {
   try {
     const res = await statisticsApi.getSurveyStatistics(dashboardForm.surveyId)
@@ -191,6 +204,10 @@ const loadStatistics = async () => {
   }
 }
 
+/**
+ * 加载填写趋势数据
+ * 加载30天内的填写趋势数据并生成折线图配置
+ */
 const loadTrendData = async () => {
   try {
     const res = await statisticsApi.getResponseTrend(dashboardForm.surveyId, '30d')
@@ -213,6 +230,10 @@ const loadTrendData = async () => {
   }
 }
 
+/**
+ * 加载填写来源数据
+ * 加载填写来源统计数据并生成饼图配置
+ */
 const loadSourceData = async () => {
   try {
     const res = await statisticsApi.getResponseSource(dashboardForm.surveyId)
@@ -234,6 +255,10 @@ const loadSourceData = async () => {
   }
 }
 
+/**
+ * 加载设备类型数据
+ * 加载设备类型统计数据并生成柱状图配置
+ */
 const loadDeviceData = async () => {
   try {
     const res = await statisticsApi.getDeviceStatistics(dashboardForm.surveyId)
@@ -255,6 +280,10 @@ const loadDeviceData = async () => {
   }
 }
 
+/**
+ * 处理导出PNG图片
+ * 将仪表盘内容导出为PNG图片文件
+ */
 const handleExportPNG = async () => {
   if (!dashboardRef.value) {
     ElMessage.warning('请先加载数据')
@@ -277,6 +306,10 @@ const handleExportPNG = async () => {
   }
 }
 
+/**
+ * 处理导出PDF
+ * 将仪表盘内容导出为PDF文件
+ */
 const handleExportPDF = async () => {
   if (!dashboardRef.value) {
     ElMessage.warning('请先加载数据')

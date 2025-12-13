@@ -3,10 +3,20 @@ package com.server.surveyanalystserver.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.server.surveyanalystserver.entity.*;
+import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.FormItem;
+import com.server.surveyanalystserver.entity.FormLogic;
+import com.server.surveyanalystserver.entity.FormTemplate;
+import com.server.surveyanalystserver.entity.FormTheme;
+import com.server.surveyanalystserver.entity.Survey;
 import com.server.surveyanalystserver.entity.User;
-import com.server.surveyanalystserver.mapper.*;
-import com.server.surveyanalystserver.service.*;
+import com.server.surveyanalystserver.mapper.FormTemplateMapper;
+import com.server.surveyanalystserver.service.FormConfigService;
+import com.server.surveyanalystserver.service.FormItemService;
+import com.server.surveyanalystserver.service.FormLogicService;
+import com.server.surveyanalystserver.service.FormTemplateService;
+import com.server.surveyanalystserver.service.FormThemeService;
+import com.server.surveyanalystserver.service.SurveyService;
 import com.server.surveyanalystserver.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +53,11 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
     @Autowired
     private UserService userService;
 
+    /**
+     * 根据表单Key获取模板
+     * @param formKey 表单Key
+     * @return 模板对象，如果不存在或已删除则返回null
+     */
     @Override
     public FormTemplate getByFormKey(String formKey) {
         LambdaQueryWrapper<FormTemplate> wrapper = new LambdaQueryWrapper<>();
@@ -51,6 +66,13 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         return this.getOne(wrapper);
     }
 
+    /**
+     * 创建表单模板
+     * 从源表单复制配置、表单项、主题、逻辑等信息创建新模板
+     * @param template 模板对象，必须包含formKey（源表单Key）
+     * @return 创建成功后的模板对象
+     * @throws RuntimeException 如果源表单不存在则抛出异常
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormTemplate createFormTemplate(FormTemplate template) {
@@ -136,6 +158,14 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         return template;
     }
 
+    /**
+     * 根据模板创建问卷
+     * 从模板复制配置、表单项、主题、逻辑等信息创建新问卷
+     * @param templateFormKey 模板表单Key
+     * @param userId 用户ID
+     * @return 创建成功后的问卷对象
+     * @throws RuntimeException 如果模板不存在或模板定义不存在则抛出异常
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Survey createSurveyByTemplate(String templateFormKey, Long userId) {
@@ -318,6 +348,71 @@ public class FormTemplateServiceImpl extends ServiceImpl<FormTemplateMapper, For
         existing.setIsDeleted(1);
         this.updateById(existing);
         
+        return formKey;
+    }
+
+    @Override
+    public Page<FormTemplate> getAdminPublicTemplatePage(Page<FormTemplate> page, String name, Long categoryId) {
+        LambdaQueryWrapper<FormTemplate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormTemplate::getIsDeleted, 0);
+        wrapper.eq(FormTemplate::getIsPublic, 1);
+        
+        if (StringUtils.hasText(name)) {
+            wrapper.like(FormTemplate::getName, name);
+        }
+        
+        if (categoryId != null) {
+            wrapper.eq(FormTemplate::getCategoryId, categoryId);
+        }
+        
+        wrapper.orderByDesc(FormTemplate::getCreateTime);
+        return this.page(page, wrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String updateAdminPublicTemplate(FormTemplate template) {
+        FormTemplate existing = this.getByFormKey(template.getFormKey());
+        if (existing == null) {
+            throw new RuntimeException("模板不存在");
+        }
+        if (existing.getIsPublic() == null || existing.getIsPublic() != 1) {
+            throw new RuntimeException("该模板不是公共模板");
+        }
+        
+        if (StringUtils.hasText(template.getName())) {
+            existing.setName(template.getName());
+        }
+        if (StringUtils.hasText(template.getDescription())) {
+            existing.setDescription(template.getDescription());
+        }
+        if (template.getCategoryId() != null) {
+            existing.setCategoryId(template.getCategoryId());
+        }
+        if (StringUtils.hasText(template.getCoverImg())) {
+            existing.setCoverImg(template.getCoverImg());
+        }
+        if (template.getStatus() != null) {
+            existing.setStatus(template.getStatus());
+        }
+        
+        this.updateById(existing);
+        return template.getFormKey();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String deleteAdminPublicTemplate(String formKey) {
+        FormTemplate existing = this.getByFormKey(formKey);
+        if (existing == null) {
+            throw new RuntimeException("模板不存在");
+        }
+        if (existing.getIsPublic() == null || existing.getIsPublic() != 1) {
+            throw new RuntimeException("该模板不是公共模板");
+        }
+        
+        existing.setIsDeleted(1);
+        this.updateById(existing);
         return formKey;
     }
 

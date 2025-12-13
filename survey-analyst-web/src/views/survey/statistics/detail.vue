@@ -87,6 +87,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷统计详情页面
+ * 功能：显示每个题目的详细统计数据，支持选择题的图表统计、填空题的词云分析、评分题的平均分统计等
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { ElSelect, ElOption } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
@@ -130,6 +135,10 @@ const chartConfig = reactive({
   legendStyle: { right: '10%' }
 })
 
+/**
+ * 加载问卷数据
+ * 加载问卷信息和所有题目的统计数据
+ */
 const loadSurveyData = async () => {
   const surveyId = route.query.id
   if (!surveyId) {
@@ -160,6 +169,12 @@ const loadSurveyData = async () => {
   }
 }
 
+/**
+ * 加载题目统计数据
+ * 根据题目类型加载统计数据，选择题生成饼图，填空题生成词云图
+ * @param {number} questionId - 题目ID
+ * @param {string} questionType - 题目类型
+ */
 const loadQuestionStatistics = async (questionId, questionType) => {
   try {
     const res = await statisticsApi.getQuestionStatistics(questionId)
@@ -200,14 +215,30 @@ const loadQuestionStatistics = async (questionId, questionType) => {
   }
 }
 
+/**
+ * 判断是否为选择题
+ * @param {string} type - 题目类型
+ * @returns {boolean} 是否为选择题
+ */
 const isChoiceQuestion = (type) => {
   return type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE'
 }
 
+/**
+ * 判断是否为文本题
+ * @param {string} type - 题目类型
+ * @returns {boolean} 是否为文本题
+ */
 const isTextQuestion = (type) => {
   return type === 'TEXT' || type === 'TEXTAREA'
 }
 
+/**
+ * 获取题目类型文本
+ * 将题目类型代码转换为中文文本
+ * @param {string} type - 题目类型代码
+ * @returns {string} 题目类型中文文本
+ */
 const getQuestionTypeText = (type) => {
   const typeMap = {
     SINGLE_CHOICE: '单选题',
@@ -222,23 +253,47 @@ const getQuestionTypeText = (type) => {
   return typeMap[type] || type
 }
 
+/**
+ * 获取题目统计数据
+ * @param {number} questionId - 题目ID
+ * @param {string} key - 统计数据的键名
+ * @returns {*} 统计数据值
+ */
 const getQuestionStat = (questionId, key) => {
   return questionStats[questionId]?.[key]
 }
 
+/**
+ * 获取题目图表配置
+ * @param {number} questionId - 题目ID
+ * @returns {Object} ECharts图表配置对象
+ */
 const getQuestionChartOption = (questionId) => {
   return questionChartOptions[questionId]
 }
 
+/**
+ * 获取题目词云图配置
+ * @param {number} questionId - 题目ID
+ * @returns {Object} ECharts词云图配置对象
+ */
 const getQuestionWordCloudOption = (questionId) => {
   return questionWordCloudOptions[questionId]
 }
 
+/**
+ * 显示图表配置对话框
+ * @param {number} questionId - 题目ID
+ */
 const showChartConfig = (questionId) => {
   currentConfigQuestionId.value = questionId
   chartConfigDialog.value = true
 }
 
+/**
+ * 应用图表配置
+ * 将配置应用到当前题目的图表并关闭对话框
+ */
 const applyChartConfig = () => {
   if (currentConfigQuestionId.value && questionChartOptions[currentConfigQuestionId.value]) {
     const baseOption = questionChartOptions[currentConfigQuestionId.value]
@@ -248,6 +303,9 @@ const applyChartConfig = () => {
   }
 }
 
+/**
+ * 返回上一页
+ */
 const goBack = () => {
   router.back()
 }

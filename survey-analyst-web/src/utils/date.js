@@ -1,11 +1,12 @@
 /**
- * 日期格式化工具类
+ * 日期格式化工具
+ * 功能：提供日期格式化功能，支持将日期对象、日期字符串或时间戳格式化为指定格式
  */
 
 /**
- * 格式化日期为 yyyy-MM-dd HH:mm:ss 格式
+ * 格式化日期为yyyy-MM-dd HH:mm:ss格式
  * @param {Date|string|number} date 日期对象、日期字符串或时间戳
- * @returns {string} 格式化后的日期字符串，格式：yyyy-MM-dd HH:mm:ss
+ * @returns {string|null} 格式化后的日期字符串，格式：yyyy-MM-dd HH:mm:ss，如果日期无效则返回null
  */
 export function formatDateTime(date) {
   if (!date) {
@@ -14,7 +15,6 @@ export function formatDateTime(date) {
   
   const d = date instanceof Date ? date : new Date(date)
   
-  // 检查日期是否有效
   if (isNaN(d.getTime())) {
     return null
   }

@@ -88,6 +88,10 @@ const resetPasswordRules = {
   ]
 }
 
+/**
+ * 处理提交重置密码
+ * 验证表单和重置令牌后调用重置密码接口，成功后2秒跳转到登录页
+ */
 const handleSubmit = async () => {
   if (!resetPasswordFormRef.value) return
 
@@ -122,6 +126,9 @@ const handleSubmit = async () => {
   })
 }
 
+/**
+ * 跳转到登录页
+ */
 const goToLogin = () => {
   router.push('/login')
 }

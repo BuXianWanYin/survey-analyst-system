@@ -1,14 +1,25 @@
 package com.server.surveyanalystserver.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.server.surveyanalystserver.entity.*;
-import com.server.surveyanalystserver.mapper.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.FormData;
+import com.server.surveyanalystserver.entity.FormItem;
+import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.mapper.FormItemMapper;
+import com.server.surveyanalystserver.mapper.ResponseMapper;
 import com.server.surveyanalystserver.service.AnalysisService;
+import com.server.surveyanalystserver.service.FormConfigService;
+import com.server.surveyanalystserver.service.FormDataService;
+import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.utils.DataCleaningUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 分析Service实现类
@@ -20,42 +31,40 @@ public class AnalysisServiceImpl implements AnalysisService {
     private ResponseMapper responseMapper;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormConfigService formConfigService;
+    private FormConfigService formConfigService;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormItemService formItemService;
+    private FormItemService formItemService;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormDataService formDataService;
+    private FormDataService formDataService;
 
     @Autowired
-    private com.server.surveyanalystserver.mapper.FormItemMapper formItemMapper;
+    private FormItemMapper formItemMapper;
 
     @Override
     public Map<String, Object> crossAnalysis(Long surveyId, String formItemId1, String formItemId2) {
         Map<String, Object> result = new HashMap<>();
 
         // 获取formKey
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 获取formItem信息
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> wrapper1 = 
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        wrapper1.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, formItemId1)
-                 .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+        LambdaQueryWrapper<FormItem> wrapper1 = new LambdaQueryWrapper<>();
+        wrapper1.eq(FormItem::getFormItemId, formItemId1)
+                 .eq(FormItem::getFormKey, formKey)
                  .last("LIMIT 1");
-        com.server.surveyanalystserver.entity.FormItem formItem1 = formItemMapper.selectOne(wrapper1);
+        FormItem formItem1 = formItemMapper.selectOne(wrapper1);
 
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> wrapper2 = 
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        wrapper2.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, formItemId2)
-                 .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+        LambdaQueryWrapper<FormItem> wrapper2 = new LambdaQueryWrapper<>();
+        wrapper2.eq(FormItem::getFormItemId, formItemId2)
+                 .eq(FormItem::getFormKey, formKey)
                  .last("LIMIT 1");
-        com.server.surveyanalystserver.entity.FormItem formItem2 = formItemMapper.selectOne(wrapper2);
+        FormItem formItem2 = formItemMapper.selectOne(wrapper2);
 
         if (formItem1 == null || formItem2 == null) {
             throw new RuntimeException("表单项不存在");
@@ -72,16 +81,14 @@ public class AnalysisServiceImpl implements AnalysisService {
         result.put("question2", question2Info);
 
         // 获取所有表单数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
-            formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        Page<FormData> page = new Page<>(1, 10000);
+        Page<FormData> formDataPage = formDataService.getFormDataList(page, formKey);
+        List<FormData> formDataList = formDataPage.getRecords();
 
         // 构建交叉表
         Map<String, Map<String, Integer>> crossTable = new HashMap<>();
 
-        for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+        for (FormData data : formDataList) {
             Map<String, Object> originalData = data.getOriginalData();
             if (originalData == null) continue;
 
@@ -108,19 +115,18 @@ public class AnalysisServiceImpl implements AnalysisService {
         Map<String, Object> result = new HashMap<>();
 
         // 获取formKey
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 获取formItem信息
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> wrapper = 
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        wrapper.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, formItemId)
-                .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+        LambdaQueryWrapper<FormItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FormItem::getFormItemId, formItemId)
+                .eq(FormItem::getFormKey, formKey)
                 .last("LIMIT 1");
-        com.server.surveyanalystserver.entity.FormItem formItem = formItemMapper.selectOne(wrapper);
+        FormItem formItem = formItemMapper.selectOne(wrapper);
 
         if (formItem == null) {
             throw new RuntimeException("表单项不存在");
@@ -130,10 +136,10 @@ public class AnalysisServiceImpl implements AnalysisService {
         result.put("questionTitle", formItem.getLabel());
 
         // 获取时间范围内的填写记录
-        LambdaQueryWrapper<com.server.surveyanalystserver.entity.Response> responseWrapper = new LambdaQueryWrapper<>();
-        responseWrapper.eq(com.server.surveyanalystserver.entity.Response::getSurveyId, surveyId)
-                       .eq(com.server.surveyanalystserver.entity.Response::getStatus, "COMPLETED")
-                       .orderByAsc(com.server.surveyanalystserver.entity.Response::getSubmitTime);
+        LambdaQueryWrapper<Response> responseWrapper = new LambdaQueryWrapper<>();
+        responseWrapper.eq(Response::getSurveyId, surveyId)
+                       .eq(Response::getStatus, "COMPLETED")
+                       .orderByAsc(Response::getSubmitTime);
 
         java.time.LocalDateTime startTime = null;
         if ("7d".equals(timeRange)) {
@@ -143,28 +149,28 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
 
         if (startTime != null) {
-            responseWrapper.ge(com.server.surveyanalystserver.entity.Response::getSubmitTime, startTime);
+            responseWrapper.ge(Response::getSubmitTime, startTime);
         }
 
-        List<com.server.surveyanalystserver.entity.Response> responses = responseMapper.selectList(responseWrapper);
+        List<Response> responses = responseMapper.selectList(responseWrapper);
 
         // 获取表单数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+        Page<FormData> page = 
+            new Page<>(1, 10000);
+        Page<FormData> formDataPage = 
             formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        List<FormData> formDataList = formDataPage.getRecords();
 
         // 按日期和选项统计趋势
         Map<String, Map<String, Integer>> trendData = new HashMap<>();
 
-        for (com.server.surveyanalystserver.entity.Response response : responses) {
+        for (Response response : responses) {
             if (response.getSubmitTime() == null) continue;
 
             String date = response.getSubmitTime().toLocalDate().toString();
             
             // 查找对应的formData（通过时间匹配，简化处理）
-            com.server.surveyanalystserver.entity.FormData formData = formDataList.stream()
+            FormData formData = formDataList.stream()
                 .filter(d -> d.getCreateTime() != null && 
                     d.getCreateTime().toLocalDate().equals(response.getSubmitTime().toLocalDate()))
                 .findFirst()
@@ -194,27 +200,27 @@ public class AnalysisServiceImpl implements AnalysisService {
         Map<String, Object> result = new HashMap<>();
 
         // 获取formKey
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 获取填写记录
-        LambdaQueryWrapper<com.server.surveyanalystserver.entity.Response> wrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Response> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(com.server.surveyanalystserver.entity.Response::getSurveyId, surveyId)
                .eq(com.server.surveyanalystserver.entity.Response::getStatus, "COMPLETED");
-        List<com.server.surveyanalystserver.entity.Response> responses = responseMapper.selectList(wrapper);
+        List<Response> responses = responseMapper.selectList(wrapper);
 
         // 获取所有表单项
-        List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
+        List<FormItem> formItems = formItemService.getByFormKey(formKey);
         
         // 识别性别、年龄、地域题目（通过题目标题关键词）
-        com.server.surveyanalystserver.entity.FormItem genderItem = null;
-        com.server.surveyanalystserver.entity.FormItem ageItem = null;
-        com.server.surveyanalystserver.entity.FormItem regionItem = null;
+        FormItem genderItem = null;
+        FormItem ageItem = null;
+        FormItem regionItem = null;
         
-        for (com.server.surveyanalystserver.entity.FormItem item : formItems) {
+        for (FormItem item : formItems) {
             String title = item.getLabel().toLowerCase();
             if (title.contains("性别") || title.contains("gender") || title.contains("男") || title.contains("女")) {
                 genderItem = item;
@@ -227,11 +233,11 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
         
         // 获取表单数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+        Page<FormData> page = 
+            new Page<>(1, 10000);
+        Page<FormData> formDataPage = 
             formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        List<FormData> formDataList = formDataPage.getRecords();
         
         // 统计性别分布
         if (genderItem != null) {
@@ -255,7 +261,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         Map<String, Long> deviceDistribution = responses.stream()
                 .filter(r -> r.getDeviceType() != null)
                 .collect(java.util.stream.Collectors.groupingBy(
-                        com.server.surveyanalystserver.entity.Response::getDeviceType,
+                        Response::getDeviceType,
                         java.util.stream.Collectors.counting()
                 ));
         result.put("deviceDistribution", deviceDistribution);
@@ -415,11 +421,11 @@ public class AnalysisServiceImpl implements AnalysisService {
      * 分析题目分布（用于性别、地域等）
      */
     private Map<String, Long> analyzeQuestionDistribution(
-            com.server.surveyanalystserver.entity.FormItem formItem, 
-            List<com.server.surveyanalystserver.entity.FormData> formDataList) {
+            FormItem formItem, 
+            List<FormData> formDataList) {
         Map<String, Long> distribution = new HashMap<>();
         
-        for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+        for (FormData data : formDataList) {
             Map<String, Object> originalData = data.getOriginalData();
             if (originalData != null && originalData.containsKey(formItem.getFormItemId())) {
                 Object value = originalData.get(formItem.getFormItemId());
@@ -437,8 +443,8 @@ public class AnalysisServiceImpl implements AnalysisService {
      * 分析年龄分布（将年龄分组）
      */
     private Map<String, Long> analyzeAgeDistribution(
-            com.server.surveyanalystserver.entity.FormItem formItem, 
-            List<com.server.surveyanalystserver.entity.FormData> formDataList) {
+            FormItem formItem, 
+            List<FormData> formDataList) {
         Map<String, Long> distribution = new HashMap<>();
         distribution.put("18岁以下", 0L);
         distribution.put("18-25岁", 0L);
@@ -448,7 +454,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         distribution.put("56岁以上", 0L);
         
         // 统计年龄分布
-        for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+        for (FormData data : formDataList) {
             Map<String, Object> originalData = data.getOriginalData();
             if (originalData != null && originalData.containsKey(formItem.getFormItemId())) {
                 Object value = originalData.get(formItem.getFormItemId());
@@ -504,35 +510,35 @@ public class AnalysisServiceImpl implements AnalysisService {
         Map<String, Object> result = new HashMap<>();
 
         // 1. 获取表单配置
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 2. 获取对比变量的表单项
-        LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> compareItemWrapper = 
+        LambdaQueryWrapper<FormItem> compareItemWrapper = 
             new LambdaQueryWrapper<>();
         compareItemWrapper.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, compareVariable)
-                         .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+                         .eq(FormItem::getFormKey, formKey)
                          .last("LIMIT 1");
-        com.server.surveyanalystserver.entity.FormItem compareItem = formItemMapper.selectOne(compareItemWrapper);
+        FormItem compareItem = formItemMapper.selectOne(compareItemWrapper);
         if (compareItem == null) {
             throw new RuntimeException("对比变量不存在");
         }
 
         // 3. 获取所有表单项（除了对比变量）
-        List<com.server.surveyanalystserver.entity.FormItem> allItems = formItemMapper.selectList(
-            new LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem>()
-                .eq(com.server.surveyanalystserver.entity.FormItem::getFormKey, formKey)
+        List<FormItem> allItems = formItemMapper.selectList(
+            new LambdaQueryWrapper<FormItem>()
+                .eq(FormItem::getFormKey, formKey)
         );
 
         // 4. 获取所有表单数据
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-            new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(1, 10000);
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+        Page<FormData> page = 
+            new Page<>(1, 10000);
+        Page<FormData> formDataPage = 
             formDataService.getFormDataList(page, formKey);
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = formDataPage.getRecords();
+        List<FormData> formDataList = formDataPage.getRecords();
 
         // 5. 解析对比变量的选项
         com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -564,12 +570,12 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
 
         // 6. 按对比变量分组数据
-        Map<String, List<com.server.surveyanalystserver.entity.FormData>> groupedData = new HashMap<>();
+        Map<String, List<FormData>> groupedData = new HashMap<>();
         for (String group : compareGroups) {
             groupedData.put(group, new ArrayList<>());
         }
 
-        for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+        for (FormData data : formDataList) {
             Map<String, Object> originalData = data.getOriginalData();
             if (originalData != null && originalData.containsKey(compareVariable)) {
                 Object value = originalData.get(compareVariable);
@@ -582,7 +588,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
         // 7. 对每个其他题目进行对比分析
         List<Map<String, Object>> compareResults = new ArrayList<>();
-        for (com.server.surveyanalystserver.entity.FormItem item : allItems) {
+        for (FormItem item : allItems) {
             if (item.getFormItemId().equals(compareVariable)) {
                 continue; // 跳过对比变量本身
             }
@@ -629,9 +635,9 @@ public class AnalysisServiceImpl implements AnalysisService {
 
                 // 统计每个组的分布
                 for (String group : compareGroups) {
-                    List<com.server.surveyanalystserver.entity.FormData> groupData = groupedData.get(group);
+                    List<FormData> groupData = groupedData.get(group);
                     int count = 0;
-                    for (com.server.surveyanalystserver.entity.FormData data : groupData) {
+                    for (FormData data : groupData) {
                         Map<String, Object> originalData = data.getOriginalData();
                         if (originalData != null && originalData.containsKey(item.getFormItemId())) {
                             Object value = originalData.get(item.getFormItemId());

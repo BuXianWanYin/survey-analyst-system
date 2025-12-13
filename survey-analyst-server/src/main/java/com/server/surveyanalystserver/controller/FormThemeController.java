@@ -20,6 +20,12 @@ public class FormThemeController {
     @Autowired
     private FormThemeService formThemeService;
     
+    /**
+     * 保存表单主题
+     * 保存或更新表单的主题样式配置，包括颜色、字体等
+     * @param theme 表单主题对象，包含主题样式配置
+     * @return 保存成功后的表单主题对象
+     */
     @ApiOperation(value = "保存表单主题", notes = "保存或更新表单主题")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @PostMapping
@@ -28,6 +34,12 @@ public class FormThemeController {
         return Result.success("保存成功", saved);
     }
     
+    /**
+     * 根据问卷ID获取表单主题
+     * 查询指定问卷的表单主题样式配置
+     * @param surveyId 问卷ID
+     * @return 表单主题对象，如果不存在则返回null
+     */
     @ApiOperation(value = "获取表单主题", notes = "根据问卷ID获取表单主题")
     @GetMapping("/{surveyId}")
     public Result<FormTheme> getFormTheme(@PathVariable Long surveyId) {

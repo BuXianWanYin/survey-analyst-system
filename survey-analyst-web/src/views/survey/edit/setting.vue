@@ -12,6 +12,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷设置页面
+ * 功能：问卷设置的容器页面，包含提交设置和通知设置两个子页面
+ */
+
 import SubmitSetting from './setting/SubmitSetting.vue'
 import NotifySetting from './setting/NotifySetting.vue'
 </script>

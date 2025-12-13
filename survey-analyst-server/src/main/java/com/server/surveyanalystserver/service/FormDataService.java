@@ -37,11 +37,17 @@ public interface FormDataService extends IService<FormData> {
     
     /**
      * 分页查询表单数据
+     * 根据表单Key分页查询该表单的所有填写数据
+     * @param page 分页参数
+     * @param formKey 表单Key
+     * @return 表单数据分页列表
      */
     Page<FormData> getFormDataList(Page<FormData> page, String formKey);
     
     /**
-     * 根据ID获取表单数据
+     * 根据ID获取表单数据详情
+     * @param id 表单数据ID
+     * @return 表单数据对象，如果不存在则返回null
      */
     FormData getFormDataById(Long id);
     
@@ -54,6 +60,9 @@ public interface FormDataService extends IService<FormData> {
     
     /**
      * 删除表单数据
+     * 根据ID删除指定的表单数据（逻辑删除）
+     * @param id 表单数据ID
+     * @return true表示删除成功，false表示删除失败
      */
     boolean deleteFormData(Long id);
     
@@ -76,5 +85,18 @@ public interface FormDataService extends IService<FormData> {
      */
     Map<String, Object> saveFormDataWithSettings(String formKey, Map<String, Object> originalData, 
         javax.servlet.http.HttpServletRequest request, String deviceId, Long userId, LocalDateTime startTime);
+
+    /**
+     * 保存表单数据并返回提交设置（接受String类型的startTime）
+     * @param formKey 表单key
+     * @param originalData 原始数据
+     * @param request HTTP请求对象
+     * @param deviceId 设备ID
+     * @param userId 用户ID
+     * @param startTimeStr 开始时间字符串（格式：yyyy-MM-dd HH:mm:ss）
+     * @return 包含表单数据和提交设置的Map
+     */
+    Map<String, Object> saveFormDataWithSettings(String formKey, Map<String, Object> originalData, 
+        javax.servlet.http.HttpServletRequest request, String deviceId, Long userId, String startTimeStr);
 }
 

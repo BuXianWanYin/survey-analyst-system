@@ -91,6 +91,11 @@
 </template>
 
 <script setup>
+/**
+ * 交叉分析页面
+ * 功能：提供两个题目之间的交叉分析功能，支持热力图、堆叠柱状图、折线图等多种图表类型展示交叉分析结果
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -133,6 +138,10 @@ const analysisForm = reactive({
   formItemId2: null
 })
 
+/**
+ * 加载问卷列表
+ * 加载所有问卷列表，用于筛选下拉框
+ */
 const loadSurveyList = async () => {
   try {
     const res = await surveyApi.getSurveyList({ pageNum: 1, pageSize: 100 })
@@ -144,6 +153,10 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理题目1变化
+ * 选择第一个题目后，更新第二个题目的选项列表（排除已选择的题目1）
+ */
 const handleQuestion1Change = async () => {
   if (!analysisForm.surveyId || !analysisForm.formItemId1) return
 
@@ -157,6 +170,10 @@ const handleQuestion1Change = async () => {
   }
 }
 
+/**
+ * 处理题目2变化
+ * 选择第二个题目后，更新第一个题目的选项列表（排除已选择的题目2）
+ */
 const handleQuestion2Change = async () => {
   if (!analysisForm.surveyId || !analysisForm.formItemId2) return
 
@@ -170,6 +187,10 @@ const handleQuestion2Change = async () => {
   }
 }
 
+/**
+ * 处理交叉分析
+ * 调用交叉分析接口，分析两个题目之间的关联关系
+ */
 const handleAnalyze = async () => {
   if (!analysisForm.surveyId || !analysisForm.formItemId1 || !analysisForm.formItemId2) {
     ElMessage.warning('请选择问卷和两个题目')
@@ -196,6 +217,11 @@ const handleAnalyze = async () => {
   }
 }
 
+/**
+ * 构建交叉表
+ * 将交叉分析结果转换为表格数据格式
+ * @param {Object} crossTable - 交叉表对象
+ */
 const buildCrossTable = (crossTable) => {
   if (!crossTable) return
 
@@ -216,6 +242,11 @@ const buildCrossTable = (crossTable) => {
   })
 }
 
+/**
+ * 构建热力图
+ * 根据交叉表数据生成热力图配置
+ * @param {Object} crossTable - 交叉表对象
+ */
 const buildHeatmap = (crossTable) => {
   if (!crossTable) return
 
@@ -244,6 +275,9 @@ const buildHeatmap = (crossTable) => {
   })
 }
 
+/**
+ * 返回上一页
+ */
 const goBack = () => {
   router.back()
 }

@@ -20,18 +20,17 @@ public class ExportController {
     @Autowired
     private ExportService exportService;
 
+    /**
+     * 导出问卷填写数据
+     * 将问卷的所有填写数据导出为Excel文件，包含图片等附件
+     * @param surveyId 问卷ID
+     * @param response HTTP响应对象，用于输出Excel文件
+     */
     @ApiOperation(value = "导出问卷数据", notes = "导出问卷的填写数据（Excel格式）")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/survey/{surveyId}/data")
     public void exportSurveyData(@PathVariable Long surveyId, HttpServletResponse response) {
         exportService.exportSurveyData(surveyId, response);
-    }
-
-    @ApiOperation(value = "导出分析报告", notes = "导出问卷的分析报告（PDF格式）")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping("/survey/{surveyId}/report")
-    public void exportAnalysisReport(@PathVariable Long surveyId, HttpServletResponse response) {
-        exportService.exportAnalysisReport(surveyId, response);
     }
 }
 

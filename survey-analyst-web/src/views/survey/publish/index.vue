@@ -133,6 +133,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷发布页面
+ * 功能：问卷发布和推广页面，支持查看问卷链接、二维码、嵌入代码等分享方式
+ */
+
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'

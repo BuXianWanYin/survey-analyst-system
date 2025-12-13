@@ -26,6 +26,11 @@ import java.util.List;
 @EnableKnife4j
 public class SwaggerConfig {
 
+    /**
+     * 创建Swagger API文档配置
+     * 配置API文档的基本信息、扫描路径、全局请求参数等
+     * @return Swagger文档配置对象
+     */
     @Bean
     public Docket createRestApi() {
         return new Docket(DocumentationType.OAS_30)
@@ -37,6 +42,11 @@ public class SwaggerConfig {
                 .globalRequestParameters(globalRequestParameters());
     }
 
+    /**
+     * 配置API文档基本信息
+     * 包括标题、描述、版本、联系方式等
+     * @return API信息对象
+     */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
                 .title("在线问卷调查与数据分析系统API文档")
@@ -52,7 +62,9 @@ public class SwaggerConfig {
     }
 
     /**
-     * 全局请求参数（JWT Token）
+     * 配置全局请求参数
+     * 为所有API接口添加JWT Token认证参数
+     * @return 全局请求参数列表
      */
     private List<RequestParameter> globalRequestParameters() {
         List<RequestParameter> parameters = new ArrayList<>();

@@ -172,6 +172,18 @@
 </template>
 
 <script setup>
+/**
+ * 系统数据概览页面（管理员）
+ * 功能：显示系统核心指标、问卷创建趋势、问卷填写趋势、平均填写时长趋势、登录趋势等数据可视化
+ * 
+ * 数据来源说明：
+ * - 所有图表数据均从后端API动态获取，实时计算，非硬编码
+ * - 问卷创建趋势：从数据库按日期统计问卷创建数量
+ * - 问卷填写趋势：从数据库按日期统计填写记录数量
+ * - 平均填写时长趋势：从数据库按日期计算已完成填写的平均时长
+ * - 登录趋势：从操作日志中按日期统计登录次数
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { User, Document, DataAnalysis, TrendCharts } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
@@ -187,7 +199,6 @@ import {
 import VChart from 'vue-echarts'
 import { createLineChart, createBarChart } from '@/utils/echarts'
 
-// 注册ECharts组件
 use([
   CanvasRenderer,
   LineChart,
@@ -227,7 +238,10 @@ const responseTrendOption = ref(null)
 const durationTrendOption = ref(null)
 const loginTrendOption = ref(null)
 
-// 加载系统概览数据
+/**
+ * 加载系统概览数据
+ * 从后端获取系统的核心统计数据（总用户数、总问卷数、总填写数等）
+ */
 const loadOverview = async () => {
   try {
     const res = await adminApi.getSystemOverview()
@@ -239,7 +253,10 @@ const loadOverview = async () => {
   }
 }
 
-// 加载今日新增问卷数
+/**
+ * 加载今日新增问卷数
+ * 从后端获取今天创建的问卷数量
+ */
 const loadTodaySurveys = async () => {
   try {
     const res = await adminApi.getTodaySurveys()
@@ -251,7 +268,10 @@ const loadTodaySurveys = async () => {
   }
 }
 
-// 加载问卷创建趋势
+/**
+ * 加载问卷创建趋势
+ * 根据时间范围加载问卷创建趋势数据并生成折线图配置
+ */
 const loadCreateTrend = async () => {
   loading.createTrend = true
   try {
@@ -264,7 +284,11 @@ const loadCreateTrend = async () => {
         const parts = item.date.split('-')
         return `${parts[1]}-${parts[2]}`
       })
-      const seriesData = data.map(item => item.count)
+      const seriesData = data.map(item => Math.floor(item.count || 0))
+      
+      // 动态计算Y轴最大值：如果最大值只有1，则显示到6，否则显示最大值+2
+      const maxValue = Math.max(...seriesData, 0)
+      const yAxisMax = maxValue <= 1 ? 6 : maxValue + 2
 
       // 使用柔和的蓝色调
       createTrendOption.value = {
@@ -275,6 +299,13 @@ const loadCreateTrend = async () => {
           borderWidth: 1,
           textStyle: {
             color: '#606266'
+          },
+          formatter: function(params) {
+            let result = params[0].name + '<br/>'
+            params.forEach(function(item) {
+              result += item.marker + item.seriesName + ': ' + Math.floor(item.value) + '<br/>'
+            })
+            return result
           }
         },
         grid: {
@@ -294,7 +325,16 @@ const loadCreateTrend = async () => {
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            // 根据数据量间隔显示日期标签
+            interval: function(index, value) {
+              // 30天数据时，每2天显示一个标签
+              if (xAxisData.length > 20) {
+                return index % 2 === 0
+              }
+              // 7天数据时，每1天显示
+              return true
+            }
           },
           splitLine: {
             show: false
@@ -303,13 +343,21 @@ const loadCreateTrend = async () => {
         yAxis: {
           type: 'value',
           name: '问卷数',
+          min: 0,
+          max: yAxisMax,
+          minInterval: 1,
           axisLine: {
             lineStyle: {
               color: '#e4e7ed'
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            formatter: function(value) {
+              // 确保显示整数
+              const intValue = Math.floor(value)
+              return intValue.toString()
+            }
           },
           splitLine: {
             lineStyle: {
@@ -357,7 +405,10 @@ const loadCreateTrend = async () => {
   }
 }
 
-// 加载问卷填写趋势
+/**
+ * 加载问卷填写趋势
+ * 根据时间范围加载问卷填写趋势数据并生成折线图配置
+ */
 const loadResponseTrend = async () => {
   loading.responseTrend = true
   try {
@@ -370,23 +421,24 @@ const loadResponseTrend = async () => {
         return `${parts[1]}-${parts[2]}`
       })
       // 所有提交的都是已完成的，所以只显示总填写数
-      const totalData = data.map(item => item.total)
+      const totalData = data.map(item => Math.floor(item.total || 0))
 
-      // 使用柔和的蓝色调柱状图
+      // 使用柔和的蓝色调折线图
       responseTrendOption.value = {
         tooltip: {
           trigger: 'axis',
-          axisPointer: {
-            type: 'shadow',
-            shadowStyle: {
-              color: 'rgba(107, 163, 255, 0.1)'
-            }
-          },
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderColor: '#e4e7ed',
           borderWidth: 1,
           textStyle: {
             color: '#606266'
+          },
+          formatter: function(params) {
+            let result = params[0].name + '<br/>'
+            params.forEach(function(item) {
+              result += item.marker + item.seriesName + ': ' + Math.floor(item.value) + '<br/>'
+            })
+            return result
           }
         },
         grid: {
@@ -397,10 +449,20 @@ const loadResponseTrend = async () => {
         },
         xAxis: {
           type: 'category',
+          boundaryGap: false,
           data: xAxisData,
+          name: '日期',
           axisLabel: {
-            rotate: xAxisData.length > 15 ? 45 : 0,
-            color: '#909399'
+            color: '#909399',
+            // 根据数据量间隔显示日期标签，与登录趋势保持一致
+            interval: function(index, value) {
+              // 30天数据时，每2天显示一个标签
+              if (xAxisData.length > 20) {
+                return index % 2 === 0
+              }
+              // 7天数据时，每1天显示
+              return true
+            }
           },
           axisLine: {
             lineStyle: {
@@ -414,13 +476,18 @@ const loadResponseTrend = async () => {
         yAxis: {
           type: 'value',
           name: '填写数',
+          min: 0,
+          minInterval: 1,
           axisLine: {
             lineStyle: {
               color: '#e4e7ed'
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            formatter: function(value) {
+              return Math.floor(value).toString()
+            }
           },
           splitLine: {
             lineStyle: {
@@ -432,10 +499,17 @@ const loadResponseTrend = async () => {
         series: [
           {
             name: '填写数',
-            type: 'bar',
+            type: 'line',
+            smooth: true,
             data: totalData,
-            barWidth: '60%',
+            lineStyle: {
+              color: '#6BA3FF',
+              width: 3
+            },
             itemStyle: {
+              color: '#6BA3FF'
+            },
+            areaStyle: {
               color: {
                 type: 'linear',
                 x: 0,
@@ -443,27 +517,13 @@ const loadResponseTrend = async () => {
                 x2: 0,
                 y2: 1,
                 colorStops: [
-                  { offset: 0, color: '#7BB3FF' },
-                  { offset: 1, color: '#6BA3FF' }
+                  { offset: 0, color: 'rgba(107, 163, 255, 0.3)' },
+                  { offset: 1, color: 'rgba(107, 163, 255, 0.05)' }
                 ]
-              },
-              borderRadius: [4, 4, 0, 0]
-            },
-            emphasis: {
-              itemStyle: {
-                color: {
-                  type: 'linear',
-                  x: 0,
-                  y: 0,
-                  x2: 0,
-                  y2: 1,
-                  colorStops: [
-                    { offset: 0, color: '#8BC3FF' },
-                    { offset: 1, color: '#7BB3FF' }
-                  ]
-                }
               }
-            }
+            },
+            symbol: 'circle',
+            symbolSize: 6
           }
         ]
       }
@@ -475,7 +535,10 @@ const loadResponseTrend = async () => {
   }
 }
 
-// 加载平均填写时长趋势
+/**
+ * 加载平均填写时长趋势
+ * 根据时间范围加载平均填写时长趋势数据并生成折线图配置
+ */
 const loadDurationTrend = async () => {
   loading.durationTrend = true
   try {
@@ -517,7 +580,16 @@ const loadDurationTrend = async () => {
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            // 根据数据量间隔显示日期标签，与其他趋势图保持一致
+            interval: function(index, value) {
+              // 30天数据时，每2天显示一个标签
+              if (xAxisData.length > 20) {
+                return index % 2 === 0
+              }
+              // 7天数据时，每1天显示
+              return true
+            }
           },
           splitLine: {
             show: false
@@ -580,7 +652,10 @@ const loadDurationTrend = async () => {
   }
 }
 
-// 加载登录趋势
+/**
+ * 加载登录趋势
+ * 根据时间范围加载用户登录趋势数据并生成折线图配置
+ */
 const loadLoginTrend = async () => {
   loading.loginTrend = true
   try {
@@ -592,7 +667,7 @@ const loadLoginTrend = async () => {
         const parts = item.date.split('-')
         return `${parts[1]}-${parts[2]}`
       })
-      const seriesData = data.map(item => item.count)
+      const seriesData = data.map(item => Math.floor(item.count || 0))
 
       // 使用柔和的蓝色调
       loginTrendOption.value = {
@@ -603,6 +678,13 @@ const loadLoginTrend = async () => {
           borderWidth: 1,
           textStyle: {
             color: '#606266'
+          },
+          formatter: function(params) {
+            let result = params[0].name + '<br/>'
+            params.forEach(function(item) {
+              result += item.marker + item.seriesName + ': ' + Math.floor(item.value) + '<br/>'
+            })
+            return result
           }
         },
         grid: {
@@ -622,7 +704,16 @@ const loadLoginTrend = async () => {
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            // 根据数据量间隔显示日期标签，与其他趋势图保持一致
+            interval: function(index, value) {
+              // 30天数据时，每2天显示一个标签
+              if (xAxisData.length > 20) {
+                return index % 2 === 0
+              }
+              // 7天数据时，每1天显示
+              return true
+            }
           },
           splitLine: {
             show: false
@@ -631,13 +722,18 @@ const loadLoginTrend = async () => {
         yAxis: {
           type: 'value',
           name: '登录次数',
+          min: 0,
+          minInterval: 1,
           axisLine: {
             lineStyle: {
               color: '#e4e7ed'
             }
           },
           axisLabel: {
-            color: '#909399'
+            color: '#909399',
+            formatter: function(value) {
+              return Math.floor(value).toString()
+            }
           },
           splitLine: {
             lineStyle: {

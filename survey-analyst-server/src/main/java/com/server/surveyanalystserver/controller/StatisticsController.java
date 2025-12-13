@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,6 +22,12 @@ public class StatisticsController {
     @Autowired
     private StatisticsService statisticsService;
 
+    /**
+     * 获取问卷统计概览
+     * 获取指定问卷的整体统计数据，包括填写数量、完成率等
+     * @param surveyId 问卷ID
+     * @return 问卷统计数据对象
+     */
     @ApiOperation(value = "获取问卷统计概览", notes = "获取问卷的整体统计数据")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/survey/{surveyId}")
@@ -29,6 +36,13 @@ public class StatisticsController {
         return Result.success("获取成功", statistics);
     }
 
+    /**
+     * 获取题目统计数据
+     * 获取指定题目的统计数据，包括填写数量、填写率等
+     * @param formItemId 表单项ID（题目ID）
+     * @param surveyId 问卷ID，可选
+     * @return 题目统计数据对象
+     */
     @ApiOperation(value = "获取题目统计", notes = "获取单个题目的统计数据")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/question/{formItemId}")
@@ -47,6 +61,13 @@ public class StatisticsController {
         return Result.success("获取成功", statistics);
     }
 
+    /**
+     * 获取问卷填写趋势数据
+     * 按时间范围统计问卷的填写数量趋势，用于趋势分析
+     * @param surveyId 问卷ID
+     * @param timeRange 时间范围（7d-最近7天，30d-最近30天，90d-最近90天，1y-最近1年），默认为30d
+     * @return 填写趋势数据对象
+     */
     @ApiOperation(value = "获取填写趋势", notes = "获取问卷的填写趋势统计")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/trend/{surveyId}")
@@ -99,7 +120,7 @@ public class StatisticsController {
     public Result<Map<String, Object>> getFilteredStatistics(@RequestBody Map<String, Object> request) {
         Long surveyId = Long.valueOf(request.get("surveyId").toString());
         @SuppressWarnings("unchecked")
-        java.util.List<Map<String, Object>> filters = (java.util.List<Map<String, Object>>) request.get("filters");
+        List<Map<String, Object>> filters = (List<Map<String, Object>>) request.get("filters");
         Map<String, Object> statistics = statisticsService.getFilteredStatistics(surveyId, filters);
         return Result.success("获取成功", statistics);
     }

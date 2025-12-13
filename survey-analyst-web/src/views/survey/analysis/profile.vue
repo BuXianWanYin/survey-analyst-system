@@ -148,6 +148,11 @@
 </template>
 
 <script setup>
+/**
+ * 样本画像分析页面
+ * 功能：分析问卷填写者的样本画像，包括设备类型分布、填写时间分布、地理位置分布等维度
+ */
+
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -188,6 +193,10 @@ const analysisForm = reactive({
   surveyId: null
 })
 
+/**
+ * 加载问卷列表
+ * 加载所有问卷列表，用于筛选下拉框
+ */
 const loadSurveyList = async () => {
   try {
     const res = await surveyApi.getSurveyList({ pageNum: 1, pageSize: 100 })
@@ -199,6 +208,10 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理画像分析
+ * 调用画像分析接口，分析问卷填写者的特征分布（设备、时间、时长、性别、年龄、地域等）
+ */
 const handleAnalyze = async () => {
   if (!analysisForm.surveyId) {
     ElMessage.warning('请选择问卷')
@@ -220,6 +233,11 @@ const handleAnalyze = async () => {
   }
 }
 
+/**
+ * 构建图表
+ * 根据画像分析数据生成多个图表配置（设备分布、时间分布、时长分布、性别分布、年龄分布、地域分布）
+ * @param {Object} data - 画像分析数据对象
+ */
 const buildCharts = (data) => {
   // 设备类型分布
   if (data.deviceDistribution) {
@@ -314,26 +332,46 @@ const buildCharts = (data) => {
   }
 }
 
+/**
+ * 判断是否有性别数据
+ * @returns {boolean} 是否有性别分布数据
+ */
 const hasGenderData = computed(() => {
   return analysisResult.value && analysisResult.value.genderDistribution && 
          Object.keys(analysisResult.value.genderDistribution).length > 0
 })
 
+/**
+ * 判断是否有年龄数据
+ * @returns {boolean} 是否有年龄分布数据
+ */
 const hasAgeData = computed(() => {
   return analysisResult.value && analysisResult.value.ageDistribution && 
          Object.keys(analysisResult.value.ageDistribution).length > 0
 })
 
+/**
+ * 判断是否有地域数据
+ * @returns {boolean} 是否有地域分布数据
+ */
 const hasRegionData = computed(() => {
   return analysisResult.value && analysisResult.value.regionDistribution && 
          Object.keys(analysisResult.value.regionDistribution).length > 0
 })
 
+/**
+ * 获取设备类型数量
+ * @param {string} deviceType - 设备类型
+ * @returns {number} 设备数量
+ */
 const getDeviceCount = (deviceType) => {
   if (!analysisResult.value || !analysisResult.value.deviceDistribution) return 0
   return analysisResult.value.deviceDistribution[deviceType] || 0
 }
 
+/**
+ * 返回上一页
+ */
 const goBack = () => {
   router.back()
 }

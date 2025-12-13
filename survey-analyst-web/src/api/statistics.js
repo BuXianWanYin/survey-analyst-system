@@ -20,7 +20,6 @@ export const statisticsApi = {
    * @returns {Promise} 题目统计数据
    */
   getQuestionStatistics(formItemId, surveyId) {
-    // 对 formItemId 进行 URL 编码，确保特殊字符正确处理
     const params = surveyId ? { surveyId } : {}
     return request.get(`/statistics/question/${encodeURIComponent(formItemId)}`, { params })
   },
@@ -31,7 +30,6 @@ export const statisticsApi = {
    * @returns {Promise} 选项统计数据
    */
   getOptionStatistics(formItemId) {
-    // 对 formItemId 进行 URL 编码，确保特殊字符正确处理
     return request.get(`/statistics/option/${encodeURIComponent(formItemId)}`)
   },
 

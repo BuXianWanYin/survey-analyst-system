@@ -2,16 +2,32 @@ package com.server.surveyanalystserver.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.server.surveyanalystserver.entity.*;
-import com.server.surveyanalystserver.mapper.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.server.surveyanalystserver.entity.FormConfig;
+import com.server.surveyanalystserver.entity.FormData;
+import com.server.surveyanalystserver.entity.FormItem;
+import com.server.surveyanalystserver.entity.Response;
+import com.server.surveyanalystserver.mapper.FormItemMapper;
+import com.server.surveyanalystserver.mapper.ResponseMapper;
+import com.server.surveyanalystserver.mapper.SurveyMapper;
+import com.server.surveyanalystserver.service.FormConfigService;
+import com.server.surveyanalystserver.service.FormDataService;
+import com.server.surveyanalystserver.service.FormItemService;
 import com.server.surveyanalystserver.service.RedisCacheService;
 import com.server.surveyanalystserver.service.StatisticsService;
+import com.server.surveyanalystserver.config.FileConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,19 +43,22 @@ public class StatisticsServiceImpl implements StatisticsService {
     private ResponseMapper responseMapper;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormConfigService formConfigService;
+    private FormConfigService formConfigService;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormItemService formItemService;
+    private FormItemService formItemService;
 
     @Autowired
-    private com.server.surveyanalystserver.service.FormDataService formDataService;
+    private FormDataService formDataService;
 
     @Autowired
-    private com.server.surveyanalystserver.mapper.FormItemMapper formItemMapper;
+    private FormItemMapper formItemMapper;
 
     @Autowired
     private RedisCacheService redisCacheService;
+
+    @Autowired
+    private FileConfig fileConfig;
 
     /**
      * Redis缓存过期时间（秒）- 1小时
@@ -51,6 +70,12 @@ public class StatisticsServiceImpl implements StatisticsService {
      */
     private static final String CACHE_KEY_PREFIX = "statistics:";
 
+    /**
+     * 获取问卷统计概览
+     * 获取指定问卷的整体统计数据，包括填写数量、完成率等，优先从Redis缓存获取
+     * @param surveyId 问卷ID
+     * @return 统计概览数据Map，包含totalResponses、completedResponses、draftResponses、validRate等字段
+     */
     @Override
     public Map<String, Object> getSurveyStatistics(Long surveyId) {
         // 先从Redis缓存获取
@@ -90,14 +115,20 @@ public class StatisticsServiceImpl implements StatisticsService {
         return statistics;
     }
 
+    /**
+     * 获取题目统计数据
+     * 获取指定题目的统计数据，包括填写数量、填写率等，优先从Redis缓存获取
+     * @param formItemId 表单项ID（字符串格式）
+     * @param surveyIdParam 问卷ID（可选，用于容错处理）
+     * @return 题目统计数据Map
+     */
     @Override
     public Map<String, Object> getQuestionStatistics(String formItemId, Long surveyIdParam) {
         // 通过formItemId查找formItem
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.server.surveyanalystserver.entity.FormItem> itemWrapper = 
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        itemWrapper.eq(com.server.surveyanalystserver.entity.FormItem::getFormItemId, formItemId)
+        LambdaQueryWrapper<FormItem> itemWrapper = new LambdaQueryWrapper<>();
+        itemWrapper.eq(FormItem::getFormItemId, formItemId)
                    .last("LIMIT 1");
-        com.server.surveyanalystserver.entity.FormItem formItem = formItemMapper.selectOne(itemWrapper);
+        FormItem formItem = formItemMapper.selectOne(itemWrapper);
         
         if (formItem == null) {
             throw new RuntimeException("表单项不存在");
@@ -107,7 +138,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         
         // 通过formKey获取surveyId
         Long surveyId = surveyIdParam;
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getByFormKey(formKey);
+        FormConfig formConfig = formConfigService.getByFormKey(formKey);
         if (formConfig != null) {
             // 如果找到了formConfig，使用formConfig中的surveyId
             surveyId = formConfig.getSurveyId();
@@ -130,17 +161,17 @@ public class StatisticsServiceImpl implements StatisticsService {
         statistics.put("questionType", formItem.getType());
 
         // 获取该表单的所有数据（分批查询）
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        List<FormData> formDataList = new ArrayList<>();
         int pageSize = 5000; // 每批5000条
         int currentPage = 1;
         boolean hasMore = true;
         
         while (hasMore) {
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            Page<FormData> page = 
+                new Page<>(currentPage, pageSize);
+            Page<FormData> formDataPage = 
                 formDataService.getFormDataList(page, formKey);
-            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            List<FormData> records = formDataPage.getRecords();
             
             if (records != null && !records.isEmpty()) {
                 formDataList.addAll(records);
@@ -185,7 +216,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             Map<String, Integer> optionCount = new HashMap<>();
             int totalCount = 0;
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -230,7 +261,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             int validAnswers = 0;
             List<String> textAnswers = new ArrayList<>(); // 用于词云分析
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -264,7 +295,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         } else if ("RATE".equals(type) || "SLIDER".equals(type)) {
             // 评分题/滑块：计算平均分
             List<Double> ratings = new ArrayList<>();
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -469,27 +500,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         result.put("surveyStatistics", surveyStatistics);
 
         // 2. 获取表单配置和表单项
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 3. 获取所有表单项
-        List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
+        List<FormItem> formItems = formItemService.getByFormKey(formKey);
         
         // 4. 获取所有表单数据（分批查询，避免数据量过大时的内存问题）
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        List<FormData> formDataList = new ArrayList<>();
         int pageSize = 5000; // 每批5000条
         int currentPage = 1;
         boolean hasMore = true;
         
         while (hasMore) {
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            Page<FormData> page = 
+                new Page<>(currentPage, pageSize);
+            Page<FormData> formDataPage = 
                 formDataService.getFormDataList(page, formKey);
-            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            List<FormData> records = formDataPage.getRecords();
             
             if (records != null && !records.isEmpty()) {
                 formDataList.addAll(records);
@@ -504,7 +535,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         Map<String, Map<String, Object>> questionStatistics = new HashMap<>();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
+        for (FormItem formItem : formItems) {
             try {
                 String formItemId = formItem.getFormItemId();
                 Map<String, Object> stat = calculateQuestionStatistics(formItem, formDataList, objectMapper);
@@ -538,8 +569,8 @@ public class StatisticsServiceImpl implements StatisticsService {
      * 计算单个题目的统计数据（提取的公共方法）
      */
     private Map<String, Object> calculateQuestionStatistics(
-            com.server.surveyanalystserver.entity.FormItem formItem,
-            List<com.server.surveyanalystserver.entity.FormData> formDataList,
+            FormItem formItem,
+            List<FormData> formDataList,
             ObjectMapper objectMapper) {
         
         Map<String, Object> statistics = new HashMap<>();
@@ -581,7 +612,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             Map<String, Integer> optionCount = new HashMap<>();
             int totalCount = 0;
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -626,7 +657,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             int validAnswers = 0;
             List<String> textAnswers = new ArrayList<>(); // 用于词云分析
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -660,7 +691,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         } else if ("RATE".equals(type) || "SLIDER".equals(type)) {
             // 评分题/滑块：计算平均分
             List<Double> ratings = new ArrayList<>();
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -692,7 +723,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             Map<String, Integer> fileTypeCount = new HashMap<>();
             List<Map<String, Object>> fileList = new ArrayList<>();
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -709,23 +740,29 @@ public class StatisticsServiceImpl implements StatisticsService {
                             validUploads++;
                             
                             for (Object fileObj : files) {
+                                totalFiles++;
+                                
+                                // 获取文件大小（支持Map对象和String URL）
+                                long fileSize = getFileSize(fileObj);
+                                totalSize += fileSize;
+                                if (fileSize > maxSize) maxSize = fileSize;
+                                if (fileSize < minSize && fileSize > 0) minSize = fileSize;
+                                
+                                // 文件类型和文件信息
                                 if (fileObj instanceof Map) {
                                     @SuppressWarnings("unchecked")
                                     Map<String, Object> file = (Map<String, Object>) fileObj;
-                                    totalFiles++;
-                                    
-                                    // 文件大小
-                                    Object sizeObj = file.get("size");
-                                    long fileSize = 0;
-                                    if (sizeObj instanceof Number) {
-                                        fileSize = ((Number) sizeObj).longValue();
-                                    }
-                                    totalSize += fileSize;
-                                    if (fileSize > maxSize) maxSize = fileSize;
-                                    if (fileSize < minSize && fileSize > 0) minSize = fileSize;
                                     
                                     // 文件类型
                                     String fileName = String.valueOf(file.get("name") != null ? file.get("name") : "");
+                                    // 如果name为空，尝试从url中提取文件名
+                                    if (fileName.isEmpty() || "null".equals(fileName)) {
+                                        String fileUrl = String.valueOf(file.get("url") != null ? file.get("url") : 
+                                                                        (file.get("rawUrl") != null ? file.get("rawUrl") : ""));
+                                        if (!fileUrl.isEmpty() && !"null".equals(fileUrl)) {
+                                            fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                                        }
+                                    }
                                     String fileType = getFileExtension(fileName);
                                     if (!fileType.isEmpty()) {
                                         fileTypeCount.put(fileType, fileTypeCount.getOrDefault(fileType, 0) + 1);
@@ -733,6 +770,21 @@ public class StatisticsServiceImpl implements StatisticsService {
                                     
                                     // 添加到文件列表
                                     fileList.add(file);
+                                } else if (fileObj instanceof String) {
+                                    // 如果是字符串URL，尝试提取文件类型
+                                    String fileUrl = (String) fileObj;
+                                    String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                                    String fileType = getFileExtension(fileName);
+                                    if (!fileType.isEmpty()) {
+                                        fileTypeCount.put(fileType, fileTypeCount.getOrDefault(fileType, 0) + 1);
+                                    }
+                                    
+                                    // 将字符串URL转换为Map格式保存
+                                    Map<String, Object> fileMap = new HashMap<>();
+                                    fileMap.put("url", fileUrl);
+                                    fileMap.put("name", fileName);
+                                    fileMap.put("size", fileSize);
+                                    fileList.add(fileMap);
                                 }
                             }
                         }
@@ -776,7 +828,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             long minSize = Long.MAX_VALUE;
             List<Map<String, Object>> imageList = new ArrayList<>();
             
-            for (com.server.surveyanalystserver.entity.FormData data : formDataList) {
+            for (FormData data : formDataList) {
                 Map<String, Object> originalData = data.getOriginalData();
                 if (originalData != null && originalData.containsKey(formItemId)) {
                     Object value = originalData.get(formItemId);
@@ -793,23 +845,29 @@ public class StatisticsServiceImpl implements StatisticsService {
                             validUploads++;
                             
                             for (Object imageObj : images) {
+                                totalImages++;
+                                
+                                // 获取图片大小（支持Map对象和String URL）
+                                long imageSize = getFileSize(imageObj);
+                                totalSize += imageSize;
+                                if (imageSize > maxSize) maxSize = imageSize;
+                                if (imageSize < minSize && imageSize > 0) minSize = imageSize;
+                                
+                                // 处理图片信息
                                 if (imageObj instanceof Map) {
                                     @SuppressWarnings("unchecked")
                                     Map<String, Object> image = (Map<String, Object>) imageObj;
-                                    totalImages++;
-                                    
-                                    // 图片大小
-                                    Object sizeObj = image.get("size");
-                                    long imageSize = 0;
-                                    if (sizeObj instanceof Number) {
-                                        imageSize = ((Number) sizeObj).longValue();
-                                    }
-                                    totalSize += imageSize;
-                                    if (imageSize > maxSize) maxSize = imageSize;
-                                    if (imageSize < minSize && imageSize > 0) minSize = imageSize;
-                                    
                                     // 添加到图片列表
                                     imageList.add(image);
+                                } else if (imageObj instanceof String) {
+                                    // 如果是字符串URL，转换为Map格式保存
+                                    String imageUrl = (String) imageObj;
+                                    String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+                                    Map<String, Object> imageMap = new HashMap<>();
+                                    imageMap.put("url", imageUrl);
+                                    imageMap.put("name", fileName);
+                                    imageMap.put("size", imageSize);
+                                    imageList.add(imageMap);
                                 }
                             }
                         }
@@ -853,32 +911,129 @@ public class StatisticsServiceImpl implements StatisticsService {
         return "";
     }
 
+    /**
+     * 从文件URL获取文件大小
+     * @param fileUrl 文件URL（可能是完整URL如 http://... 或相对路径如 /upload/2024/01/01/xxx.jpg）
+     * @return 文件大小（字节），如果文件不存在则返回0
+     */
+    private long getFileSizeFromUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return 0;
+        }
+        try {
+            String relativePath = fileUrl;
+            
+            // 如果是完整URL（http:// 或 https://），尝试提取路径部分
+            if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+                try {
+                    java.net.URL url = new java.net.URL(fileUrl);
+                    String path = url.getPath();
+                    // 提取 /upload/ 之后的部分
+                    int uploadIndex = path.indexOf("/upload/");
+                    if (uploadIndex >= 0) {
+                        relativePath = path.substring(uploadIndex + 8); // 移除 "/upload/"
+                    } else {
+                        // 如果没有 /upload/ 前缀，使用整个路径（去掉开头的 /）
+                        relativePath = path.startsWith("/") ? path.substring(1) : path;
+                    }
+                } catch (Exception e) {
+                    // 如果URL解析失败，尝试直接从URL中提取路径
+                    int uploadIndex = fileUrl.indexOf("/upload/");
+                    if (uploadIndex >= 0) {
+                        relativePath = fileUrl.substring(uploadIndex + 8);
+                    }
+                }
+            } else if (fileUrl.startsWith("/upload/")) {
+                // 如果是相对路径，移除 "/upload/" 前缀
+                relativePath = fileUrl.substring(8);
+            }
+            
+            // 构建完整路径
+            String fullPath = fileConfig.getPath();
+            if (!fullPath.endsWith("/") && !relativePath.startsWith("/")) {
+                fullPath += "/";
+            }
+            fullPath += relativePath;
+            
+            File file = new File(fullPath);
+            
+            if (file.exists() && file.isFile()) {
+                return file.length();
+            }
+        } catch (Exception e) {
+            // 忽略异常，返回0
+        }
+        return 0;
+    }
+
+    /**
+     * 从文件对象或URL获取文件大小
+     * 优先从文件对象的size字段获取，如果不存在则从文件URL读取实际文件大小
+     * @param fileObj 文件对象（Map）或文件URL（String）
+     * @return 文件大小（字节）
+     */
+    private long getFileSize(Object fileObj) {
+        if (fileObj == null) {
+            return 0;
+        }
+        
+        // 如果是Map对象，尝试获取size字段
+        if (fileObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> file = (Map<String, Object>) fileObj;
+            Object sizeObj = file.get("size");
+            if (sizeObj instanceof Number) {
+                long size = ((Number) sizeObj).longValue();
+                if (size > 0) {
+                    return size;
+                }
+            }
+            // 如果没有size字段或size为0，尝试从url或rawUrl获取
+            String fileUrl = null;
+            if (file.containsKey("url")) {
+                fileUrl = String.valueOf(file.get("url"));
+            } else if (file.containsKey("rawUrl")) {
+                fileUrl = String.valueOf(file.get("rawUrl"));
+            }
+            if (fileUrl != null && !fileUrl.isEmpty()) {
+                return getFileSizeFromUrl(fileUrl);
+            }
+        }
+        
+        // 如果是字符串，直接作为URL处理
+        if (fileObj instanceof String) {
+            return getFileSizeFromUrl((String) fileObj);
+        }
+        
+        return 0;
+    }
+
     @Override
     public Map<String, Object> getFilteredStatistics(Long surveyId, java.util.List<Map<String, Object>> filters) {
         Map<String, Object> result = new HashMap<>();
 
         // 1. 获取表单配置
-        com.server.surveyanalystserver.entity.FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
+        FormConfig formConfig = formConfigService.getBySurveyId(surveyId);
         if (formConfig == null) {
             throw new RuntimeException("表单配置不存在");
         }
         String formKey = formConfig.getFormKey();
 
         // 2. 获取所有表单项
-        List<com.server.surveyanalystserver.entity.FormItem> formItems = formItemService.getByFormKey(formKey);
+        List<FormItem> formItems = formItemService.getByFormKey(formKey);
 
         // 3. 获取所有表单数据（分批查询）
-        List<com.server.surveyanalystserver.entity.FormData> formDataList = new ArrayList<>();
+        List<FormData> formDataList = new ArrayList<>();
         int pageSize = 5000; // 每批5000条
         int currentPage = 1;
         boolean hasMore = true;
         
         while (hasMore) {
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> page = 
-                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(currentPage, pageSize);
-            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.server.surveyanalystserver.entity.FormData> formDataPage = 
+            Page<FormData> page = 
+                new Page<>(currentPage, pageSize);
+            Page<FormData> formDataPage = 
                 formDataService.getFormDataList(page, formKey);
-            List<com.server.surveyanalystserver.entity.FormData> records = formDataPage.getRecords();
+            List<FormData> records = formDataPage.getRecords();
             
             if (records != null && !records.isEmpty()) {
                 formDataList.addAll(records);
@@ -890,7 +1045,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         }
 
         // 4. 根据筛选条件过滤数据
-        List<com.server.surveyanalystserver.entity.FormData> filteredDataList = formDataList;
+        List<FormData> filteredDataList = formDataList;
         if (filters != null && !filters.isEmpty()) {
             filteredDataList = formDataList.stream()
                 .filter(data -> {
@@ -939,7 +1094,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         Map<String, Map<String, Object>> questionStatistics = new HashMap<>();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        for (com.server.surveyanalystserver.entity.FormItem formItem : formItems) {
+        for (FormItem formItem : formItems) {
             try {
                 String formItemId = formItem.getFormItemId();
                 Map<String, Object> stat = calculateQuestionStatistics(formItem, filteredDataList, objectMapper);

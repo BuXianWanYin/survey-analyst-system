@@ -12,7 +12,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     /**
-     * 跨域配置
+     * 配置跨域资源共享
+     * 允许所有来源、所有HTTP方法、所有请求头，支持携带凭证，预检请求缓存1小时
+     * @param registry CORS注册表
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -25,7 +27,9 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /**
-     * 静态资源映射（文件访问）
+     * 配置静态资源处理器
+     * 映射文件上传路径和Swagger/Knife4j静态资源路径
+     * @param registry 资源处理器注册表
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -34,10 +38,12 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:upload/");
         
         // Swagger/Knife4j 静态资源映射
-        registry.addResourceHandler("doc.html")
+        registry.addResourceHandler("/doc.html")
                 .addResourceLocations("classpath:/META-INF/resources/");
-        registry.addResourceHandler("swagger-ui.html")
+        registry.addResourceHandler("/swagger-ui.html")
                 .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/swagger-ui/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/springfox-swagger-ui/");
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }

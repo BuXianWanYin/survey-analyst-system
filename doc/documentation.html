@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线问卷调查与数据分析系统 - 系统文档</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #409EFF;
+            --primary-light: #66b1ff;
+            --primary-dark: #337ecc;
+            --success-color: #67c23a;
+            --warning-color: #e6a23c;
+            --danger-color: #f56c6c;
+            --info-color: #909399;
+            --text-primary: #303133;
+            --text-regular: #606266;
+            --text-secondary: #909399;
+            --text-placeholder: #c0c4cc;
+            --border-base: #dcdfe6;
+            --border-light: #e4e7ed;
+            --border-lighter: #ebeef5;
+            --border-extra-light: #f2f6fc;
+            --bg-color: #ffffff;
+            --bg-page: #f5f7fa;
+            --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+            --shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+            background-color: var(--bg-page);
+            line-height: 1.6;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: var(--bg-color);
+            box-shadow: var(--shadow-base);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-brand {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .navbar-nav a {
+            color: var(--text-regular);
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.3s;
+            padding: 8px 0;
+        }
+
+        .navbar-nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* 主要内容区域 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 40px 60px;
+        }
+
+        /* 页面标题 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 0;
+        }
+
+        .page-title {
+            font-size: 42px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-base);
+            transition: box-shadow 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-light);
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-lighter);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .card-content {
+            color: var(--text-regular);
+            line-height: 1.8;
+        }
+
+        /* 表格样式 */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-color);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-lighter);
+        }
+
+        th {
+            background: var(--bg-page);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: var(--border-extra-light);
+        }
+
+        /* 代码块样式 */
+        .code-block {
+            background: #f5f7fa;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 架构图样式 */
+        .architecture-diagram {
+            background: #fafbfc;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            white-space: pre;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .architecture-diagram::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+            border-radius: 8px 8px 0 0;
+        }
+
+        /* 标签样式 */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 0 4px;
+        }
+
+        .badge-primary {
+            background: #ecf5ff;
+            color: var(--primary-color);
+        }
+
+        .badge-success {
+            background: #f0f9ff;
+            color: var(--success-color);
+        }
+
+        .badge-warning {
+            background: #fdf6ec;
+            color: var(--warning-color);
+        }
+
+        /* 列表样式 */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+            border-bottom: 1px solid var(--border-extra-light);
+        }
+
+        .feature-list li::before {
+            content: '●';
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .navbar-nav {
+                display: none;
+            }
+
+            .container {
+                padding: 80px 20px 40px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+
+        /* 锚点平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* 章节间距 */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        /* 链接样式 */
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 代码内联样式 */
+        code {
+            background: #f5f7fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: #e83e8c;
+        }
+
+        /* 有序列表样式 */
+        ol {
+            padding-left: 20px;
+        }
+
+        ol li {
+            margin: 10px 0;
+        }
+
+        /* 标题样式增强 */
+        h3 {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+        }
+
+        h4 {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">在线问卷调查与数据分析系统</a>
+        <ul class="navbar-nav">
+            <li><a href="#overview">项目概述</a></li>
+            <li><a href="#tech">技术栈</a></li>
+            <li><a href="#quickstart">快速启动</a></li>
+            <li><a href="#architecture">系统架构</a></li>
+            <li><a href="#features">功能模块</a></li>
+            <li><a href="#business">业务流程</a></li>
+            <li><a href="#api">API文档</a></li>
+            <li><a href="#database">数据库</a></li>
+            <li><a href="#defense">答辩准备</a></li>
+            <li><a href="#paper">论文相关</a></li>
+        </ul>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">在线问卷调查与数据分析系统</h1>
+            <p class="page-subtitle">系统说明文档 - 项目概述、技术栈、架构设计、功能模块、答辩准备</p>
+        </div>
+
+        <!-- 项目概述 -->
+        <section id="overview" class="section">
+            <div class="card">
+                <h2 class="card-title">项目概述</h2>
+                <div class="card-content">
+                    <p><strong>项目名称：</strong>在线问卷调查与数据分析系统</p>
+                    <p><strong>开发模式：</strong>前后端分离</p>
+                    <p><strong>维护者：</strong>开发团队</p>
+                    <p><strong>完成时间：</strong>2024年</p>
+                    <p><strong>开发进度：</strong>已完成</p>
+                    <p><strong>项目简介：</strong>本系统是一个基于Web的在线问卷调查与数据分析系统，采用B/S架构，支持问卷设计、发布、数据收集、多维度分析和可视化展示等功能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 技术栈 -->
+        <section id="tech" class="section">
+            <div class="card">
+                <h2 class="card-title">技术栈</h2>
+                <div class="card-content">
+                    <h3>后端技术栈</h3>
+                    <div class="table-wrapper" style="margin: 20px 0;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 200px;">技术名称</th>
+                                    <th style="width: 120px;">版本</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Java</strong></td>
+                                    <td>1.8</td>
+                                    <td>系统后端开发的核心编程语言，选择Java 1.8是因为其稳定性和广泛的企业级应用支持，兼容性好，适合构建大型Web应用系统</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Spring Boot</strong></td>
+                                    <td>2.6.13</td>
+                                    <td>Spring框架的扩展，提供了自动配置、起步依赖等特性，大大简化了Spring应用的开发。2.6.13版本稳定可靠，提供了完善的Web开发支持</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Spring Security</strong></td>
+                                    <td>-</td>
+                                    <td>Spring生态系统中的安全框架，提供了认证、授权、防护攻击等安全功能。系统使用Spring Security实现用户认证和权限控制</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>MyBatis Plus</strong></td>
+                                    <td>3.5.3.1</td>
+                                    <td>MyBatis的增强工具，提供了代码生成、条件构造器、分页插件等功能，简化了数据库操作代码的编写，提高了开发效率</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>MySQL</strong></td>
+                                    <td>8.0+</td>
+                                    <td>关系型数据库管理系统，用于存储系统的结构化数据。MySQL 8.0版本提供了JSON支持、窗口函数等新特性，适合存储问卷数据、用户信息等</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Redis</strong></td>
+                                    <td>6.0+</td>
+                                    <td>内存数据库，用于缓存统计数据、会话存储等。Redis的高性能特性能够显著提升系统的响应速度，减少数据库查询压力</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>JWT (jjwt)</strong></td>
+                                    <td>0.11.5</td>
+                                    <td>JSON Web Token是一种无状态的身份认证方案。系统使用JWT实现用户登录认证，Token包含用户信息，避免了服务端存储会话的开销</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Knife4j</strong></td>
+                                    <td>3.0.3</td>
+                                    <td>Swagger的增强版本，提供了更美观的API文档界面。系统使用Knife4j自动生成API文档，方便前端开发和接口测试</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Hutool</strong></td>
+                                    <td>5.8.22</td>
+                                    <td>Java工具类库，提供了字符串、日期、加密、文件等常用工具方法。系统使用Hutool简化了工具类代码的编写</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>EasyExcel</strong></td>
+                                    <td>3.3.2</td>
+                                    <td>阿里巴巴开源的Excel处理工具，支持大数据量的Excel读写，性能优异。系统使用EasyExcel实现问卷数据的Excel导出功能</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Apache POI</strong></td>
+                                    <td>5.2.4</td>
+                                    <td>Apache基金会的Office文档处理库，支持Excel、Word、PowerPoint等格式。系统使用POI作为EasyExcel的补充，处理复杂的文档操作</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Druid</strong></td>
+                                    <td>1.2.18</td>
+                                    <td>阿里巴巴开源的数据库连接池，提供了监控、统计、SQL防注入等功能。系统使用Druid管理数据库连接，提高数据库访问性能</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">前端技术栈</h3>
+                    <div class="table-wrapper" style="margin: 20px 0;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 200px;">技术名称</th>
+                                    <th style="width: 120px;">版本</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Vue</strong></td>
+                                    <td>3.4.21</td>
+                                    <td>渐进式JavaScript框架，采用Composition API提供了更好的代码组织和复用性。Vue 3的性能优化和TypeScript支持使其成为现代前端开发的首选框架</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vite</strong></td>
+                                    <td>6.0.0</td>
+                                    <td>下一代前端构建工具，使用原生ES模块和Rollup打包，提供了极速的开发服务器启动和热更新。Vite的开发体验远优于传统的Webpack</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vue Router</strong></td>
+                                    <td>4.3.0</td>
+                                    <td>Vue.js的官方路由管理器，支持嵌套路由、路由守卫、懒加载等功能。系统使用Vue Router实现单页应用的路由管理</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pinia</strong></td>
+                                    <td>2.1.7</td>
+                                    <td>Vue 3官方推荐的状态管理库，替代了Vuex。Pinia提供了更简洁的API和更好的TypeScript支持，系统使用Pinia管理用户状态、应用配置等全局状态</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Element Plus</strong></td>
+                                    <td>2.6.3</td>
+                                    <td>基于Vue 3的组件库，提供了丰富的UI组件。系统使用Element Plus快速构建用户界面，包括表格、表单、对话框等常用组件</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ECharts</strong></td>
+                                    <td>5.5.0</td>
+                                    <td>百度开源的数据可视化图表库，支持多种图表类型。系统使用ECharts实现问卷数据的可视化展示，包括柱状图、饼图、折线图、词云图等</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Axios</strong></td>
+                                    <td>1.6.7</td>
+                                    <td>基于Promise的HTTP客户端，支持请求拦截、响应拦截等功能。系统使用Axios封装API请求，统一处理错误和Token认证</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>dayjs</strong></td>
+                                    <td>1.11.10</td>
+                                    <td>轻量级的日期处理库，API与Moment.js兼容但体积更小。系统使用dayjs处理日期格式化、日期计算等操作</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>qrcode</strong></td>
+                                    <td>1.5.3</td>
+                                    <td>二维码生成库，支持在浏览器中生成二维码图片。系统使用qrcode为问卷生成分享二维码，方便移动端扫描访问</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>quill</strong></td>
+                                    <td>1.3.7</td>
+                                    <td>富文本编辑器，提供了丰富的文本编辑功能。系统使用Quill实现问卷描述、题目说明等富文本内容的编辑</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>signature_pad</strong></td>
+                                    <td>4.0.9</td>
+                                    <td>签名板组件，支持在Canvas上绘制签名。系统使用signature_pad实现问卷中的签名题功能</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快速启动 -->
+        <section id="quickstart" class="section">
+            <div class="card">
+                <h2 class="card-title">快速启动</h2>
+                <div class="card-content">
+                    <h3>环境要求</h3>
+                    <div style="margin: 20px 0;">
+                        <p>在开始之前，请确保已安装以下软件：</p>
+                        <ul class="feature-list">
+                            <li><strong>JDK 1.8</strong> 或更高版本 - Java开发环境</li>
+                            <li><strong>Maven 3.6</strong> 或更高版本 - Java项目构建工具</li>
+                            <li><strong>MySQL 8.0</strong> 或更高版本 - 关系型数据库</li>
+                            <li><strong>Redis 6.0</strong> 或更高版本 - 缓存数据库</li>
+                            <li><strong>Node.js >= 16.0.0</strong> - JavaScript运行环境</li>
+                            <li><strong>npm >= 7.0.0</strong> - Node.js包管理器</li>
+                        </ul>
+                    </div>
+
+                    <h3 style="margin-top: 40px;">后端启动步骤</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：创建数据库</h4>
+                        <div class="code-block">
+CREATE DATABASE survey_analyst CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);">在MySQL中执行上述SQL语句创建数据库。</p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：配置数据库连接</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            编辑 <code>survey-analyst-server/src/main/resources/application-dev.yml</code> 文件，配置数据库连接信息：
+                        </p>
+                        <div class="code-block">
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/survey_analyst?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: your_password
+                        </div>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：配置Redis连接</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            在同一配置文件中配置Redis连接信息：
+                        </p>
+                        <div class="code-block">
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: your_redis_password  # 如果有密码
+      database: 0
+                        </div>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤4：编译项目</h4>
+                        <div class="code-block">
+cd survey-analyst-server
+mvn clean install
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);">在项目根目录执行Maven编译命令。</p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤5：运行项目</h4>
+                        <div class="code-block">
+mvn spring-boot:run
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);">或者直接运行 <code>SurveyAnalystServerApplication.java</code> 的main方法。</p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤6：访问API文档</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            启动成功后，访问 <a href="http://localhost:8080/doc.html" target="_blank" style="color: var(--primary-color);">http://localhost:8080/doc.html</a> 查看API文档。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">前端启动步骤</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：安装依赖</h4>
+                        <div class="code-block">
+cd survey-analyst-web
+npm install
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);">在项目根目录执行npm安装命令，安装所有依赖包。</p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：配置环境变量</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            在项目根目录创建 <code>.env.development</code> 文件，配置以下内容：
+                        </p>
+                        <div class="code-block">
+# 应用标题
+VITE_APP_TITLE=在线问卷调查与数据分析系统
+
+# API 基础路径
+VITE_APP_BASE_API=/api
+
+# 请求超时时间（毫秒）
+VITE_APP_TIMEOUT=30000
+
+# 开发服务器端口
+VITE_SERVER_PORT=3001
+
+# 开发服务器主机地址
+VITE_SERVER_HOST=0.0.0.0
+
+# 代理目标地址（后端服务地址）
+VITE_SERVER_PROXY_TARGET=http://localhost:8080
+                        </div>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：启动开发服务器</h4>
+                        <div class="code-block">
+npm run dev
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);">启动Vite开发服务器，支持热更新。</p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <h4>步骤4：访问前端</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            启动成功后，访问 <a href="http://localhost:3001" target="_blank" style="color: var(--primary-color);">http://localhost:3001</a> 查看前端界面。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 系统架构 -->
+        <section id="architecture" class="section">
+            <div class="card">
+                <h2 class="card-title">系统架构</h2>
+                <div class="card-content">
+                    <h3>整体架构</h3>
+                    <p style="margin-bottom: 20px; color: var(--text-regular);">
+                        系统采用前后端分离架构，分为前端层、API网关层、后端服务层和数据存储层，各层职责清晰，便于维护和扩展。
+                    </p>
+                    <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                     前端层 (Vue3)                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              用户前端界面                              │  │
+│  │  • 问卷设计器（拖拽式编辑器）                          │  │
+│  │  • 数据可视化（ECharts图表）                           │  │
+│  │  • 问卷填写界面（响应式设计）                          │  │
+│  │  • 数据统计分析                                        │  │
+│  └───────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │           管理员后台界面（独立页面）                     │  │
+│  │  • 用户管理（增删改查、状态管理）                       │  │
+│  │  • 问卷管理（审核、状态管理）                           │  │
+│  │  • 数据管理（查看、导出、删除）                         │  │
+│  │  • 系统监控（数据统计、操作日志）                       │  │
+│  └───────────────────────────────────────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            │ HTTP / HTTPS
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                    API网关层 (Nginx)                         │
+│  • 反向代理（将请求转发到后端服务）                          │
+│  • 负载均衡（多实例部署时分配请求）                          │
+│  • 静态资源服务（前端资源访问）                              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│               后端服务层 (Spring Boot)                       │
+│  • 业务逻辑处理（Service层）                                 │
+│  • 接口服务（Controller层）                                  │
+│  • 安全认证（Spring Security + JWT）                         │
+│  • 数据访问（MyBatis Plus）                                 │
+└───────────────┬───────────────────────┬───────────────────────┘
+                │                       │
+                │                       │
+    ┌───────────▼───────────┐   ┌───────▼───────────┐
+    │      MySQL 8.0+       │   │   Redis 6.0+     │
+    │      关系型数据库      │   │     缓存数据库     │
+    │  • 用户数据            │   │  • 统计数据缓存    │
+    │  • 问卷数据            │   │  • 会话存储       │
+    │  • 填写数据            │   │  • 验证码存储     │
+    │  • 系统配置            │   │                  │
+    └───────────────────────┘   └───────────────────┘
+                    </div>
+
+                    <h3 style="margin-top: 50px;">请求流程</h3>
+                    <div style="margin: 20px 0;">
+                        <ol style="margin-left: 20px; color: var(--text-regular); line-height: 2;">
+                            <li><strong>前端发起请求</strong> - 用户在前端界面进行操作，前端通过Axios发送HTTP请求</li>
+                            <li><strong>API网关路由</strong> - Nginx接收请求，根据路径进行反向代理，转发到后端服务</li>
+                            <li><strong>后端处理请求</strong> - Spring Boot接收请求，经过安全认证、参数验证等中间件处理</li>
+                            <li><strong>业务逻辑处理</strong> - Service层执行业务逻辑，调用Mapper层进行数据库操作</li>
+                            <li><strong>数据存储/缓存</strong> - 数据持久化到MySQL，统计数据缓存到Redis</li>
+                            <li><strong>返回响应</strong> - 处理结果通过Controller返回JSON格式数据给前端</li>
+                            <li><strong>前端渲染</strong> - 前端接收数据，更新界面显示</li>
+                        </ol>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">后端结构</h3>
+                    <div style="margin: 20px 0;">
+                        <p style="color: var(--text-regular);">后端采用经典的分层架构：</p>
+                        <ul class="feature-list" style="margin-top: 15px;">
+                            <li><strong>Controller层</strong> - 接收HTTP请求，参数验证，返回响应结果</li>
+                            <li><strong>Service层</strong> - 业务逻辑处理，事务管理，调用Mapper层</li>
+                            <li><strong>Mapper层</strong> - 数据访问层，使用MyBatis Plus进行数据库操作</li>
+                            <li><strong>Entity层</strong> - 实体类，对应数据库表结构</li>
+                            <li><strong>DTO/VO层</strong> - 数据传输对象和视图对象，用于接口参数和返回值</li>
+                            <li><strong>Config层</strong> - 配置类，包括Spring Security、Redis、MyBatis Plus等配置</li>
+                            <li><strong>Utils层</strong> - 工具类，提供通用功能方法</li>
+                            <li><strong>Aspect层</strong> - 切面类，实现操作日志记录等功能</li>
+                        </ul>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">前端结构</h3>
+                    <div style="margin: 20px 0;">
+                        <p style="color: var(--text-regular);">前端采用组件化开发模式：</p>
+                        <ul class="feature-list" style="margin-top: 15px;">
+                            <li><strong>Views层</strong> - 页面组件，包括问卷管理、数据分析、系统管理等页面</li>
+                            <li><strong>Components层</strong> - 公共组件，包括表单渲染、问卷预览等可复用组件</li>
+                            <li><strong>API层</strong> - API接口封装，统一管理所有后端接口调用</li>
+                            <li><strong>Router层</strong> - 路由配置，定义页面路由和路由守卫</li>
+                            <li><strong>Store层</strong> - 状态管理，使用Pinia管理全局状态</li>
+                            <li><strong>Utils层</strong> - 工具函数，包括请求封装、日期处理、图表配置等</li>
+                            <li><strong>Layouts层</strong> - 布局组件，提供统一的页面布局结构</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能模块 -->
+        <section id="features" class="section">
+            <div class="card">
+                <h2 class="card-title">功能模块</h2>
+                <div class="card-content">
+                    <h3>模块概览</h3>
+                    <ul class="feature-list">
+                        <li>用户管理模块 - 用户注册、登录、信息管理</li>
+                        <li>问卷设计模块 - 拖拽式问卷编辑器，支持多种题型</li>
+                        <li>问卷发布模块 - 多渠道发布，灵活的发布设置</li>
+                        <li>数据收集模块 - 稳定的数据收集通道</li>
+                        <li>数据统计模块 - 实时统计、基础数据统计</li>
+                        <li>数据分析模块 - 交叉分析、趋势分析、画像分析</li>
+                        <li>数据可视化模块 - 多种图表类型展示</li>
+                        <li>安全管理模块 - 访问权限控制、数据安全</li>
+                        <li>系统管理模块 - 管理员后台管理</li>
+                    </ul>
+                    <h3 style="margin-top: 30px;">移动端页面列表</h3>
+                    <p>系统支持移动端访问，主要页面包括：</p>
+                    <ul class="feature-list">
+                        <li>问卷填写页面 - 移动端优化的问卷填写界面</li>
+                        <li>问卷预览页面 - 移动端预览功能</li>
+                        <li>数据统计页面 - 移动端数据查看</li>
+                        <li>用户中心页面 - 个人信息管理</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心业务流程 -->
+        <section id="business" class="section">
+            <div class="card">
+                <h2 class="card-title">核心业务流程</h2>
+                <div class="card-content">
+                    <h3>问卷设计流程</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：创建问卷</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            用户登录系统后，点击"创建问卷"按钮，填写问卷标题、描述，上传封面图片。系统自动创建问卷并设置为草稿状态。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：设计问卷内容</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            使用拖拽式问卷编辑器添加题目，支持多种题型：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>单选题、多选题、下拉选择</li>
+                            <li>单行文本、多行文本</li>
+                            <li>数字、日期、时间、日期时间</li>
+                            <li>评分题、滑块题</li>
+                            <li>图片选择、级联选择</li>
+                            <li>文件上传、图片上传</li>
+                            <li>签名题、图片展示、图片轮播</li>
+                            <li>描述文本、分割线</li>
+                        </ul>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-top: 15px;">
+                            每个题目可以配置属性：必填/非必填、提示文字、验证规则、默认值等。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：配置逻辑跳转</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            在逻辑配置页面，可以设置题目之间的跳转关系：根据选项跳转到指定题目、根据条件显示/隐藏题目、分页逻辑控制等。逻辑规则以JSON格式存储。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤4：设置外观主题</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            在主题设置页面，可以自定义问卷的外观：主题颜色、背景颜色、Logo上传与位置、头图设置、按钮样式等。支持移动端和桌面端预览。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤5：保存问卷</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            设计完成后，问卷自动保存为草稿状态，可以随时编辑和修改。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">问卷发布流程</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：发布设置</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            在发布设置页面，配置以下选项：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li><strong>访问权限</strong> - 公开访问或密码访问</li>
+                            <li><strong>填写限制</strong> - IP限制、设备限制、账号限制、填写次数限制</li>
+                            <li><strong>时间设置</strong> - 开始时间、结束时间</li>
+                            <li><strong>目标填写数量</strong> - 设置期望的填写数量</li>
+                            <li><strong>通知设置</strong> - 填写完成后的通知方式</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：发布问卷</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            点击"发布"按钮，系统验证问卷配置（表单配置、表单项是否存在），验证通过后将问卷状态变更为"已发布"（PUBLISHED），问卷开始接收填写数据。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：生成分享链接和二维码</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            发布成功后，系统自动生成问卷访问链接和二维码图片。用户可以通过链接或扫描二维码访问问卷，支持多渠道分享（微信、QQ、微博等）。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">数据收集流程</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：访问问卷</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            填写者通过分享链接或扫描二维码访问问卷。如果问卷设置了密码访问，需要先输入密码验证。系统记录访问IP、设备类型等信息。
+                        </p>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：填写问卷</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            填写过程中：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>实时表单验证 - 必填项检查、格式验证等</li>
+                            <li>逻辑跳转执行 - 根据选项自动跳转到指定题目</li>
+                            <li>草稿保存（可选） - 可以保存填写进度，稍后继续</li>
+                            <li>填写进度显示 - 显示当前填写进度百分比</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：提交数据</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            点击提交按钮后：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>前端验证 - 检查必填项、格式等</li>
+                            <li>后端验证 - 服务器端再次验证数据有效性</li>
+                            <li>防重复提交检查 - 根据IP、设备、账号等限制检查</li>
+                            <li>数据存储 - 将填写数据存储到数据库（form_data表）</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤4：记录填写信息</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            系统自动记录填写信息到response表：IP地址、设备类型（PC/MOBILE）、填写时长（秒）、开始时间、提交时间等，用于后续的数据分析。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 50px;">数据分析流程</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>步骤1：数据统计</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            系统提供实时数据统计功能：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>问卷整体统计 - 总填写数、完成数、草稿数、完成率、有效率等</li>
+                            <li>题目统计 - 每个题目的填写数、填写率、选项分布等</li>
+                            <li>实时刷新 - 支持定时刷新（如30秒）获取最新统计数据</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤2：基础分析</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            对收集的数据进行基础分析：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>选项分布分析 - 使用柱状图、饼图展示各选项的选择人数和比例</li>
+                            <li>文本分析 - 对填空题进行词云分析，提取高频词</li>
+                            <li>评分分析 - 计算平均分、最高分、最低分，展示评分分布</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤3：高级分析</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            提供多维度的高级分析功能：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>交叉分析 - 分析多个题目之间的关联关系，生成交叉表</li>
+                            <li>趋势分析 - 按时间维度统计填写趋势，分析选项选择率随时间的变化</li>
+                            <li>画像分析 - 分析填写者的特征，包括地域分布、设备偏好、填写时间偏好等</li>
+                            <li>对比分析 - 支持按不同条件筛选数据后进行对比分析</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 30px 0;">
+                        <h4>步骤4：数据可视化</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular); margin-bottom: 15px;">
+                            使用ECharts实现丰富的数据可视化：
+                        </p>
+                        <ul class="feature-list" style="margin-left: 40px;">
+                            <li>多种图表类型 - 柱状图、饼图、折线图、雷达图、词云图等</li>
+                            <li>图表交互 - 支持缩放、筛选、数据提示等交互功能</li>
+                            <li>数据导出 - 支持导出Excel、PDF、图片等格式</li>
+                        </ul>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">用户角色体系</h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>角色</th>
+                                    <th>权限说明</th>
+                                    <th>功能范围</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-primary">USER</span></td>
+                                    <td>普通用户</td>
+                                    <td>创建问卷、设计问卷、发布问卷、查看统计数据、导出数据</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">ADMIN</span></td>
+                                    <td>管理员</td>
+                                    <td>所有普通用户功能 + 用户管理、问卷管理、数据管理、系统监控、操作日志</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">问卷状态枚举</h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>状态</th>
+                                    <th>说明</th>
+                                    <th>可执行操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-warning">DRAFT</span></td>
+                                    <td>草稿</td>
+                                    <td>编辑、删除、发布</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">PUBLISHED</span></td>
+                                    <td>已发布（收集中）</td>
+                                    <td>查看、结束、查看数据、统计分析</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge">ENDED</span></td>
+                                    <td>已结束</td>
+                                    <td>查看数据、导出数据、统计分析</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API文档 -->
+        <section id="api" class="section">
+            <div class="card">
+                <h2 class="card-title">API接口文档</h2>
+                <div class="card-content">
+                    <h3>API文档访问</h3>
+                    <p>在线API文档地址：<a href="http://localhost:8080/doc.html" target="_blank" style="color: var(--primary-color);">http://localhost:8080/doc.html</a></p>
+                    <p>Swagger文档地址：<a href="http://localhost:8080/swagger-ui.html" target="_blank" style="color: var(--primary-color);">http://localhost:8080/swagger-ui.html</a></p>
+                    
+                    <h3 style="margin-top: 30px;">主要API模块</h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>模块</th>
+                                    <th>基础路径</th>
+                                    <th>主要功能</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-primary">认证模块</span></td>
+                                    <td>/api/auth</td>
+                                    <td>用户注册、登录、验证码发送、密码重置</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">用户模块</span></td>
+                                    <td>/api/user</td>
+                                    <td>当前用户信息、更新信息、修改密码、退出登录</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">问卷模块</span></td>
+                                    <td>/api/survey</td>
+                                    <td>问卷创建、更新、查询、发布、删除、使用模板创建</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">表单模块</span></td>
+                                    <td>/api/form</td>
+                                    <td>表单配置、表单项管理（批量操作）</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">数据模块</span></td>
+                                    <td>/api/form/data</td>
+                                    <td>数据提交、数据验证、数据查询、数据删除</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">统计模块</span></td>
+                                    <td>/api/statistics</td>
+                                    <td>问卷统计、题目统计、选项统计、趋势分析、设备统计</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">分析模块</span></td>
+                                    <td>/api/analysis</td>
+                                    <td>交叉分析、趋势分析、画像分析、数据筛选、对比分析</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">导出模块</span></td>
+                                    <td>/api/export</td>
+                                    <td>Excel导出、PDF导出、数据导出</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">文件模块</span></td>
+                                    <td>/api/file</td>
+                                    <td>文件上传、文件删除、文件信息查询</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">模板模块</span></td>
+                                    <td>/api/form/template</td>
+                                    <td>模板查询、创建、更新、删除、分类管理</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">主题模块</span></td>
+                                    <td>/api/form/theme</td>
+                                    <td>主题配置、主题查询、主题删除</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">设置模块</span></td>
+                                    <td>/api/form/setting</td>
+                                    <td>表单设置保存、查询、删除</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">逻辑模块</span></td>
+                                    <td>/api/form/logic</td>
+                                    <td>逻辑规则保存、查询、删除</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-primary">发布模块</span></td>
+                                    <td>/api/survey</td>
+                                    <td>生成分享链接、生成二维码</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">管理员-用户</span></td>
+                                    <td>/api/admin/user</td>
+                                    <td>用户列表、用户详情、用户更新、状态管理、用户统计</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">管理员-问卷</span></td>
+                                    <td>/api/admin/survey</td>
+                                    <td>问卷列表、问卷详情、状态管理、问卷删除、问卷统计</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">管理员-数据</span></td>
+                                    <td>/api/admin/data</td>
+                                    <td>填写记录列表、记录详情、数据删除、数据统计</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">管理员-模板</span></td>
+                                    <td>/api/admin/template</td>
+                                    <td>模板列表、模板详情、模板管理</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-success">管理员-系统</span></td>
+                                    <td>/api/admin/system</td>
+                                    <td>系统概览、趋势统计、操作日志</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">认证方式</h3>
+                    <p>系统使用JWT Token进行身份认证：</p>
+                    <ul class="feature-list">
+                        <li>登录接口（/api/auth/login）无需认证，可直接调用</li>
+                        <li>其他接口需要在请求头中携带 JWT Token</li>
+                        <li>Token 格式：<code>Authorization: Bearer {token}</code></li>
+                        <li>Token 有效期：24小时（可在配置文件中修改）</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 数据库设计 -->
+        <section id="database" class="section">
+            <div class="card">
+                <h2 class="card-title">数据库设计</h2>
+                <div class="card-content">
+                    <h3>数据库基本信息</h3>
+                    <p><strong>数据库名称：</strong>survey_analyst</p>
+                    <p><strong>数据库类型：</strong>MySQL 8.0+</p>
+                    <p><strong>字符集：</strong>UTF-8 (utf8mb4)</p>
+                    <p><strong>数据表数量：</strong>12张表</p>
+
+                    <h3 style="margin-top: 30px;">数据表结构</h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>表名</th>
+                                    <th>说明</th>
+                                    <th>主要字段</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>user</strong></td>
+                                    <td>用户表</td>
+                                    <td>id, account, email, username, password, role, status</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>survey</strong></td>
+                                    <td>问卷表</td>
+                                    <td>id, user_id, title, description, status, access_type, password</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>response</strong></td>
+                                    <td>填写记录表</td>
+                                    <td>id, survey_id, user_id, ip_address, device_type, duration, status</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_config</strong></td>
+                                    <td>表单配置表</td>
+                                    <td>id, form_key, survey_id, name, description, type, status</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_data</strong></td>
+                                    <td>表单数据表</td>
+                                    <td>id, form_key, serial_number, original_data (JSON), submit_browser, submit_request_ip</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_item</strong></td>
+                                    <td>表单项表</td>
+                                    <td>id, form_key, form_item_id, type, label, required, scheme (JSON)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_logic</strong></td>
+                                    <td>表单逻辑表</td>
+                                    <td>id, survey_id, scheme (JSON)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_setting</strong></td>
+                                    <td>表单设置表</td>
+                                    <td>id, survey_id, settings (JSON)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_theme</strong></td>
+                                    <td>表单主题表</td>
+                                    <td>id, survey_id, theme_color, background_color, logo_img, submit_btn_text</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_template</strong></td>
+                                    <td>表单模板表</td>
+                                    <td>id, form_key, name, cover_img, category_id, scheme (JSON), is_public</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>form_template_category</strong></td>
+                                    <td>模板分类表</td>
+                                    <td>id, user_id, name, sort</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>operation_log</strong></td>
+                                    <td>操作日志表</td>
+                                    <td>id, user_id, operation_type, operation_desc, request_url, ip_address</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">数据字典</h3>
+                    <h4>用户角色（user.role）</h4>
+                    <ul class="feature-list">
+                        <li>USER - 普通用户</li>
+                        <li>ADMIN - 管理员</li>
+                    </ul>
+
+                    <h4 style="margin-top: 20px;">用户状态（user.status）</h4>
+                    <ul class="feature-list">
+                        <li>0 - 禁用</li>
+                        <li>1 - 启用</li>
+                    </ul>
+
+                    <h4 style="margin-top: 20px;">问卷状态（survey.status）</h4>
+                    <ul class="feature-list">
+                        <li>DRAFT - 草稿：问卷创建后的初始状态，可以编辑和删除</li>
+                        <li>PUBLISHED - 已发布（收集中）：问卷已发布，可以接收填写数据，可以进行统计和分析</li>
+                        <li>ENDED - 已结束：问卷已结束收集，不再接收新的填写数据，但可以查看历史数据和导出</li>
+                    </ul>
+
+                    <h4 style="margin-top: 20px;">访问类型（survey.access_type）</h4>
+                    <ul class="feature-list">
+                        <li>PUBLIC - 公开访问</li>
+                        <li>PASSWORD - 密码访问</li>
+                    </ul>
+
+                    <h4 style="margin-top: 20px;">填写记录状态（response.status）</h4>
+                    <ul class="feature-list">
+                        <li>COMPLETED - 已完成</li>
+                        <li>DRAFT - 草稿</li>
+                    </ul>
+
+                    <h4 style="margin-top: 20px;">设备类型（response.device_type）</h4>
+                    <ul class="feature-list">
+                        <li>PC - 电脑</li>
+                        <li>MOBILE - 手机</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 答辩准备 -->
+        <section id="defense" class="section">
+            <div class="card">
+                <h2 class="card-title">答辩准备</h2>
+                <div class="card-content">
+                    <h3>常见问题及回答</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>1. 系统的核心功能是什么？</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            系统的核心功能包括：问卷设计（拖拽式编辑器）、问卷发布（多渠道分享）、数据收集（实时提交）、数据统计（实时统计）、数据分析（交叉分析、趋势分析、画像分析）、数据可视化（多种图表展示）、数据导出（Excel、PDF等格式）。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>2. 采用了哪些技术栈？为什么选择这些技术？</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            后端采用Spring Boot 2.6.13，因为Spring Boot简化了配置，提高了开发效率；前端采用Vue 3.4.21，因为Vue 3的Composition API提供了更好的代码组织和复用性；数据库使用MySQL 8.0+，因为MySQL成熟稳定，适合结构化数据存储；使用Redis作为缓存，提高系统性能。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>3. 系统的创新点在哪里？</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            创新点包括：①拖拽式问卷设计器，提供直观的可视化编辑体验；②多维度数据分析，支持交叉分析、趋势分析、画像分析等高级分析功能；③实时数据统计，支持定时刷新获取最新统计数据；④完善的逻辑跳转功能，支持复杂的问卷逻辑；⑤多种数据可视化展示，包括柱状图、饼图、折线图、词云图等。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>4. 遇到了哪些技术难点？如何解决的？</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            主要技术难点：①问卷逻辑跳转的复杂实现 - 通过JSON配置存储逻辑规则，前端解析执行；②大量数据的统计分析性能 - 使用Redis缓存统计数据，定时刷新机制；③文件上传和存储管理 - 采用本地文件系统存储，按日期分类管理；④跨域和认证问题 - 使用JWT Token无状态认证，配置CORS解决跨域。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>5. 系统的性能如何？如何优化的？</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            性能优化措施：①使用Redis缓存统计数据，减少数据库查询；②数据库索引优化，对常用查询字段建立索引；③分页查询，避免一次性加载大量数据；④前端代码分割和懒加载，提高页面加载速度；⑤使用连接池（Druid）管理数据库连接，提高连接复用率。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 40px;">技术亮点</h3>
+                    <ul class="feature-list">
+                        <li><strong>前后端分离架构</strong> - 提高开发效率，便于团队协作和维护</li>
+                        <li><strong>拖拽式问卷设计器</strong> - 提供直观的可视化编辑体验，降低使用门槛</li>
+                        <li><strong>多维度数据分析</strong> - 支持交叉分析、趋势分析、画像分析等高级分析功能</li>
+                        <li><strong>实时数据统计</strong> - 支持定时刷新获取最新统计数据，实时掌握问卷填写情况</li>
+                        <li><strong>完善的权限管理</strong> - 基于Spring Security和JWT的安全认证机制</li>
+                        <li><strong>多种数据导出格式</strong> - 支持Excel、PDF、CSV等多种格式导出</li>
+                        <li><strong>响应式设计</strong> - 支持PC端和移动端访问，适配不同设备</li>
+                        <li><strong>逻辑跳转功能</strong> - 支持复杂的问卷逻辑，提供灵活的问卷设计能力</li>
+                    </ul>
+
+                    <h3 style="margin-top: 40px;">难点解决</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>1. 问卷逻辑跳转实现</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            <strong>问题：</strong>如何实现复杂的问卷逻辑跳转？<br>
+                            <strong>解决方案：</strong>使用JSON格式存储逻辑规则，定义条件表达式和跳转目标，前端解析JSON规则并实时执行跳转逻辑。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>2. 大量数据统计分析性能</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            <strong>问题：</strong>大量填写数据的统计分析性能如何保证？<br>
+                            <strong>解决方案：</strong>使用Redis缓存统计数据，设置合理的缓存过期时间，提供手动刷新接口，采用定时刷新机制获取最新数据。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>3. 文件上传和存储管理</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            <strong>问题：</strong>如何管理上传的文件？<br>
+                            <strong>解决方案：</strong>采用本地文件系统存储，按日期分类存储（upload/yyyy/MM/dd/），提供文件信息查询和删除接口，确保文件安全访问。
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top: 40px;">答辩技巧</h3>
+                    <ul class="feature-list">
+                        <li><strong>准备充分</strong> - 熟悉系统功能和技术实现，准备常见问题的回答</li>
+                        <li><strong>突出重点</strong> - 重点介绍系统的核心功能和创新点</li>
+                        <li><strong>演示流畅</strong> - 提前准备演示流程，确保演示过程流畅</li>
+                        <li><strong>诚实回答</strong> - 对于不确定的问题，诚实说明，不要编造</li>
+                        <li><strong>展示学习能力</strong> - 强调在开发过程中学到的知识和技能</li>
+                        <li><strong>时间控制</strong> - 控制演示和回答时间，突出重点内容</li>
+                    </ul>
+
+                    <h3 style="margin-top: 40px;">演示指南</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>演示流程建议（10-15分钟）</h4>
+                        <ol style="margin-left: 20px; color: var(--text-regular); line-height: 2;">
+                            <li><strong>系统介绍（2分钟）</strong> - 介绍系统背景、目标、技术栈</li>
+                            <li><strong>功能演示（8-10分钟）</strong>
+                                <ul style="margin-top: 10px;">
+                                    <li>用户注册登录（1分钟）</li>
+                                    <li>问卷设计（2-3分钟）- 重点演示拖拽式编辑器</li>
+                                    <li>问卷发布（1分钟）- 演示发布设置和二维码生成</li>
+                                    <li>数据收集（1分钟）- 演示问卷填写</li>
+                                    <li>数据统计（2-3分钟）- 重点演示统计图表</li>
+                                    <li>数据分析（1-2分钟）- 演示交叉分析、趋势分析</li>
+                                </ul>
+                            </li>
+                            <li><strong>技术亮点介绍（2-3分钟）</strong> - 介绍架构设计、技术难点解决</li>
+                            <li><strong>总结与展望（1分钟）</strong> - 总结系统特点，展望未来改进</li>
+                        </ol>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>演示注意事项</h4>
+                        <ul class="feature-list">
+                            <li>提前测试系统，确保功能正常运行</li>
+                            <li>准备测试数据，确保演示效果</li>
+                            <li>准备备用方案，应对网络或系统问题</li>
+                            <li>保持演示流畅，避免长时间等待</li>
+                            <li>突出系统亮点，重点展示核心功能</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 论文相关 -->
+        <section id="paper" class="section">
+            <div class="card">
+                <h2 class="card-title">论文相关</h2>
+                <div class="card-content">
+                    <h3>论文结构建议</h3>
+                    <ol style="margin-left: 20px; color: var(--text-regular); line-height: 2;">
+                        <li><strong>第一章 绪论</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>研究背景与意义</li>
+                                <li>国内外研究现状</li>
+                                <li>研究内容与目标</li>
+                                <li>论文组织结构</li>
+                            </ul>
+                        </li>
+                        <li><strong>第二章 相关技术</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>Spring Boot框架</li>
+                                <li>Vue.js框架</li>
+                                <li>MySQL数据库</li>
+                                <li>Redis缓存</li>
+                                <li>JWT认证</li>
+                            </ul>
+                        </li>
+                        <li><strong>第三章 系统需求分析</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>功能需求分析</li>
+                                <li>非功能需求分析</li>
+                                <li>用例分析</li>
+                            </ul>
+                        </li>
+                        <li><strong>第四章 系统设计</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>系统架构设计</li>
+                                <li>功能模块设计</li>
+                                <li>数据库设计</li>
+                                <li>接口设计</li>
+                            </ul>
+                        </li>
+                        <li><strong>第五章 系统实现</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>开发环境搭建</li>
+                                <li>核心功能实现</li>
+                                <li>关键技术实现</li>
+                            </ul>
+                        </li>
+                        <li><strong>第六章 系统测试</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>测试环境</li>
+                                <li>功能测试</li>
+                                <li>性能测试</li>
+                                <li>测试结果分析</li>
+                            </ul>
+                        </li>
+                        <li><strong>第七章 总结与展望</strong>
+                            <ul style="margin-top: 10px;">
+                                <li>工作总结</li>
+                                <li>系统不足</li>
+                                <li>未来展望</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h3 style="margin-top: 40px;">创新点总结</h3>
+                    <ul class="feature-list">
+                        <li><strong>拖拽式问卷设计器</strong> - 提供直观的可视化编辑体验，降低问卷设计门槛</li>
+                        <li><strong>多维度数据分析算法</strong> - 实现交叉分析、趋势分析、画像分析等高级分析功能</li>
+                        <li><strong>实时数据统计机制</strong> - 采用Redis缓存和定时刷新机制，实现实时统计数据更新</li>
+                        <li><strong>灵活的问卷逻辑系统</strong> - 基于JSON配置的逻辑跳转系统，支持复杂的问卷逻辑</li>
+                        <li><strong>完善的数据可视化</strong> - 集成ECharts实现多种图表类型，提供丰富的数据可视化展示</li>
+                        <li><strong>前后端分离架构</strong> - 采用现代化的前后端分离架构，提高系统可维护性和扩展性</li>
+                    </ul>
+
+                    <h3 style="margin-top: 40px;">总结与展望</h3>
+                    <div style="margin: 20px 0;">
+                        <h4>工作总结</h4>
+                        <p style="margin-left: 20px; color: var(--text-regular);">
+                            本系统成功实现了在线问卷调查与数据分析的核心功能，包括问卷设计、发布、数据收集、统计分析和数据可视化等。系统采用前后端分离架构，使用Spring Boot和Vue 3等现代化技术栈，提供了良好的用户体验和系统性能。通过拖拽式问卷设计器、多维度数据分析、实时统计等功能，系统能够满足用户进行在线问卷调查和数据分析的需求。
+                        </p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>系统不足</h4>
+                        <ul class="feature-list">
+                            <li>数据量较大时，统计分析性能仍有优化空间</li>
+                            <li>移动端适配可以进一步完善</li>
+                            <li>可以增加更多数据分析算法和可视化图表类型</li>
+                            <li>可以增加协作功能，支持多人协作编辑问卷</li>
+                        </ul>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <h4>未来展望</h4>
+                        <ul class="feature-list">
+                            <li><strong>性能优化</strong> - 进一步优化大数据量下的统计分析性能，考虑引入大数据处理技术</li>
+                            <li><strong>功能扩展</strong> - 增加更多题型支持，增加协作编辑功能，增加问卷模板市场</li>
+                            <li><strong>智能化</strong> - 引入AI技术，提供智能问卷推荐、智能数据分析等功能</li>
+                            <li><strong>移动端优化</strong> - 开发移动端APP，提供更好的移动端体验</li>
+                            <li><strong>数据分析增强</strong> - 增加更多数据分析算法，如聚类分析、关联规则挖掘等</li>
+                            <li><strong>安全性增强</strong> - 加强数据加密、访问控制等安全机制</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

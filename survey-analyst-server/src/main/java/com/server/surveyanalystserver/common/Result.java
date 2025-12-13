@@ -34,56 +34,80 @@ public class Result<T> implements Serializable {
     }
 
     /**
-     * 成功响应
+     * 创建成功响应结果（无消息无数据）
+     * @param <T> 响应数据类型
+     * @return 成功响应结果对象
      */
     public static <T> Result<T> success() {
         return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), null);
     }
 
     /**
-     * 成功响应（带消息）
+     * 创建成功响应结果（带消息，无数据）
+     * @param <T> 响应数据类型
+     * @param message 响应消息
+     * @return 成功响应结果对象
      */
     public static <T> Result<T> success(String message) {
         return new Result<>(ResultCode.SUCCESS.getCode(), message, null);
     }
 
     /**
-     * 成功响应（带数据）
+     * 创建成功响应结果（带数据，使用默认成功消息）
+     * @param <T> 响应数据类型
+     * @param data 响应数据
+     * @return 成功响应结果对象
      */
     public static <T> Result<T> success(T data) {
         return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), data);
     }
 
     /**
-     * 成功响应（带消息和数据）
+     * 创建成功响应结果（带消息和数据）
+     * @param <T> 响应数据类型
+     * @param message 响应消息
+     * @param data 响应数据
+     * @return 成功响应结果对象
      */
     public static <T> Result<T> success(String message, T data) {
         return new Result<>(ResultCode.SUCCESS.getCode(), message, data);
     }
 
     /**
-     * 失败响应
+     * 创建失败响应结果（使用默认错误码和消息）
+     * @param <T> 响应数据类型
+     * @return 失败响应结果对象
      */
     public static <T> Result<T> error() {
         return new Result<>(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMessage(), null);
     }
 
     /**
-     * 失败响应（带消息）
+     * 创建失败响应结果（使用默认错误码，自定义消息）
+     * @param <T> 响应数据类型
+     * @param message 错误消息
+     * @return 失败响应结果对象
      */
     public static <T> Result<T> error(String message) {
         return new Result<>(ResultCode.ERROR.getCode(), message, null);
     }
 
     /**
-     * 失败响应（带响应码和消息）
+     * 创建失败响应结果（自定义错误码和消息）
+     * @param <T> 响应数据类型
+     * @param code 错误码
+     * @param message 错误消息
+     * @return 失败响应结果对象
      */
     public static <T> Result<T> error(Integer code, String message) {
         return new Result<>(code, message, null);
     }
 
     /**
-     * 失败响应（带ResultCode）
+     * 创建失败响应结果（使用ResultCode枚举）
+     * @param <T> 响应数据类型
+     * @param resultCode 响应码枚举
+     * @return 失败响应结果对象
      */
     public static <T> Result<T> error(ResultCode resultCode) {
         return new Result<>(resultCode.getCode(), resultCode.getMessage(), null);

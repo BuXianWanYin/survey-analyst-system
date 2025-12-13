@@ -1,11 +1,17 @@
 /**
  * ECharts工具封装
- * 提供常用图表的配置方法
+ * 功能：提供常用图表类型的配置生成方法，包括柱状图、饼图、折线图、雷达图、词云图、热力图等
  */
 
 /**
  * 创建柱状图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.xAxisData X轴数据
+ * @param {Array} options.seriesData 系列数据
+ * @param {string} options.xAxisName X轴名称
+ * @param {string} options.yAxisName Y轴名称
+ * @param {Array} options.color 颜色数组
  * @returns {Object} ECharts配置对象
  */
 export function createBarChart(options = {}) {
@@ -65,13 +71,16 @@ export function createBarChart(options = {}) {
 /**
  * 创建饼图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.data 数据数组，格式：[{value: 数值, name: 名称}]
+ * @param {Array} options.radius 饼图半径，默认['40%', '70%']为环形图，['0%', '70%']为普通饼图
  * @returns {Object} ECharts配置对象
  */
 export function createPieChart(options = {}) {
   const {
     title = '',
     data = [],
-    radius = ['40%', '70%'] // 环形图，改为 ['0%', '70%'] 为普通饼图
+    radius = ['40%', '70%']
   } = options
 
   return {
@@ -108,6 +117,13 @@ export function createPieChart(options = {}) {
 /**
  * 创建折线图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.xAxisData X轴数据
+ * @param {Array} options.seriesData 系列数据
+ * @param {string} options.seriesName 系列名称
+ * @param {string} options.xAxisName X轴名称
+ * @param {string} options.yAxisName Y轴名称
+ * @param {boolean} options.smooth 是否平滑曲线，默认true
  * @returns {Object} ECharts配置对象
  */
 export function createLineChart(options = {}) {
@@ -162,6 +178,9 @@ export function createLineChart(options = {}) {
 /**
  * 创建雷达图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.indicator 雷达图的指示器数组，格式：[{name: 名称, max: 最大值}]
+ * @param {Array} options.seriesData 系列数据数组
  * @returns {Object} ECharts配置对象
  */
 export function createRadarChart(options = {}) {
@@ -191,8 +210,13 @@ export function createRadarChart(options = {}) {
 }
 
 /**
- * 创建词云图配置（需要echarts-wordcloud依赖）
+ * 创建词云图配置
+ * 需要echarts-wordcloud依赖支持
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.data 词云数据数组，格式：[{name: 词语, value: 权重}]
+ * @param {string} options.shape 词云形状，可选：circle、cardioid、diamond、triangle-forward、triangle、star
+ * @param {Array} options.sizeRange 字体大小范围，默认[12, 60]
  * @returns {Object} ECharts配置对象
  */
 export function createWordCloudChart(options = {}) {
@@ -247,10 +271,16 @@ export function createWordCloudChart(options = {}) {
 }
 
 /**
- * 自定义图表配置（允许用户自定义颜色、样式等）
- * @param {Object} baseOption 基础配置
- * @param {Object} customConfig 自定义配置
- * @returns {Object} 合并后的配置
+ * 自定义图表配置
+ * 允许用户自定义颜色、标题样式、图例样式、网格样式、提示框样式等
+ * @param {Object} baseOption 基础ECharts配置对象
+ * @param {Object} customConfig 自定义配置对象
+ * @param {Array} customConfig.colors 自定义颜色数组
+ * @param {Object} customConfig.titleStyle 自定义标题样式对象
+ * @param {Object} customConfig.legendStyle 自定义图例样式对象
+ * @param {Object} customConfig.gridStyle 自定义网格样式对象
+ * @param {Object} customConfig.tooltipStyle 自定义提示框样式对象
+ * @returns {Object} 合并后的ECharts配置对象
  */
 export function customizeChart(baseOption, customConfig = {}) {
   const {
@@ -263,27 +293,22 @@ export function customizeChart(baseOption, customConfig = {}) {
 
   const customized = JSON.parse(JSON.stringify(baseOption))
 
-  // 自定义颜色
   if (colors && Array.isArray(colors)) {
     customized.color = colors
   }
 
-  // 自定义标题样式
   if (titleStyle && customized.title) {
     Object.assign(customized.title, titleStyle)
   }
 
-  // 自定义图例样式
   if (legendStyle && customized.legend) {
     Object.assign(customized.legend, legendStyle)
   }
 
-  // 自定义网格样式
   if (gridStyle && customized.grid) {
     Object.assign(customized.grid, gridStyle)
   }
 
-  // 自定义提示框样式
   if (tooltipStyle && customized.tooltip) {
     Object.assign(customized.tooltip, tooltipStyle)
   }
@@ -294,6 +319,10 @@ export function customizeChart(baseOption, customConfig = {}) {
 /**
  * 创建热力图配置
  * @param {Object} options 配置选项
+ * @param {string} options.title 图表标题
+ * @param {Array} options.xAxisData X轴分类数据
+ * @param {Array} options.yAxisData Y轴分类数据
+ * @param {Array} options.data 热力图数据，格式：[[xIndex, yIndex, value], ...]
  * @returns {Object} ECharts配置对象
  */
 export function createHeatmapChart(options = {}) {

@@ -12,11 +12,14 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Excel图片写入处理器
@@ -29,10 +32,11 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
     // 注意：这个路径应该与 FileConfig 中的 path 配置一致
     private static final String UPLOAD_DIR = "upload/";
     private final Set<String> imageColumns = new HashSet<>();
-    private final Map<Integer, Map<String, Object>> rowDataMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Integer, Map<String, Object>> rowDataMap = new ConcurrentHashMap<>();
 
     /**
-     * 设置图片列
+     * 设置需要嵌入图片的列名集合
+     * @param columns 图片列名集合
      */
     public void setImageColumns(Set<String> columns) {
         imageColumns.clear();
@@ -42,12 +46,19 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
     }
 
     /**
-     * 设置行数据（用于获取图片URL）
+     * 设置行数据，用于获取图片URL
+     * @param rowIndex 行索引（从0开始）
+     * @param rowData 行数据Map，包含列名和对应的值
      */
     public void setRowData(int rowIndex, Map<String, Object> rowData) {
         rowDataMap.put(rowIndex, rowData);
     }
 
+    /**
+     * 在工作簿处理完成后执行图片嵌入操作
+     * 遍历所有sheet和数据行，将图片URL对应的图片嵌入到Excel单元格中
+     * @param writeWorkbookHolder 工作簿持有者对象
+     */
     @Override
     public void afterWorkbookDispose(WriteWorkbookHolder writeWorkbookHolder) {
         Workbook workbook = writeWorkbookHolder.getWorkbook();
@@ -68,7 +79,7 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
         }
 
         // 构建列名到列索引的映射
-        java.util.Map<String, Integer> columnIndexMap = new java.util.HashMap<>();
+        Map<String, Integer> columnIndexMap = new HashMap<>();
         for (int i = 0; i < headerRow.getLastCellNum(); i++) {
             Cell cell = headerRow.getCell(i);
             if (cell != null && cell.getCellType() == CellType.STRING) {
@@ -278,7 +289,7 @@ public class ImageExcelWriteHandler implements WorkbookWriteHandler {
             
             try {
                 // 获取图片原始尺寸
-                BufferedImage img = ImageIO.read(new java.io.ByteArrayInputStream(imageBytes));
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageBytes));
                 if (img == null) {
                     throw new Exception("无法读取图片");
                 }

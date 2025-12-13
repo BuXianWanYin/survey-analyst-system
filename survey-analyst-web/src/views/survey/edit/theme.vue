@@ -426,6 +426,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷主题设置页面
+ * 功能：配置问卷的外观主题，包括主题颜色、背景颜色、Logo、头图、按钮样式等，支持移动端和桌面端预览
+ */
+
 import { ref, reactive, computed, onMounted, watch, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -472,7 +477,11 @@ const { width } = useWindowSize()
 const isMobile = computed(() => width.value < 992)
 const showSettingsDrawer = ref(false) // 初始值为 false，确保移动端默认不显示抽屉
 
-// 处理中间区域点击事件（点击其他地方关闭抽屉）
+/**
+ * 处理中间区域点击事件
+ * 移动端点击中间预览区域时，关闭右侧设置抽屉（点击设置按钮除外）
+ * @param {Event} event - 点击事件对象
+ */
 const handleCenterClick = (event) => {
   if (!isMobile.value) return
   
@@ -536,12 +545,19 @@ const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${getToken()}`
 }))
 
-// 获取Logo位置样式值
+/**
+ * 获取Logo位置样式值
+ * 返回Logo位置的CSS flex值
+ * @returns {string} CSS flex布局位置值
+ */
 const getLogoPosition = () => {
   return themeForm.logoPosition || 'flex-start'
 }
 
-// 加载问卷信息和表单数据
+/**
+ * 加载问卷信息和表单数据
+ * 优先使用props传入的数据，如果没有则从路由参数加载问卷信息、表单配置和表单项
+ */
 const loadData = async () => {
   // 优先使用 props 传入的数据
   if (props.surveyId) {
@@ -645,7 +661,10 @@ const loadData = async () => {
   }
 }
 
-// 加载外观设置
+/**
+ * 加载外观设置
+ * 从后端获取问卷的主题配置并更新到themeForm中
+ */
 const loadTheme = async () => {
   try {
     const res = await formApi.getFormTheme(surveyId.value)
@@ -684,7 +703,10 @@ const loadTheme = async () => {
   }
 }
 
-// 初始化预览表单
+/**
+ * 初始化预览表单
+ * 根据表单项的类型和默认值，为预览表单模型初始化对应的值
+ */
 const initPreviewForm = () => {
   Object.keys(previewFormModel).forEach(key => {
     delete previewFormModel[key]
@@ -734,7 +756,10 @@ const initPreviewForm = () => {
   })
 }
 
-// 保存外观设置（防抖）
+/**
+ * 保存外观设置（防抖）
+ * 使用防抖机制保存主题配置到后端，避免频繁请求
+ */
 let saveTimer = null
 const saveTheme = () => {
   if (saveTimer) {
@@ -773,7 +798,11 @@ const saveTheme = () => {
   }, 500)
 }
 
-// Logo上传成功
+/**
+ * 处理Logo上传成功
+ * 上传成功后更新Logo图片URL并保存主题配置
+ * @param {Object} response - 上传响应对象
+ */
 const handleLogoUpload = (response) => {
   if (response.code === 200 && response.data) {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)
@@ -783,7 +812,11 @@ const handleLogoUpload = (response) => {
   }
 }
 
-// 头图上传成功
+/**
+ * 处理头图上传成功
+ * 上传成功后更新头图URL并保存主题配置
+ * @param {Object} response - 上传响应对象
+ */
 const handleHeadImgUpload = (response) => {
   if (response.code === 200 && response.data) {
     const imageUrl = typeof response.data === 'string' ? response.data : (response.data.url || response.data)

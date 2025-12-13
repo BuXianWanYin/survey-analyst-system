@@ -19,6 +19,13 @@ import java.util.Map;
 @Service
 public class FormSettingServiceImpl extends ServiceImpl<FormSettingMapper, FormSetting> implements FormSettingService {
     
+    /**
+     * 保存表单设置
+     * 保存或更新表单设置，如果已存在则合并设置（保留原有设置，只更新传入的字段），否则创建新设置
+     * @param surveyId 问卷ID
+     * @param settings 设置Map
+     * @return 保存成功后的表单设置对象
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FormSetting saveFormSetting(Long surveyId, Map<String, Object> settings) {
@@ -57,6 +64,11 @@ public class FormSettingServiceImpl extends ServiceImpl<FormSettingMapper, FormS
         }
     }
     
+    /**
+     * 根据问卷ID获取表单设置
+     * @param surveyId 问卷ID
+     * @return 表单设置对象，如果不存在则返回null
+     */
     @Override
     public FormSetting getBySurveyId(Long surveyId) {
         LambdaQueryWrapper<FormSetting> wrapper = new LambdaQueryWrapper<>();
@@ -64,6 +76,11 @@ public class FormSettingServiceImpl extends ServiceImpl<FormSettingMapper, FormS
         return this.getOne(wrapper);
     }
     
+    /**
+     * 根据问卷ID删除表单设置
+     * @param surveyId 问卷ID
+     * @return true表示删除成功，false表示删除失败
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteBySurveyId(Long surveyId) {

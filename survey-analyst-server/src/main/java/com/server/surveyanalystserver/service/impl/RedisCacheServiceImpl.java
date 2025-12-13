@@ -21,6 +21,13 @@ public class RedisCacheServiceImpl implements RedisCacheService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 设置缓存
+     * 将数据存储到Redis缓存中，可设置过期时间
+     * @param key 缓存键
+     * @param value 缓存值
+     * @param timeout 过期时间（秒），如果为null或小于等于0则不设置过期时间
+     */
     @Override
     public void set(String key, Object value, Long timeout) {
         if (timeout != null && timeout > 0) {
@@ -30,11 +37,25 @@ public class RedisCacheServiceImpl implements RedisCacheService {
         }
     }
 
+    /**
+     * 获取缓存
+     * 从Redis缓存中获取数据（返回Object类型）
+     * @param key 缓存键
+     * @return 缓存值，如果不存在则返回null
+     */
     @Override
     public Object get(String key) {
         return redisTemplate.opsForValue().get(key);
     }
 
+    /**
+     * 获取缓存（指定类型）
+     * 从Redis缓存中获取数据并转换为指定类型
+     * @param key 缓存键
+     * @param clazz 目标类型
+     * @param <T> 泛型类型
+     * @return 转换后的缓存值，如果不存在或转换失败则返回null
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(String key, Class<T> clazz) {
@@ -67,11 +88,21 @@ public class RedisCacheServiceImpl implements RedisCacheService {
         }
     }
 
+    /**
+     * 删除缓存
+     * 从Redis缓存中删除指定键的数据
+     * @param key 缓存键
+     */
     @Override
     public void delete(String key) {
         redisTemplate.delete(key);
     }
 
+    /**
+     * 按模式删除缓存
+     * 删除匹配指定模式的所有缓存键
+     * @param pattern 键模式（支持通配符，如"user:*"）
+     */
     @Override
     public void deleteByPattern(String pattern) {
         Set<String> keys = redisTemplate.keys(pattern);
@@ -80,17 +111,35 @@ public class RedisCacheServiceImpl implements RedisCacheService {
         }
     }
 
+    /**
+     * 检查缓存是否存在
+     * 检查指定键是否存在于Redis缓存中
+     * @param key 缓存键
+     * @return true表示存在，false表示不存在
+     */
     @Override
     public boolean exists(String key) {
         Boolean result = redisTemplate.hasKey(key);
         return result != null && result;
     }
 
+    /**
+     * 设置缓存过期时间
+     * 为指定键设置过期时间
+     * @param key 缓存键
+     * @param timeout 过期时间（秒）
+     */
     @Override
     public void expire(String key, long timeout) {
         redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
     }
 
+    /**
+     * 获取缓存（Map类型）
+     * 从Redis缓存中获取数据并转换为Map类型
+     * @param key 缓存键
+     * @return Map类型的缓存值，如果不存在或转换失败则返回null
+     */
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> getMap(String key) {

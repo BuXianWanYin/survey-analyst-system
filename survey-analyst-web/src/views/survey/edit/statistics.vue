@@ -945,6 +945,11 @@
 </template>
 
 <script setup>
+/**
+ * 问卷统计分析页面
+ * 功能：提供问卷的统计分析功能，支持统计视图和表格视图切换，支持多种图表类型、配色方案、交叉分析、对比分析等功能
+ */
+
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -968,7 +973,6 @@ import { generateChartOption, generateCrossChartOption, generateCompareChartOpti
 import { colorSchemes, loadColorScheme, saveColorScheme } from '@/utils/colorSchemes'
 import { getImageUrl } from '@/utils/image'
 
-// 响应式检测（用于移动端特殊处理，如下拉菜单）
 const { width } = useWindowSize()
 const isMobile = computed(() => width.value < 768)
 
@@ -1065,7 +1069,10 @@ const compareChartTypes = [
   { value: 'line', label: '折线' }
 ]
 
-// 加载表单配置和表单项
+/**
+ * 加载表单配置和表单项
+ * 从后端加载表单配置、表单项（过滤展示类组件），然后加载统计数据
+ */
 const loadFormConfig = async () => {
   const id = route.query.id
   if (!id) return
@@ -1107,7 +1114,10 @@ const loadFormConfig = async () => {
   }
 }
 
-// 加载统计数据
+/**
+ * 加载统计数据
+ * 使用统一接口一次性获取所有统计数据，如果失败则使用降级方案
+ */
 const loadStatistics = async () => {
   if (!formKey.value || !surveyId.value) return
 
@@ -1149,7 +1159,10 @@ const loadStatistics = async () => {
   }
 }
 
-// 降级方案：如果统一接口失败，使用旧的逐个请求方式
+/**
+ * 加载统计数据降级方案
+ * 如果统一接口失败，使用旧的逐个请求方式，如果API也失败则使用前端计算
+ */
 const loadStatisticsFallback = async () => {
   try {
     // 1. 加载问卷整体统计
@@ -1187,7 +1200,13 @@ const loadStatisticsFallback = async () => {
   }
 }
 
-// 计算选择题统计
+/**
+ * 计算选择题统计
+ * 根据填写数据计算每个选项的选择次数
+ * @param {Object} item - 表单项对象
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Object} 统计结果对象，包含optionCount和total
+ */
 const calculateChoiceStat = (item, dataList) => {
   const options = item.scheme?.config?.options || []
   const optionCount = {}
@@ -1219,7 +1238,13 @@ const calculateChoiceStat = (item, dataList) => {
   }
 }
 
-// 计算文本题统计
+/**
+ * 计算文本题统计
+ * 统计文本题的有效填写数量（非空文本）
+ * @param {Object} item - 表单项对象
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Object} 统计结果对象，包含count和total
+ */
 const calculateTextStat = (item, dataList) => {
   let count = 0
   dataList.forEach(data => {
@@ -1235,7 +1260,12 @@ const calculateTextStat = (item, dataList) => {
   }
 }
 
-// 获取当前题目的图表类型
+/**
+ * 获取当前题目的图表类型
+ * 优先从响应式map获取，其次从localStorage加载，最后返回默认值
+ * @param {string} formItemId - 表单项ID
+ * @returns {string} 图表类型
+ */
 const getCurrentChartType = (formItemId) => {
   // 优先从响应式 map 中获取（实时更新）
   if (chartTypeMap.value[formItemId]) {
@@ -1260,7 +1290,12 @@ const getCurrentChartType = (formItemId) => {
   return defaultType
 }
 
-// 切换图表类型
+/**
+ * 切换图表类型
+ * 更新图表类型并保存到localStorage
+ * @param {string} formItemId - 表单项ID
+ * @param {string} type - 新的图表类型
+ */
 const switchChartType = (formItemId, type) => {
   try {
     // 更新响应式 map（触发视图更新）
@@ -1272,7 +1307,12 @@ const switchChartType = (formItemId, type) => {
   }
 }
 
-// 获取图表配置（选择题）
+/**
+ * 获取图表配置（选择题）
+ * 根据当前图表类型生成对应的ECharts配置对象
+ * @param {string} formItemId - 表单项ID
+ * @returns {Object|null} ECharts配置对象，如果是表格类型则返回null
+ */
 const getChartOption = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.optionStats) return null
@@ -1283,7 +1323,12 @@ const getChartOption = (formItemId) => {
   return generateChartOption(chartType, stat, currentColorScheme.value)
 }
 
-// 获取表格数据
+/**
+ * 获取表格数据
+ * 根据统计数据和显示设置生成表格数据，支持过滤空选项和跳过选项
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 表格数据数组，包含选项标签、值、数量、百分比和图片URL
+ */
 const getTableData = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat) {
@@ -1339,7 +1384,12 @@ const getTableData = (formItemId) => {
   })
 }
 
-// 获取级联选择的树形表格数据
+/**
+ * 获取级联选择的树形表格数据
+ * 将级联选择的统计数据构建为树形结构，支持父子节点统计
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 树形表格数据数组
+ */
 const getCascaderTableData = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.optionStats) return []
@@ -1434,25 +1484,44 @@ const getCascaderTableData = (formItemId) => {
   return treeData
 }
 
-// 获取图片预览列表（用于图片选择的预览）
+/**
+ * 获取图片预览列表
+ * 从表格数据中提取所有图片URL，用于图片选择的预览功能
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 图片URL数组
+ */
 const getImagePreviewList = (formItemId) => {
   const tableData = getTableData(formItemId)
   return tableData.filter(row => row.image).map(row => row.image)
 }
 
-// 获取图片在预览列表中的索引
+/**
+ * 获取图片在预览列表中的索引
+ * @param {string} formItemId - 表单项ID
+ * @param {string} imageUrl - 图片URL
+ * @returns {number} 图片在预览列表中的索引，未找到返回-1
+ */
 const getImageIndex = (formItemId, imageUrl) => {
   const previewList = getImagePreviewList(formItemId)
   return previewList.indexOf(imageUrl)
 }
 
-// 获取总填写人数
+/**
+ * 获取总填写人数
+ * @param {string} formItemId - 表单项ID
+ * @returns {number} 总填写人数
+ */
 const getTotalCount = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   return stat?.totalCount || 0
 }
 
-// 获取词云图配置
+/**
+ * 获取词云图配置
+ * 根据统计数据生成词云图配置对象
+ * @param {string} formItemId - 表单项ID
+ * @returns {Object|null} ECharts词云图配置对象，如果没有数据则返回null
+ */
 const getWordCloudOption = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.wordCloudData || stat.wordCloudData.length === 0) {
@@ -1461,7 +1530,12 @@ const getWordCloudOption = (formItemId) => {
   return generateChartOption('wordcloud', stat, currentColorScheme.value)
 }
 
-// 获取文本统计
+/**
+ * 获取文本题统计数据
+ * @param {string} formItemId - 表单项ID
+ * @param {string} key - 统计数据的键名 ('count', 'total' 等)
+ * @returns {number} 统计数据值
+ */
 const getTextStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
   if (!stat) return 0
@@ -1472,7 +1546,12 @@ const getTextStat = (formItemId, key) => {
 }
 
 
-// 获取签名统计
+/**
+ * 获取签名题统计数据
+ * @param {string} formItemId - 表单项ID
+ * @param {string} key - 统计数据的键名 ('count', 'total' 等)
+ * @returns {number} 统计数据值
+ */
 const getSignatureStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
   if (!stat) return 0
@@ -1481,7 +1560,12 @@ const getSignatureStat = (formItemId, key) => {
   return stat[key] || 0
 }
 
-// 获取签名预览列表
+/**
+ * 获取签名预览列表
+ * 获取签名题的所有签名图片URL列表
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 签名图片URL数组
+ */
 const getSignaturePreviewList = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.signatureList) return []
@@ -1489,28 +1573,46 @@ const getSignaturePreviewList = (formItemId) => {
   return stat.signatureList.filter(url => url && (url.startsWith('data:image') || url.startsWith('http')))
 }
 
-// 获取文件上传统计
+/**
+ * 获取文件上传统计数据
+ * @param {string} formItemId - 表单项ID
+ * @param {string} key - 统计数据的键名
+ * @returns {number} 统计数据值
+ */
 const getUploadStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
   if (!stat) return 0
   return stat[key] || 0
 }
 
-// 获取文件类型统计
+/**
+ * 获取文件类型统计数据
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 文件类型统计数组
+ */
 const getFileTypeStats = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.fileTypeStats) return []
   return stat.fileTypeStats
 }
 
-// 获取图片上传列表
+/**
+ * 获取图片上传列表
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 图片上传列表
+ */
 const getImageUploadList = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.imageList) return []
   return stat.imageList
 }
 
-// 获取图片URL
+/**
+ * 获取图片URL
+ * 将图片对象或字符串转换为完整的图片URL
+ * @param {string|Object} image - 图片对象或URL字符串
+ * @returns {string} 完整的图片URL
+ */
 const getImageUploadUrl = (image) => {
   if (!image) return ''
   if (typeof image === 'string') {
@@ -1522,13 +1624,23 @@ const getImageUploadUrl = (image) => {
   return ''
 }
 
-// 获取图片URL列表
+/**
+ * 获取图片URL列表
+ * 获取指定表单项的所有图片上传的URL列表
+ * @param {string} formItemId - 表单项ID
+ * @returns {Array} 图片URL数组
+ */
 const getImageUploadUrlList = (formItemId) => {
   const images = getImageUploadList(formItemId)
   return images.map(img => getImageUploadUrl(img)).filter(url => url)
 }
 
-// 格式化文件大小
+/**
+ * 格式化文件大小
+ * 将字节数转换为可读的文件大小格式（B, KB, MB, GB）
+ * @param {number} bytes - 文件大小（字节）
+ * @returns {string} 格式化后的文件大小字符串
+ */
 const formatFileSize = (bytes) => {
   if (!bytes || bytes === 0) return '0 B'
   const k = 1024
@@ -1537,7 +1649,11 @@ const formatFileSize = (bytes) => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
-// 处理移动端操作命令
+/**
+ * 处理移动端操作命令
+ * 根据命令类型执行相应的操作（如打开配色方案对话框、刷新数据等）
+ * @param {string} command - 命令类型
+ */
 const handleActionCommand = (command) => {
   switch (command) {
     case 'colorScheme':
@@ -1549,13 +1665,23 @@ const handleActionCommand = (command) => {
   }
 }
 
-// 获取评分统计
+/**
+ * 获取评分题统计数据
+ * @param {string} formItemId - 表单项ID
+ * @param {string} key - 统计数据的键名
+ * @returns {number} 统计数据值
+ */
 const getRatingStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
   return stat ? stat[key] : 0
 }
 
-// 获取数字统计
+/**
+ * 获取数字题统计数据
+ * @param {string} formItemId - 表单项ID
+ * @param {string} key - 统计数据的键名 ('average', 'max', 'min' 等)
+ * @returns {number} 统计数据值
+ */
 const getNumberStat = (formItemId, key) => {
   const stat = statisticsData.value[formItemId]
   if (!stat) return 0
@@ -1567,12 +1693,21 @@ const getNumberStat = (formItemId, key) => {
   return stat[key] || 0
 }
 
-// 判断是否为评分题
+/**
+ * 判断是否为评分题类型
+ * @param {string} type - 组件类型
+ * @returns {boolean} 是否为评分题（RATE或SLIDER）
+ */
 const isRatingType = (type) => {
   return ['RATE', 'SLIDER'].includes(type)
 }
 
-// 获取评分题图表配置
+/**
+ * 获取评分题图表配置
+ * 根据评分统计数据生成柱状图配置，显示评分分布
+ * @param {string} formItemId - 表单项ID
+ * @returns {Object|null} ECharts柱状图配置对象
+ */
 const getRatingChartOption = (formItemId) => {
   const stat = statisticsData.value[formItemId]
   if (!stat || !stat.optionStats) return null
@@ -1614,7 +1749,11 @@ const getRatingChartOption = (formItemId) => {
   }
 }
 
-// 判断是否为选择题
+/**
+ * 判断是否为选择题类型
+ * @param {string} type - 组件类型
+ * @returns {boolean} 是否为选择题（单选、多选、下拉、图片选择、级联）
+ */
 const isChoiceType = (type) => {
   return ['RADIO', 'CHECKBOX', 'SELECT', 'IMAGE_SELECT', 'CASCADER'].includes(type)
 }
@@ -1624,13 +1763,23 @@ const choiceFormItems = computed(() => {
   return formItems.value.filter(item => isChoiceType(item.type))
 })
 
-// 获取可用的自变量选项（排除已选择的自变量）
+/**
+ * 获取可用的自变量选项
+ * 获取可以作为自变量的表单项列表，排除已选择的自变量
+ * @param {number} currentIndex - 当前自变量索引
+ * @returns {Array} 可用的表单项列表
+ */
 const getAvailableIndependentVars = (currentIndex) => {
   const selected = crossAnalysisForm.independentVars.filter((id, idx) => idx !== currentIndex && id)
   return choiceFormItems.value.filter(item => !selected.includes(item.formItemId))
   }
 
-// 获取可用的因变量选项（排除已选择的因变量和自变量）
+/**
+ * 获取可用的因变量选项
+ * 获取可以作为因变量的表单项列表，排除已选择的因变量和所有自变量
+ * @param {number} currentIndex - 当前因变量索引
+ * @returns {Array} 可用的表单项列表
+ */
 const getAvailableDependentVars = (currentIndex) => {
   const selectedIndependent = crossAnalysisForm.independentVars.filter(id => id)
   const selectedDependent = crossAnalysisForm.dependentVars.filter((id, idx) => idx !== currentIndex && id)
@@ -1638,43 +1787,71 @@ const getAvailableDependentVars = (currentIndex) => {
   return choiceFormItems.value.filter(item => !allSelected.includes(item.formItemId))
 }
 
-// 添加自变量
+/**
+ * 添加自变量
+ * 向交叉分析表单中添加一个新的自变量（最多2个）
+ */
 const addIndependentVar = () => {
   if (crossAnalysisForm.independentVars.length < 2) {
     crossAnalysisForm.independentVars.push(null)
   }
 }
 
-// 删除自变量
+/**
+ * 删除自变量
+ * 从交叉分析表单中删除指定索引的自变量，并清空分析结果
+ * @param {number} index - 要删除的自变量索引
+ */
 const removeIndependentVar = (index) => {
   crossAnalysisForm.independentVars.splice(index, 1)
   crossAnalysisResults.value = []
 }
 
-// 添加因变量
+/**
+ * 添加因变量
+ * 向交叉分析表单中添加一个新的因变量（最多10个）
+ */
 const addDependentVar = () => {
   if (crossAnalysisForm.dependentVars.length < 10) {
     crossAnalysisForm.dependentVars.push(null)
   }
 }
 
-// 删除因变量
+/**
+ * 删除因变量
+ * 从交叉分析表单中删除指定索引的因变量，并清空分析结果
+ * @param {number} index - 要删除的因变量索引
+ */
 const removeDependentVar = (index) => {
   crossAnalysisForm.dependentVars.splice(index, 1)
   crossAnalysisResults.value = []
 }
 
-// 处理自变量变化
+/**
+ * 处理自变量变化
+ * 当自变量选择变化时，清空之前的分析结果
+ * @param {number} index - 变化的自变量索引
+ */
 const handleIndependentVarChange = (index) => {
   crossAnalysisResults.value = []
 }
 
-// 处理因变量变化
+/**
+ * 处理因变量变化
+ * 当因变量选择变化时，清空之前的分析结果
+ * @param {number} index - 变化的因变量索引
+ */
 const handleDependentVarChange = (index) => {
   crossAnalysisResults.value = []
 }
 
-// 组合多个自变量的值作为行标签
+/**
+ * 组合多个自变量的值作为行标签
+ * 将多个自变量的选择值组合成一个字符串作为交叉表的行标签
+ * @param {Object} data - 填写数据对象
+ * @param {Array<string>} independentVars - 自变量ID数组
+ * @returns {string} 组合后的行标签
+ */
 const combineIndependentValues = (data, independentVars) => {
   const values = independentVars.map(varId => {
     if (!varId) return ''
@@ -1704,7 +1881,11 @@ const combineIndependentValues = (data, independentVars) => {
   return values.join('/') || '未填写'
 }
 
-// 执行交叉分析
+/**
+ * 执行交叉分析
+ * 根据选定的自变量和因变量进行交叉分析，生成交叉表
+ * @param {boolean} showWarning - 是否显示警告提示，默认为true
+ */
 const handleCrossAnalyze = async (showWarning = true) => {
   // 验证自变量（至少1个，最多2个）
   const validIndependentVars = crossAnalysisForm.independentVars.filter(id => id)
@@ -1812,25 +1993,43 @@ const handleCrossAnalyze = async (showWarning = true) => {
   }
 }
 
-// 切换百分比视图
+/**
+ * 切换百分比视图
+ * 切换交叉分析结果表格的显示模式（数量/百分比）
+ */
 const togglePercentageView = () => {
   showPercentage.value = !showPercentage.value
   // 百分比切换会通过computed自动更新表格数据
 }
 
-// 获取自变量的标题
+/**
+ * 获取自变量的标题
+ * 将多个自变量的标题用 "×" 连接
+ * @param {Array<Object>} independentVars - 自变量对象数组
+ * @returns {string} 组合后的标题
+ */
 const getIndependentVarsTitle = (independentVars) => {
   if (!independentVars || independentVars.length === 0) return ''
   return independentVars.map(v => v.title).join(' × ')
 }
 
-// 获取行的标签（X\Y）
+/**
+ * 获取交叉表的行标签
+ * 将自变量标题和因变量标题组合成 "X × Y" 格式
+ * @param {Object} result - 交叉分析结果对象
+ * @returns {string} 行标签文本
+ */
 const getRowLabel = (result) => {
   if (!result.independentVars || result.independentVars.length === 0) return 'X\\Y'
   return result.independentVars.map(v => v.title).join(' × ') + ' \\ ' + result.dependentVarTitle
 }
 
-// 获取交叉表的列
+/**
+ * 获取交叉表的列
+ * 从交叉表中提取所有的列（因变量的选项）
+ * @param {Object} result - 交叉分析结果对象
+ * @returns {Array<string>} 列数组
+ */
 const getCrossTableColumns = (result) => {
   if (!result?.crossTable) return []
   const rows = Object.keys(result.crossTable)
@@ -1841,7 +2040,12 @@ const getCrossTableColumns = (result) => {
   return Array.from(cols)
 }
 
-// 获取交叉表的表格数据
+/**
+ * 获取交叉表的表格数据
+ * 将交叉表转换为表格数据格式，支持显示数量或百分比
+ * @param {Object} result - 交叉分析结果对象
+ * @returns {Array<Object>} 表格数据数组
+ */
 const getCrossTableData = (result) => {
   if (!result?.crossTable) return []
   
@@ -1889,7 +2093,12 @@ const getCrossTableData = (result) => {
   })
 }
 
-// 获取交叉表的摘要
+/**
+ * 获取交叉表的摘要
+ * 计算每列的总计数量
+ * @param {Object} result - 交叉分析结果对象
+ * @returns {Object} 摘要对象，键为列名，值为包含total的对象
+ */
 const getCrossTableSummary = (result) => {
   if (!result?.crossTable) return {}
   const rows = Object.keys(result.crossTable)
@@ -1904,7 +2113,12 @@ const getCrossTableSummary = (result) => {
   return summary
 }
 
-// 获取交叉表的总计
+/**
+ * 获取交叉表的总计
+ * 计算交叉表中所有单元格的总和
+ * @param {Object} result - 交叉分析结果对象
+ * @returns {number} 总计数量
+ */
 const getCrossTableTotal = (result) => {
   if (!result?.crossTable) return 0
   const rows = Object.keys(result.crossTable)
@@ -1920,7 +2134,12 @@ const getCrossTableTotal = (result) => {
 
 // 已移除：buildHeatmap（已由 buildHeatmapForResult 替代）
 
-// 切换交叉分析图表类型
+/**
+ * 切换交叉分析图表类型
+ * 更新指定结果的图表类型并保存到localStorage
+ * @param {string} type - 图表类型
+ * @param {number} resultIndex - 结果索引，默认为0
+ */
 const switchCrossChartType = (type, resultIndex = 0) => {
   crossChartTypeMap.value[resultIndex] = type
   // 保存到localStorage
@@ -1931,7 +2150,12 @@ const switchCrossChartType = (type, resultIndex = 0) => {
   }
 }
 
-// 获取当前交叉分析图表类型
+/**
+ * 获取当前交叉分析图表类型
+ * 优先从map读取，其次从localStorage读取，最后返回默认值
+ * @param {number} resultIndex - 结果索引，默认为0
+ * @returns {string} 图表类型
+ */
 const getCurrentCrossChartType = (resultIndex = 0) => {
   // 优先从map读取
   if (crossChartTypeMap.value[resultIndex]) {
@@ -1951,7 +2175,12 @@ const getCurrentCrossChartType = (resultIndex = 0) => {
   return 'table'
 }
 
-// 获取交叉分析图表类型标签
+/**
+ * 获取交叉分析图表类型标签
+ * 将图表类型代码转换为中文标签
+ * @param {string} type - 图表类型
+ * @returns {string} 中文标签
+ */
 const getCrossChartTypeLabel = (type) => {
   const typeMap = {
     table: '交叉表',
@@ -1968,7 +2197,13 @@ const getCrossChartTypeLabel = (type) => {
 // 已移除：buildAllCrossCharts（不再使用）
 // 已移除：buildStackedHorizontalBarChart、buildStackedBarChart、buildLineChart（已由 generateCrossChartOption 替代）
 
-// 获取交叉分析图表配置（为指定结果）
+/**
+ * 获取交叉分析图表配置
+ * 为指定的分析结果生成图表配置对象
+ * @param {Object} result - 交叉分析结果对象
+ * @param {number} resultIndex - 结果索引
+ * @returns {Object|null} ECharts配置对象，如果是表格类型则返回null
+ */
 const getCrossChartOptionForResult = (result, resultIndex) => {
   if (!result?.crossTable) return null
   
@@ -1987,7 +2222,12 @@ const getCrossChartOptionForResult = (result, resultIndex) => {
 
 // 已移除：buildStackedHorizontalBarChart、buildStackedBarChart、buildLineChart（已由 generateCrossChartOption 替代）
 
-// 切换对比分析图表类型
+/**
+ * 切换对比分析图表类型
+ * 更新指定结果的对比分析图表类型并保存到localStorage
+ * @param {string} type - 图表类型
+ * @param {number} resultIndex - 结果索引，默认为0
+ */
 const switchCompareChartType = (type, resultIndex = 0) => {
   compareChartTypeMap.value[resultIndex] = type
   // 保存到localStorage
@@ -1998,7 +2238,12 @@ const switchCompareChartType = (type, resultIndex = 0) => {
       }
 }
 
-// 获取当前对比分析图表类型
+/**
+ * 获取当前对比分析图表类型
+ * 优先从map读取，其次从localStorage读取，最后返回默认值
+ * @param {number} resultIndex - 结果索引，默认为0
+ * @returns {string} 图表类型
+ */
 const getCurrentCompareChartType = (resultIndex = 0) => {
   // 优先从map读取
   if (compareChartTypeMap.value[resultIndex]) {
@@ -2018,7 +2263,12 @@ const getCurrentCompareChartType = (resultIndex = 0) => {
   return 'table'
 }
 
-// 切换对比分析显示模式
+/**
+ * 切换对比分析显示模式
+ * 切换显示数量或百分比模式
+ * @param {string} mode - 显示模式（'count' 或 'percentage'）
+ * @param {number} resultIndex - 结果索引，默认为0
+ */
 const switchCompareDisplayMode = (mode, resultIndex = 0) => {
   compareDisplayModeMap.value[resultIndex] = mode
   // 保存到localStorage
@@ -2029,7 +2279,12 @@ const switchCompareDisplayMode = (mode, resultIndex = 0) => {
   }
 }
 
-// 获取当前对比分析显示模式
+/**
+ * 获取当前对比分析显示模式
+ * 优先从map读取，其次从localStorage读取，最后返回默认值
+ * @param {number} resultIndex - 结果索引，默认为0
+ * @returns {string} 显示模式（'count' 或 'percentage'）
+ */
 const getCurrentCompareDisplayMode = (resultIndex = 0) => {
   // 优先从map读取
   if (compareDisplayModeMap.value[resultIndex]) {
@@ -2049,7 +2304,12 @@ const getCurrentCompareDisplayMode = (resultIndex = 0) => {
   return 'count'
 }
 
-// 获取进度条显示状态
+/**
+ * 获取进度条显示状态
+ * 获取指定结果的进度条是否显示
+ * @param {number} resultIndex - 结果索引，默认为0
+ * @returns {boolean} 是否显示进度条
+ */
 const getCurrentCompareProgressBar = (resultIndex = 0) => {
   // 如果未设置，默认显示进度条
   if (compareShowProgressBarMap.value[resultIndex] === undefined) {
@@ -2071,7 +2331,13 @@ const getProgressBarGradient = computed(() => {
   return `linear-gradient(90deg, ${color1} 0%, ${color2} 100%)`
 })
 
-// 获取对比分析图表配置
+/**
+ * 获取对比分析图表配置
+ * 为指定的对比项生成图表配置对象
+ * @param {Object} compareItem - 对比项对象
+ * @param {number} resultIndex - 结果索引
+ * @returns {Object|null} ECharts配置对象，如果是表格类型则返回null
+ */
 const getCompareChartOption = (compareItem, resultIndex) => {
   if (!compareItem?.compareData || !compareItem.groups || compareItem.groups.length === 0) {
     return null
@@ -2087,7 +2353,13 @@ const getCompareChartOption = (compareItem, resultIndex) => {
 }
 
 
-// 计算对比分析表格行的总计
+/**
+ * 计算对比分析表格行的总计
+ * 计算一行中所有分组的总和
+ * @param {Object} row - 行数据对象
+ * @param {Array<string>} groups - 分组名称数组
+ * @returns {number} 总计数量
+ */
 const getCompareRowTotal = (row, groups) => {
   if (!groups || !row) return 0
   let total = 0
@@ -2097,12 +2369,21 @@ const getCompareRowTotal = (row, groups) => {
   return total
 }
 
-// 判断是否为文本题
+/**
+ * 判断是否为文本题类型
+ * @param {string} type - 组件类型
+ * @returns {boolean} 是否为文本题（单行文本、多行文本、日期、时间等）
+ */
 const isTextType = (type) => {
   return ['INPUT', 'TEXTAREA', 'DATE', 'TIME', 'DATETIME'].includes(type)
 }
 
-// 获取类型标签
+/**
+ * 获取类型标签
+ * 将组件类型代码转换为中文标签
+ * @param {string} type - 组件类型
+ * @returns {string} 中文标签
+ */
 const getTypeLabel = (type) => {
   const typeMap = {
     INPUT: '单行文本',
@@ -2122,7 +2403,10 @@ const getTypeLabel = (type) => {
   return typeMap[type] || type
 }
 
-// 加载趋势数据
+/**
+ * 加载趋势数据
+ * 加载问卷填写趋势数据并生成趋势图表配置
+ */
 const loadTrendData = async () => {
   if (!surveyId.value) return
   
@@ -2353,7 +2637,13 @@ const loadTrendData = async () => {
   }
 }
 
-// 计算趋势数据
+/**
+ * 计算趋势数据
+ * 根据时间范围计算填写趋势，返回日期和对应的填写数量
+ * @param {Array} dataList - 填写数据列表
+ * @param {string} range - 时间范围（'7d', '30d', 'all'）
+ * @returns {Object} 包含dates和counts的对象
+ */
 const calculateTrendData = (dataList, range) => {
   const dates = []
   const counts = []
@@ -2382,7 +2672,12 @@ const calculateTrendData = (dataList, range) => {
   return { dates, counts }
 }
 
-// 计算设备数据
+/**
+ * 计算设备数据
+ * 统计填写数据的设备类型分布
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Array} 设备统计数组，每个元素包含name和value
+ */
 const calculateDeviceData = (dataList) => {
   const deviceMap = {}
   dataList.forEach(item => {
@@ -2396,7 +2691,12 @@ const calculateDeviceData = (dataList) => {
   }))
 }
 
-// 计算时段数据
+/**
+ * 计算时段数据
+ * 统计24小时内每个时段的填写数量
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Object} 包含hours和counts的对象
+ */
 const calculateHourData = (dataList) => {
   const hourCounts = new Array(24).fill(0)
   
@@ -2411,7 +2711,12 @@ const calculateHourData = (dataList) => {
   return { hours, counts: hourCounts }
 }
 
-// 计算填写时长分布
+/**
+ * 计算填写时长分布
+ * 将填写时长分为多个区间并统计每个区间的数量
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Object|null} 包含labels和counts的对象，如果没有数据则返回null
+ */
 const calculateDurationData = (dataList) => {
   const durations = []
   dataList.forEach(item => {
@@ -2440,7 +2745,12 @@ const calculateDurationData = (dataList) => {
   return { labels, counts }
 }
 
-// 计算浏览器类型分布
+/**
+ * 计算浏览器类型分布
+ * 统计填写数据的浏览器类型分布，并简化浏览器名称
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Array} 浏览器统计数组，按数量降序排列
+ */
 const calculateBrowserData = (dataList) => {
   const browserMap = {}
   dataList.forEach(item => {
@@ -2462,7 +2772,12 @@ const calculateBrowserData = (dataList) => {
     .sort((a, b) => b.value - a.value)
 }
 
-// 计算选项热度对比
+/**
+ * 计算选项热度对比
+ * 统计所有选择题选项的选择次数，返回TOP 10最热门的选项
+ * @param {Array} dataList - 填写数据列表
+ * @returns {Array} 选项热度数组，按选择次数降序排列
+ */
 const calculateOptionHeat = (dataList) => {
   const optionCountMap = {}
   
@@ -2496,7 +2811,10 @@ const calculateOptionHeat = (dataList) => {
     .slice(0, 10) // 取TOP 10
 }
 
-// 刷新数据
+/**
+ * 处理刷新数据
+ * 清除统计缓存并重新加载统计数据，如果当前在数据分析页面则同时刷新趋势数据
+ */
 const handleRefresh = async () => {
   try {
     // 先清除缓存，然后重新加载统计数据
@@ -2518,14 +2836,22 @@ const handleRefresh = async () => {
   }
 }
 
-// 监听标签页切换
+/**
+ * 处理标签页切换
+ * 当切换到数据分析标签页时，如果趋势数据未加载则加载趋势数据
+ * @param {string} tabName - 标签页名称
+ */
 const handleTabChange = (tabName) => {
   if (tabName === 'analysis' && !trendChartOption.value) {
     loadTrendData()
   }
 }
 
-// 处理配色方案变化（立即生效）
+/**
+ * 处理配色方案变化
+ * 更新配色方案并保存到本地，如果在数据分析页面则重新加载图表以应用新配色
+ * @param {string} schemeId - 配色方案ID
+ */
 const handleColorSchemeChange = (schemeId) => {
   const scheme = colorSchemes.find(s => s.id === schemeId)
   if (scheme) {
@@ -2539,7 +2865,11 @@ const handleColorSchemeChange = (schemeId) => {
   }
 }
 
-// 计算完成率
+/**
+ * 计算完成率
+ * 计算已完成填写占总填写数的百分比
+ * @returns {number} 完成率（百分比，保留两位小数）
+ */
 const getCompletionRate = () => {
   if (!surveyStatistics.value) return 0
   const total = surveyStatistics.value.totalResponses || 0
@@ -2549,12 +2879,18 @@ const getCompletionRate = () => {
 }
 
 
-// 处理对比变量变化
+/**
+ * 处理对比变量变化
+ * 当对比变量选择变化时，清空之前的对比分析结果
+ */
 const handleCompareVariableChange = () => {
   compareAnalysisResult.value = null
 }
 
-// 执行对比分析
+/**
+ * 执行对比分析
+ * 调用对比分析接口，分析不同变量值对题目选项分布的影响，并计算行百分比
+ */
 const handleCompareAnalyze = async () => {
   if (!compareForm.compareVariable) {
     ElMessage.warning('请选择对比变量')

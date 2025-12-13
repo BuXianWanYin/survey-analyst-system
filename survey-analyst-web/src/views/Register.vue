@@ -97,6 +97,11 @@
 </template>
 
 <script setup>
+/**
+ * 注册页面
+ * 功能：用户注册功能，支持邮箱验证码注册，包含验证码发送倒计时功能
+ */
+
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -156,6 +161,10 @@ const registerRules = {
   ]
 }
 
+/**
+ * 处理发送验证码
+ * 验证邮箱后发送注册验证码，并启动60秒倒计时
+ */
 const handleSendCode = async () => {
   if (!registerFormRef.value) return
 
@@ -191,6 +200,10 @@ const handleSendCode = async () => {
   }
 }
 
+/**
+ * 处理用户注册
+ * 验证表单后调用注册接口，成功后跳转到登录页
+ */
 const handleRegister = async () => {
   if (!registerFormRef.value) return
 
@@ -227,6 +240,10 @@ const handleRegister = async () => {
   })
 }
 
+/**
+ * 跳转到登录页
+ * 如果有重定向参数，会传递给登录页
+ */
 const goToLogin = () => {
   // 如果有重定向参数，传递给登录页
   const redirect = route.query.redirect

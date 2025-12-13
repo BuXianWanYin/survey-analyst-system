@@ -1,14 +1,17 @@
 /**
  * 图表配置生成工具
- * 根据图表类型和统计数据生成 ECharts 配置
+ * 功能：根据图表类型和统计数据生成ECharts配置，支持饼图、环形图、柱状图、折线图、横向柱状图、词云图等
  */
 
 /**
- * 根据图表类型和统计数据生成 ECharts 配置
- * @param {String} type 图表类型 (pie, ring, bar, line, horizontalBar, wordcloud)
- * @param {Object} statistics 统计数据
- * @param {Object} colorScheme 配色方案
- * @returns {Object} ECharts配置对象
+ * 根据图表类型和统计数据生成ECharts配置
+ * @param {string} type 图表类型，可选值：pie(饼图)、ring(环形图)、bar(柱状图)、line(折线图)、horizontalBar(横向柱状图)、wordcloud(词云图)
+ * @param {Object} statistics 统计数据对象
+ * @param {Array} statistics.optionStats 选项统计数组
+ * @param {string} statistics.questionTitle 题目标题
+ * @param {Array} statistics.wordCloudData 词云数据（仅wordcloud类型需要）
+ * @param {Object} colorScheme 配色方案对象，包含colors数组
+ * @returns {Object|null} ECharts配置对象，如果数据无效则返回null
  */
 export function generateChartOption(type, statistics, colorScheme = null) {
   const defaultColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc']
@@ -213,7 +216,6 @@ export function generateChartOption(type, statistics, colorScheme = null) {
       }
 
     case 'wordcloud':
-      // 词云图（用于文本题）
       const wordCloudData = statistics.wordCloudData || []
       if (wordCloudData.length === 0) return null
 
@@ -259,10 +261,13 @@ export function generateChartOption(type, statistics, colorScheme = null) {
 
 /**
  * 生成交叉分析图表配置
- * @param {String} type 图表类型 (table, horizontalBar, bar, line, heatmap)
- * @param {Object} crossTable 交叉表数据 { rowKey: { colKey: count } }
- * @param {Object} options 其他选项 { question1Title, question2Title, colorScheme }
- * @returns {Object} ECharts配置对象
+ * @param {string} type 图表类型，可选值：horizontalBar(横向堆叠柱状图)、bar(纵向堆叠柱状图)、line(折线图)、heatmap(热力图)
+ * @param {Object} crossTable 交叉表数据对象，格式：{rowKey: {colKey: count}}
+ * @param {Object} options 其他选项对象
+ * @param {string} options.question1Title 第一个题目标题
+ * @param {string} options.question2Title 第二个题目标题
+ * @param {Object} options.colorScheme 配色方案对象，包含colors数组
+ * @returns {Object|null} ECharts配置对象，如果数据无效则返回null
  */
 export function generateCrossChartOption(type, crossTable, options = {}) {
   const { question1Title = '', question2Title = '', colorScheme = null } = options
@@ -290,7 +295,6 @@ export function generateCrossChartOption(type, crossTable, options = {}) {
 
   switch (type) {
     case 'horizontalBar':
-      // 堆叠条形图（横向）
       const series1 = colArray.map((col, colIndex) => {
         const data = rows.map(row => crossTable[row][col] || 0)
         return {
@@ -355,7 +359,6 @@ export function generateCrossChartOption(type, crossTable, options = {}) {
       }
 
     case 'bar':
-      // 堆叠柱状图（纵向）
       const series2 = colArray.map((col, colIndex) => {
         const data = rows.map(row => crossTable[row][col] || 0)
         return {
@@ -422,7 +425,6 @@ export function generateCrossChartOption(type, crossTable, options = {}) {
       }
 
     case 'line':
-      // 折线图
       const series3 = colArray.map((col, colIndex) => {
         const data = rows.map(row => crossTable[row][col] || 0)
         return {
@@ -485,7 +487,6 @@ export function generateCrossChartOption(type, crossTable, options = {}) {
       }
 
     case 'heatmap':
-      // 热力图
       const xAxisData = colArray
       const yAxisData = rows
       const heatmapData = []
@@ -578,11 +579,13 @@ export function generateCrossChartOption(type, crossTable, options = {}) {
 
 /**
  * 生成对比分析图表配置
- * @param {String} type 图表类型 (table, bar, horizontalBar, line)
- * @param {Object} compareData 对比数据 [{ optionLabel, group1: { count, percentage }, ... }]
- * @param {Array} groups 对比组数组 ['组1', '组2', ...]
- * @param {Object} options 其他选项 { questionTitle, colorScheme }
- * @returns {Object} ECharts配置对象
+ * @param {string} type 图表类型，可选值：bar(柱状图)、horizontalBar(横向柱状图)、line(折线图)
+ * @param {Array} compareData 对比数据数组，格式：[{optionLabel: 选项标签, group1: {count: 数量, percentage: 百分比}, ...}]
+ * @param {Array} groups 对比组数组，格式：['组1', '组2', ...]
+ * @param {Object} options 其他选项对象
+ * @param {string} options.questionTitle 题目标题
+ * @param {Object} options.colorScheme 配色方案对象，包含colors数组
+ * @returns {Object|null} ECharts配置对象，如果数据无效则返回null
  */
 export function generateCompareChartOption(type, compareData, groups, options = {}) {
   const { questionTitle = '', colorScheme = null } = options
@@ -597,7 +600,6 @@ export function generateCompareChartOption(type, compareData, groups, options = 
 
   switch (type) {
     case 'bar':
-      // 柱状图（显示百分比）
       const series1 = groups.map((group, groupIndex) => {
         const data = compareData.map(item => {
           const count = item[group]?.count || 0
@@ -672,7 +674,6 @@ export function generateCompareChartOption(type, compareData, groups, options = 
       }
 
     case 'horizontalBar':
-      // 条形图（横向，显示百分比）
       const series2 = groups.map((group, groupIndex) => {
         const data = compareData.map(item => {
           const count = item[group]?.count || 0
@@ -746,7 +747,6 @@ export function generateCompareChartOption(type, compareData, groups, options = 
       }
 
     case 'line':
-      // 折线图（显示百分比）
       const series3 = groups.map((group, groupIndex) => {
         const data = compareData.map(item => {
           const count = item[group]?.count || 0

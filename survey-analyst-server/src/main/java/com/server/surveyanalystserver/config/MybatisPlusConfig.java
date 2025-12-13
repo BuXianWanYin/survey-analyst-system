@@ -15,7 +15,9 @@ import org.springframework.context.annotation.Configuration;
 public class MybatisPlusConfig {
 
     /**
-     * 分页插件
+     * 配置MyBatis Plus拦截器
+     * 添加分页插件，支持MySQL数据库的分页查询
+     * @return MyBatis Plus拦截器实例
      */
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {

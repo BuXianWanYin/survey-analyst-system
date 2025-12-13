@@ -69,6 +69,11 @@
 </template>
 
 <script setup>
+/**
+ * 忘记密码页面
+ * 功能：通过邮箱验证码找回密码，包含验证码发送倒计时功能
+ */
+
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -104,6 +109,10 @@ const forgotPasswordRules = {
   ]
 }
 
+/**
+ * 处理发送验证码
+ * 验证邮箱后发送重置密码验证码，并启动60秒倒计时
+ */
 const handleSendCode = async () => {
   if (!forgotPasswordFormRef.value) return
 
@@ -139,6 +148,10 @@ const handleSendCode = async () => {
   }
 }
 
+/**
+ * 处理提交重置密码
+ * 验证表单后调用重置密码接口，成功后2秒跳转到登录页
+ */
 const handleSubmit = async () => {
   if (!forgotPasswordFormRef.value) return
 
@@ -167,6 +180,9 @@ const handleSubmit = async () => {
   })
 }
 
+/**
+ * 跳转到登录页
+ */
 const goToLogin = () => {
   router.push('/login')
 }

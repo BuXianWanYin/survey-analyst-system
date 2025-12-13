@@ -80,6 +80,11 @@
 </template>
 
 <script setup>
+/**
+ * 趋势分析页面
+ * 功能：分析题目选项在不同时间段的填写趋势，支持选择时间范围（7天、30天、全部）进行趋势分析
+ */
+
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -121,6 +126,10 @@ const analysisForm = reactive({
   timeRange: '30d'
 })
 
+/**
+ * 加载问卷列表
+ * 加载所有问卷列表，用于筛选下拉框
+ */
 const loadSurveyList = async () => {
   try {
     const res = await surveyApi.getSurveyList({ pageNum: 1, pageSize: 100 })
@@ -132,6 +141,10 @@ const loadSurveyList = async () => {
   }
 }
 
+/**
+ * 处理问卷变化
+ * 选择问卷后加载该问卷的题目列表
+ */
 const handleSurveyChange = async () => {
   if (!analysisForm.surveyId) return
 
@@ -145,6 +158,10 @@ const handleSurveyChange = async () => {
   }
 }
 
+/**
+ * 处理趋势分析
+ * 调用趋势分析接口，分析指定题目在不同时间段的选项变化趋势
+ */
 const handleAnalyze = async () => {
   if (!analysisForm.surveyId || !analysisForm.questionId) {
     ElMessage.warning('请选择问卷和题目')
@@ -171,6 +188,11 @@ const handleAnalyze = async () => {
   }
 }
 
+/**
+ * 构建趋势图表
+ * 根据趋势数据生成折线图配置，显示各选项随时间的变化趋势
+ * @param {Object} trendData - 趋势数据对象，键为日期，值为选项统计
+ */
 const buildTrendChart = (trendData) => {
   if (!trendData) return
 
@@ -220,6 +242,11 @@ const buildTrendChart = (trendData) => {
   }
 }
 
+/**
+ * 构建趋势表格数据
+ * 将趋势数据转换为表格格式，每行代表一个日期，每列代表一个选项
+ * @param {Object} trendData - 趋势数据对象
+ */
 const buildTrendTable = (trendData) => {
   if (!trendData) return
 
@@ -233,6 +260,9 @@ const buildTrendTable = (trendData) => {
   })
 }
 
+/**
+ * 返回上一页
+ */
 const goBack = () => {
   router.back()
 }
